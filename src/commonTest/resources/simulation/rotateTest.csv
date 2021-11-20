@@ -1,0 +1,8 @@
+rleBefore,rleAfter,startX,startY,direction
+oo$oo!,2o$2o!,0,0,clockwise
+ob4o$4o2bo2bo$2b3obo$o2bob3o$obo4b2o$3bobobobo$b6ob2o$4o2bo2bo$2o4bo$4o2bobo!,3o2b2ob2o$4o4bo$ob2obob3o$ob3ob4o$3bo3bobo$3b2obo2bo$4o2b3o$4b3o$o2bobo$2b3o3bo!,0,0,clockwise
+ob4o$4o2bo2bo$2b3obo$o2bob3o$obo4b2o$3bobobobo$b6ob2o$4o2bo2bo$2o4bo$4o2bobo!,bo3b3o$4bobo2bo$3b3o$b3o2b4o$o2bob2o$obo3bo$4ob3obo$3obob2obo$bo4b4o$2ob2o2b3o!,0,0,anti-clockwise
+3o2bob8obo2bo$4ob3o2b2o5b2o$3obobob3o2bobo2bo$obo2bo4bo3bo2b3o!,4o$b3o$4o$2bo$bo$ob2o$b2o$2b2o$bobo$bobo$4o$2b2o$3bo$bobo$o2bo$bo$3bo$obo$3o$o2bo!,8,-8,clockwise
+3o2bob8obo2bo$4ob3o2b2o5b2o$3obobob3o2bobo2bo$obo2bo4bo3bo2b3o!,o2bo$b3o$bobo$o$2bo$o2bo$obo$o$2o$4o$obo$obo$2o$b2o$2obo$2bo$bo$4o$3o$4o!,8,-8,anti-clockwise
+AB4.A$2.B.B.B2A$.BA.A2.B$B2A.4B$.A.2A.BA$3BA.BAB!,B.B2.A$B2AB.B$B.2AB$2A$.ABAB$B.B$A2B.BA$BA2BA$4.A!,3,-3,clockwise
+AB4.A$2.B.B.B2A$.BA.A2.B$B2A.4B$.A.2A.BA$3BA.BAB!,.A$.A2BAB$AB.2BA$3.B.B$.BABA$4.2A$.B2A.B$B.B2AB$A2.B.B!,3,-3,anti-clockwise

@@ -1,0 +1,111 @@
+package simulation
+
+import readResource
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.todo
+
+class SparseGridTest {
+    @Test
+    fun shift_pattern_correctly() {
+        var tokens: List<String>
+        val testCases = readResource("simulation/shiftTest.csv").split("\n")
+
+        for (i in 1 until testCases.size) {
+            tokens = testCases[i].trim().split(",")
+
+            val grid = SparseGrid(tokens[0]).shift(tokens[1].toInt(), tokens[2].toInt())
+            grid.updateBounds()
+
+            assertEquals(tokens[0].replace("o", "A").replace("b", "."), grid.toRLE())
+            assertEquals(Coordinate(tokens[1].toInt(), tokens[2].toInt()), grid.bounds.first)
+        }
+    }
+
+    @Test
+    fun flip_pattern_correctly() {
+        var tokens: List<String>
+        val testCases = readResource("simulation/flipTest.csv").split("\n")
+
+        for (i in 1 until testCases.size) {
+            tokens = testCases[i].trim().split(",")
+
+            // Load the RLE
+            val grid = SparseGrid(tokens[0])
+            grid.updateBounds()
+
+            // Store some information about the previous grid
+            val prevBounds = grid.bounds
+            val prevPopulation = grid.population()
+
+            // Flip the grid
+            grid.flip(if (tokens[2] == "horizontal") Flip.HORIZONTAL else Flip.VERTICAL)
+
+            // Test the different characteristics of the grid
+            assertEquals(prevBounds, grid.bounds)
+            assertEquals(prevPopulation, grid.population())
+            assertEquals(tokens[1].replace("o", "A").replace("b", "."), grid.toRLE())
+        }
+    }
+
+    @Test
+    fun rotate_pattern_correctly() {
+        var tokens: List<String>
+        val testCases = readResource("simulation/rotateTest.csv").split("\n")
+
+        for (i in 1 until testCases.size) {
+            tokens = testCases[i].trim().split(",")
+
+            // Load the RLE
+            val grid = SparseGrid(tokens[0])
+            grid.updateBounds()
+
+            // Store some information about the previous grid
+            val prevPopulation = grid.population()
+
+            // Flip the grid
+            grid.rotate(if (tokens[4] == "clockwise") Rotation.CLOCKWISE else Rotation.ANTICLOCKWISE)
+
+            // Test the different characteristics of the grid
+            grid.updateBounds()
+            //assertEquals(Coordinate(tokens[2].toInt(), tokens[3].toInt()), grid.bounds.first)
+            assertEquals(prevPopulation, grid.population())
+            assertEquals(tokens[1].replace("o", "A").replace("b", "."), grid.toRLE())
+        }
+    }
+
+    @Test
+    fun correctly_read_and_export_rle() {
+        var tokens: List<String>
+        val testCases = readResource("simulation/patternExportTest.csv").split("\n")
+
+        for (i in 1 until testCases.size) {
+            tokens = testCases[i].trim().split(",")
+
+            val grid = SparseGrid(tokens[0])
+            val correctRLE = tokens[0].replace("b", ".").replace("o", "A")
+
+            assertEquals(tokens[2].toInt(), grid.population())
+            assertEquals(correctRLE, grid.toRLE())
+        }
+    }
+
+    @Test
+    fun correctly_read_and_export_apgcode() {
+        var tokens: List<String>
+        val testCases = readResource("simulation/patternExportTest.csv").split("\n")
+
+        for (i in 1 until testCases.size) {
+            tokens = testCases[i].trim().split(",")
+
+            val grid = SparseGrid(tokens[1])
+            val correctApgcode = tokens[1].split("_").slice(1 until
+                    tokens[1].split("_").size).joinToString("_")
+
+            assertEquals(tokens[2].toInt(), grid.population())
+
+            // Not yet implemented
+            todo { assertEquals(correctApgcode, grid.toApgcode()) }
+        }
+    }
+}

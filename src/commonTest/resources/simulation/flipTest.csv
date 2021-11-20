@@ -1,0 +1,11 @@
+rleBefore,rleAfter,direction
+5bo$2bo3bo$bo4bo$4obo!,bo$o3bo$o4bo$bob4o!,horizontal
+5bo$2bo3bo$bo4bo$4obo!,4obo$bo4bo$2bo3bo$5bo!,vertical
+2bo$b3o$bo3b3o$2obo3bo$3bo3bo$3b2o$5b2o!,5bo$4b3o$3o3bo$o3bob2o$o3bo$3b2o$b2o!,horizontal
+2bo$b3o$bo3b3o$2obo3bo$3bo3bo$3b2o$5b2o!,5b2o$3b2o$3bo3bo$2obo3bo$bo3b3o$b3o$2bo!,vertical
+.BCE.D.E3.EC$.A2.B2.E4.AB$.ECB2.2BCAD.AC$.C.E4.CB2.D$2DCBE2.B.A.EC$2.D3.A2.C.EB!,.CE3.E.D.ECB$BA4.E2.B2.A$CA.DAC2B2.BCE$.D2.BC4.E.C$.CE.A.B2.EBC2D$.BE.C2.A3.D!,horizontal
+.BCE.D.E3.EC$.A2.B2.E4.AB$.ECB2.2BCAD.AC$.C.E4.CB2.D$2DCBE2.B.A.EC$2.D3.A2.C.EB!,2.D3.A2.C.EB$2DCBE2.B.A.EC$.C.E4.CB2.D$.ECB2.2BCAD.AC$.A2.B2.E4.AB$.BCE.D.E3.EC!,vertical
+b3ob2o$obo$2ob3o$6o$2bob3o$2bo3bo$bo$2o2bo$2bo2b2o$b4o!,2ob3o$4bobo$b3ob2o$b6o$3obo$o3bo$5bo$2bo2b2o$2o2bo$2b4o!,horizontal
+b3ob2o$obo$2ob3o$6o$2bob3o$2bo3bo$bo$2o2bo$2bo2b2o$b4o!,b4o$2bo2b2o$2o2bo$bo$2bo3bo$2bob3o$6o$2ob3o$obo$b3ob2o!,vertical
+.DB$.3CE$B.D.A$3.EC$A.C.C$BD2.A$2.DA$2DEAD$.D.E$E$.C2.A$AEC2B$.C.2B!,2.BD$E3C$A.D.B$CE$C.C.A$A2.DB$.AD$DAE2D$.E.D$4.E$A2.C$2BCEA$2B.C!,horizontal
+.DB$.3CE$B.D.A$3.EC$A.C.C$BD2.A$2.DA$2DEAD$.D.E$E$.C2.A$AEC2B$.C.2B!,.C.2B$AEC2B$.C2.A$E$.D.E$2DEAD$2.DA$BD2.A$A.C.C$3.EC$B.D.A$.3CE$.DB!,vertical
