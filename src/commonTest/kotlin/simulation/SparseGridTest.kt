@@ -17,7 +17,8 @@ class SparseGridTest {
             val grid = SparseGrid(tokens[0]).shift(tokens[1].toInt(), tokens[2].toInt())
             grid.updateBounds()
 
-            assertEquals(tokens[0].replace("o", "A").replace("b", "."), grid.toRLE())
+            assertEquals(tokens[0].replace("o", "A").replace("b", "."),
+                grid.toRLE().replace("o", "A").replace("b", "."))
             assertEquals(Coordinate(tokens[1].toInt(), tokens[2].toInt()), grid.bounds.first)
         }
     }
@@ -44,7 +45,8 @@ class SparseGridTest {
             // Test the different characteristics of the grid
             assertEquals(prevBounds, grid.bounds)
             assertEquals(prevPopulation, grid.population())
-            assertEquals(tokens[1].replace("o", "A").replace("b", "."), grid.toRLE())
+            assertEquals(tokens[1].replace("o", "A").replace("b", "."),
+                grid.toRLE().replace("o", "A").replace("b", "."))
         }
     }
 
@@ -70,7 +72,8 @@ class SparseGridTest {
             grid.updateBounds()
             //assertEquals(Coordinate(tokens[2].toInt(), tokens[3].toInt()), grid.bounds.first)
             assertEquals(prevPopulation, grid.population())
-            assertEquals(tokens[1].replace("o", "A").replace("b", "."), grid.toRLE())
+            assertEquals(tokens[1].replace("o", "A").replace("b", "."),
+                grid.toRLE().replace("o", "A").replace("b", "."))
         }
     }
 
@@ -86,7 +89,7 @@ class SparseGridTest {
             val correctRLE = tokens[0].replace("b", ".").replace("o", "A")
 
             assertEquals(tokens[2].toInt(), grid.population())
-            assertEquals(correctRLE, grid.toRLE())
+            assertEquals(correctRLE, grid.toRLE().replace("o", "A").replace("b", "."))
         }
     }
 

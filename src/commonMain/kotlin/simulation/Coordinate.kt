@@ -4,7 +4,7 @@ package simulation
  * Represents a coordinate (x, y) in the grid
  * @constructor Constructs coordinate (x, y)
  */
-class Coordinate(val x: Int = 0, val y: Int) {
+class Coordinate(val x: Int = 0, val y: Int = 0) {
     /**
      * Adds the coordinates together and returns a new coordinate
      * @param other The other coordinate to add to this coordinate

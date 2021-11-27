@@ -8,3 +8,4 @@ config.module.rules.push({
 config.resolve.modules.push("src/commonMain/resources")
 config.resolve.modules.push("src/commonTest/resources")
 config.resolve.modules.push("src/commonTest/resources/simulation")
+config.resolve.modules.push("src/commonTest/resources/rules/HROT")
