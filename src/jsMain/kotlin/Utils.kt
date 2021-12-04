@@ -12,6 +12,8 @@ actual fun readResource(resource: String): String {
         "rotateTest.csv" -> require("rotateTest.csv") as String
         "hrotParsingTest.txt" -> require("hrotParsingTest.txt") as String
         "hrotSimulationTest.txt" -> require("hrotSimulationTest.txt") as String
+        "oscillatorStats.csv" -> require("oscillatorStats.csv") as String
+        "spaceshipStats.csv" -> require("spaceshipStats.csv") as String
         else -> require(tokens[tokens.size - 1]) as String
     }
 }

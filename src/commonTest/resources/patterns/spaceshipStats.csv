@@ -1,0 +1,7 @@
+rule,ship,dx,dy,period,min_heat,max_heat,avg_heat,speed,direction
+B3/S23,bo$o$3o!,-1,1,4,4,4,4.0,c/4d,diagonal
+B38/S23,4b2o$2b3o8bo$13b2o$3b2o7bob2o$2o3bo6bobo$o3b2o6b2o$b4o32bo$36bobo$22b3o11b2o$22b3obo$27bo$27b2o$26b2o$26bo!,-2,5,190,21,117,60.9,"(-2, 5)c/190",oblique
+B38/S23,2bo$2bo$bo$b2o$o2bo$o5b2o$o3b4o$o4b2obo$o2bo2b3o$3o4bo!,0,8,16,28,46,38.0,8c/116o,orthogonal
+B35/S35678,2b3o$2bob2o$2b3o$3b3o2$2bo$2b2o$b3obo$3bo$b4o$3bo2$2b3o$b5o$ob3obo2$2bobo!,0,2,6,34,45,40.7,2c/6o,orthogonal
+B34678/S0567,3o$3bo2bo$2bob2o$2b5o$3bobo!,1,1,10,13,19,17.2,c/10d,diagonal
+B02345/S0123,bo$o$3bo$2b2o$b2o$2o$2o$bo!,0,-6,12,13,29,20.0,6c/12o,orthogonal

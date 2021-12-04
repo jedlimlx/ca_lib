@@ -1,5 +1,6 @@
 package simulation
 
+import Utils
 import rules.Rule
 import rules.hrot.HROT
 import kotlin.math.max
@@ -51,12 +52,20 @@ class SparseGrid(pattern: String = "", rule: Rule = HROT("B3/S23")): Grid() {
         }
     }
 
-    override operator fun get(coordinate: Coordinate): Int {
-        val state = dictionary[coordinate] ?: return background
-        return Utils.convert(state, background)
+    override operator fun get(coordinate: Coordinate, withoutBg: Boolean): Int {
+        return if (!withoutBg) Utils.convert(dictionary[coordinate] ?: 0, background)
+        else dictionary[coordinate] ?: 0
     }
 
     override fun population() = dictionary.size
+
+    override fun populationByState(): IntArray {
+        val result = IntArray(rule.numStates) { 0 }
+        result[background] = -1
+
+        forEach { result[it.second]++ }
+        return result
+    }
 
     override fun deepCopy(): SparseGrid {
         val grid = SparseGrid("", rule)
@@ -66,16 +75,28 @@ class SparseGrid(pattern: String = "", rule: Rule = HROT("B3/S23")): Grid() {
         return grid
     }
 
-    override fun iterator(): MutableIterator<Pair<Coordinate, Int>> = GridIterator(dictionary)
+    override fun iterator(): MutableIterator<Pair<Coordinate, Int>> = GridIterator(dictionary, background)
+
+    override fun equals(other: Any?): Boolean {
+        if (other !is Grid) return false
+
+        val check = background == other.background && rule == other.rule &&
+                population() == other.population()
+        return if (check) {
+            val otherDictionary: HashMap<Coordinate, Int> = hashMapOf()
+            other.forEach { otherDictionary[it.first] = it.second }
+            dictionary == otherDictionary
+        } else false
+    }
 }
 
-class GridIterator(dictionary: HashMap<Coordinate, Int>): MutableIterator<Pair<Coordinate, Int>> {
+class GridIterator(dictionary: HashMap<Coordinate, Int>, val background: Int): MutableIterator<Pair<Coordinate, Int>> {
     val iterator = dictionary.iterator()
 
     override fun hasNext(): Boolean = iterator.hasNext()
     override fun next(): Pair<Coordinate, Int> {
         val entry = iterator.next()
-        return Pair(entry.key, entry.value)
+        return Pair(entry.key, Utils.convert(entry.value, background))
     }
 
     override fun remove() = iterator.remove()

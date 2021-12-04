@@ -1,5 +1,6 @@
 package simulation
 
+import Utils
 import rules.Rule
 import rules.hrot.HROT
 import kotlin.math.max
@@ -458,7 +459,7 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
      * @param coordinate Coordinate of the cell to get the state for
      * @return Returns the state of the cell
      */
-    abstract operator fun get(coordinate: Coordinate): Int
+    abstract operator fun get(coordinate: Coordinate, withoutBg: Boolean = false): Int
 
     /**
      * Gets the state of the cell at (x, y)
@@ -466,7 +467,7 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
      * @param y y-coordinate of the cell to get the state for
      * @return Returns the state of the cell
      */
-    operator fun get(x: Int, y: Int): Int = this[Coordinate(x, y)]
+    operator fun get(x: Int, y: Int, withoutBg: Boolean = false): Int = this[Coordinate(x, y), withoutBg]
 
     /**
      * Generates a new grid with the cells with x coordinate within xIntRange and with y coordinate within yIntRange.
@@ -564,6 +565,14 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
     abstract fun population(): Int
 
     /**
+     * Gets the current population as an array of integers.
+     * Each element of the array represents the number of cells of a certain state.
+     * A background state is denoted as -1.
+     * @return Returns the current population as an array of integers.
+     */
+    abstract fun populationByState(): IntArray
+
+    /**
      * Creates a deep copy of the current grid
      * @return Returns the deep copy
      */
@@ -574,5 +583,35 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
      */
     override fun toString(): String {
         return toRLE()
+    }
+
+    /**
+     * Gets the hash of the grid.
+     * @return Returns the grid's hash (uses Golly's hash algorithm).
+     */
+    override fun hashCode(): Int {
+        updateBounds()
+        return hashCode(bounds.first, bounds.second)
+    }
+
+    /**
+     * Gets the hash of the grid.
+     * @param startCoordinate The start coordinate of the region where the hash is calculated
+     * @param endCoordinate The end coordinate of the region where the hash is calculated
+     * @return Returns the grid's hash (uses Golly's hash algorithm).
+     */
+    open fun hashCode(startCoordinate: Coordinate, endCoordinate: Coordinate): Int {
+        var hash = 31415962
+        for (y in startCoordinate.y .. endCoordinate.y) {
+            val yShift: Int = y - startCoordinate.y
+            for (x in startCoordinate.x .. endCoordinate.x) {
+                if (this[x, y] > 0) {
+                    hash = hash * 1000003 xor yShift
+                    hash = hash * 1000003 xor x - startCoordinate.x
+                    hash = hash * 1000003 xor this[x, y]
+                }
+            }
+        }
+        return hash
     }
 }
