@@ -60,11 +60,20 @@ class HROT(rulestring: String = "B3/S23") : BaseHROT() {
                 survival = readTransition(survivalString)
             }
             else -> {
-                val tokens = Regex("[BbSs]([0-9]*)").findAll(rulestring).map { it.groupValues[1] }.toList()
+                if ("b" in rulestring.lowercase()) {
+                    val birthToken = Regex("[Bb]([0-8]*)").findAll(rulestring).map { it.groupValues[1] }.toList()
+                    val survivalToken = Regex("[Ss]([0-8]*)").findAll(rulestring).map { it.groupValues[1] }.toList()
 
-                // Loading birth and survival conditions
-                birth = readTransition(if ("b" in rulestring.lowercase()) tokens[0] else tokens[1], false)
-                survival = readTransition(if ("b" in rulestring.lowercase()) tokens[1] else tokens[0], false)
+                    // Loading birth and survival conditions
+                    birth = readTransition(birthToken[0], false)
+                    survival = readTransition(survivalToken[0], false)
+                } else {
+                    val tokens = rulestring.replace(Regex("[VH]"), "").split("/")
+
+                    // Loading birth and survival conditions
+                    birth = readTransition(tokens[1], false)
+                    survival = readTransition(tokens[0], false)
+                }
 
                 // Load neighbourhood
                 neighbourhoodString = null

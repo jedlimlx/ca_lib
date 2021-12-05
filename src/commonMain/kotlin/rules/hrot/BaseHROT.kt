@@ -43,9 +43,7 @@ abstract class BaseHROT: RuleFamily() {
                 if ("-" in it) {
                     val tokens = it.split("-")
                     for (i in tokens[0].toInt() .. tokens[1].toInt()) set.add(i)
-                } else {
-                    set.add(it.toInt())
-                }
+                } else if (it.isNotEmpty()) set.add(it.toInt())
             }
 
             set

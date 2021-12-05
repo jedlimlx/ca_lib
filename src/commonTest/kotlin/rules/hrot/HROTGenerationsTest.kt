@@ -5,11 +5,12 @@ import simulation.SparseGrid
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class HROTTest {
+class HROTGenerationsTest {
     @Test
     fun parse_transitions_correctly() {
         // Loading test cases
-        val testCases = readResource("rules/hrot/hrotParsingTest.txt").split("\n").map { it.trim() }
+        val testCases = readResource("rules/hrot/hrotGenerationsParsingTest.txt")
+            .split("\n").map { it.trim() }
 
         var rulestring = ""
         var birth = setOf<Int>()
@@ -27,7 +28,7 @@ class HROTTest {
 
                 // Running the test case
                 !line.startsWith("#") -> {
-                    val hrot = HROT(rulestring)
+                    val hrot = HROTGenerations(rulestring)
                     assertEquals(birth, hrot.birth)
                     assertEquals(survival, hrot.survival)
                 }
@@ -38,7 +39,7 @@ class HROTTest {
     @Test
     fun canonise_rulestring_correctly() {
         // Loading test cases
-        val testCases = readResource("rules/hrot/hrotParsingTest.txt").split("\n").map { it.trim() }
+        val testCases = readResource("rules/hrot/hrotGenerationsParsingTest.txt").split("\n").map { it.trim() }
 
         var rulestring = ""
         var canonRulestring = ""
@@ -52,7 +53,7 @@ class HROTTest {
 
                 // Running the test case
                 !line.startsWith("#") -> {
-                    val hrot = HROT(rulestring)
+                    val hrot = HROTGenerations(rulestring)
                     assertEquals(canonRulestring, hrot.rulestring)
                 }
             }
@@ -62,7 +63,7 @@ class HROTTest {
     @Test
     fun simulate_rule_correctly() {
         // Loading test cases
-        val testCases = readResource("rules/hrot/hrotSimulationTest.txt").split("\n").map { it.trim() }
+        val testCases = readResource("rules/hrot/hrotGenerationsSimulationTest.txt").split("\n").map { it.trim() }
 
         var rulestring = ""
         var generations = 0
@@ -82,7 +83,7 @@ class HROTTest {
 
                 // Running the test case
                 !line.startsWith("#") -> {
-                    val grid = SparseGrid(initial, HROT(rulestring))
+                    val grid = SparseGrid(initial, HROTGenerations(rulestring))
                     grid.step(generations)
                     assertEquals(final, grid.toRLE())
                 }

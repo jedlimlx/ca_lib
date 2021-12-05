@@ -35,6 +35,7 @@ class SpaceshipTest {
 
             // assertEquals(tokens[8], ship.speed)
             // assertEquals(tokens[9], ship.direction)
+            // TODO (Parse CSVs correctly)
         }
     }
 }

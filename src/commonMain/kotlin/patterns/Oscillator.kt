@@ -5,6 +5,8 @@ import simulation.Grid
 
 /**
  * Represents an oscillator in a cellular automaton rule
+ * @property period The period of the oscillator
+ * @property phases An array of grids representing the phases of the oscillator
  */
 class Oscillator(period: Int, phases: Array<Grid>) : Spaceship(0, 0, period, phases) {
     /**

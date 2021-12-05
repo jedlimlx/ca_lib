@@ -5,6 +5,10 @@ import simulation.Grid
 
 /**
  * Represents a spaceship in a cellular automaton
+ * @property dx The displacement of the spaceship in the x-direction
+ * @property dy The displacement of the spaceship in the y-direction
+ * @property period The period of the spaceship
+ * @property phases An array of grids representing the phases of the spacship
  */
 open class Spaceship(val dx: Int, val dy: Int, val period: Int, val phases: Array<Grid>): Pattern() {
     /**
