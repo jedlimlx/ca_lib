@@ -1,6 +1,9 @@
 package simulation
 
+import patterns.Oscillator
+import patterns.Spaceship
 import readResource
+import rules.hrot.HROT
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.todo
@@ -110,5 +113,13 @@ class SparseGridTest {
             // Not yet implemented
             todo { assertEquals(correctApgcode, grid.toApgcode()) }
         }
+    }
+
+    @Test
+    fun test_for_fun() {
+        val grid = SparseGrid("2bo2b\$b3ob\$bob2o\$o2b2o\$o3bo\$5o\$b3ob\$b3o!", HROT("R2,C0,S6-9,B7-8,NM"))
+        println((grid.identify() as Spaceship).period)
+        println((grid.identify() as Spaceship).dx)
+        println((grid.identify() as Spaceship).dy)
     }
 }

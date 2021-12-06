@@ -12,12 +12,12 @@ abstract class Rule {
     /**
      * The number of states in the rule
      */
-    abstract val numStates: Int
+    open val numStates: Int = 2
 
     /**
      * The alternating period of the rule (excluding B0 emulation)
      */
-    abstract val alternatingPeriod: Int
+    open val alternatingPeriod: Int = 1
 
     /**
      * The neighbourhood of the rule (excluding B0 emulation)

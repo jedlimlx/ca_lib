@@ -1,6 +1,9 @@
 package simulation
 
 import Utils
+import patterns.Oscillator
+import patterns.Pattern
+import patterns.Spaceship
 import rules.Rule
 import rules.hrot.HROT
 import kotlin.math.max
@@ -119,6 +122,52 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
 
         // Return itself to allow command chaining
         return this
+    }
+
+    /**
+     * Identifies the pattern as a oscillator, spaceship, etc.
+     * @param maxGenerations The number of generations to check before giving up and returning null
+     * @return Returns the pattern if identification is successful and null otherwise
+     */
+    open fun identify(maxGenerations: Int = 5000): Pattern? {
+        var hash = this.hashCode()
+
+        var deepCopy = this.deepCopy()
+        val gridList = arrayListOf(deepCopy)
+        val hashMap = hashMapOf(hash to deepCopy)
+
+        for (i in 0 until maxGenerations) {
+            // Step 1 generation forward
+            this.step()
+
+            // Check the hash
+            hash = this.hashCode()
+            if (hash in hashMap) {  // Potential pattern detected
+                // Check for hash collisions
+                updateBounds()
+                hashMap[hash]!!.updateBounds()
+
+                val diff = hashMap[hash]!!.bounds.first - bounds.first
+                if (!equals(hashMap[hash]!!, diff.x, diff.y)) continue
+
+                // Output the pattern
+                gridList.add(this.deepCopy())
+
+                val period = generation - hashMap[hash]!!.generation
+                val phases = gridList.subList(gridList.size - period, gridList.size).toTypedArray()
+
+                return if (diff.x == 0 && diff.y == 0) Oscillator(period, phases)
+                else Spaceship(diff.x, diff.y, period, phases)
+            } else {  // Nothing detected
+                deepCopy = this.deepCopy()
+
+                gridList.add(deepCopy)
+                hashMap[hash] = deepCopy
+            }
+        }
+
+        // Didn't find anything
+        return null
     }
 
     /* Pattern Manipulation */
@@ -586,6 +635,35 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
     }
 
     /**
+     * Checks if 2 grids are equal in the patterns that they display and the parity of their
+     * generations (based on the alternating period of the rule).
+     * @param other The other grid to compare to
+     * @param dx The translation in the x-direction of the other grid with respect to this one
+     * @param dy The translation in the y-direction of the other grid with respect to this one
+     * @return Returns true if the grids are equal and false otherwise
+     */
+    open fun equals(other: Grid, dx: Int, dy: Int): Boolean {
+        val check = background == other.background && population() == other.population() &&
+                generation % rule.background.size == other.generation % rule.background.size
+        return if (check) {
+            val translation = Coordinate(dx, dy)
+            forEach { if (it.second != other[it.first + translation]) return false }
+
+            return true
+        } else false
+    }
+
+    /**
+     * Checks if the hash of 2 grids are equal (there could be hash collisions).
+     * @param other The other grid to check
+     * @return Returns true if the grids are equal and false otherwise
+     */
+    override fun equals(other: Any?): Boolean {
+        if (other !is Grid) return false
+        return this.hashCode() == other.hashCode()
+    }
+
+    /**
      * Gets the hash of the grid.
      * @return Returns the grid's hash (uses Golly's hash algorithm).
      */
@@ -612,6 +690,7 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
                 }
             }
         }
-        return hash
+
+        return hash + 31 * generation % rule.background.size
     }
 }

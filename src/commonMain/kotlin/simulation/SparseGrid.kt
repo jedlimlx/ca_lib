@@ -69,6 +69,7 @@ class SparseGrid(pattern: String = "", rule: Rule = HROT("B3/S23")): Grid() {
 
     override fun deepCopy(): SparseGrid {
         val grid = SparseGrid("", rule)
+        grid.generation = generation
         grid.background = background
         grid.dictionary.putAll(dictionary)
 
@@ -76,18 +77,6 @@ class SparseGrid(pattern: String = "", rule: Rule = HROT("B3/S23")): Grid() {
     }
 
     override fun iterator(): MutableIterator<Pair<Coordinate, Int>> = GridIterator(dictionary, background)
-
-    override fun equals(other: Any?): Boolean {
-        if (other !is Grid) return false
-
-        val check = background == other.background && rule == other.rule &&
-                population() == other.population()
-        return if (check) {
-            val otherDictionary: HashMap<Coordinate, Int> = hashMapOf()
-            other.forEach { otherDictionary[it.first] = it.second }
-            dictionary == otherDictionary
-        } else false
-    }
 }
 
 class GridIterator(dictionary: HashMap<Coordinate, Int>, val background: Int): MutableIterator<Pair<Coordinate, Int>> {
