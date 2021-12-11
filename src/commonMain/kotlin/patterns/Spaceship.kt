@@ -1,5 +1,7 @@
 package patterns
 
+import rules.Rule
+import rules.ruleRange
 import simulation.Coordinate
 import simulation.Grid
 
@@ -79,12 +81,12 @@ open class Spaceship(val dx: Int, val dy: Int, val period: Int, val phases: Arra
     /**
      * The population of the spaceship in each generation
      */
-    open val populationList by lazy { phases.map { it.population() } }
+    open val populationList by lazy { phases.map { it.population } }
 
     /**
      * The population of the spaceship by state in each generation
      */
-    open val populationListByState by lazy { phases.map { it.populationByState() } }
+    open val populationListByState by lazy { phases.map { it.populationByState } }
 
     override val information: Map<String, String> by lazy {
         mapOf(
@@ -94,6 +96,13 @@ open class Spaceship(val dx: Int, val dy: Int, val period: Int, val phases: Arra
             "heat_stats" to "${heat.minOrNull()!!} | ${heat.maxOrNull()!!} | ${heat.average()}",
             "pop_stats" to "${populationList.minOrNull()!!} | ${populationList.maxOrNull()!!} | ${populationList.average()}"
         )
+    }
+
+    override val ruleRange: Pair<Rule, Rule>? by lazy {
+        val newPhases = phases.toMutableList()
+        newPhases.add(newPhases[newPhases.size - 1].deepCopy().step())
+
+        ruleRange(newPhases)
     }
 
     /**
@@ -122,5 +131,9 @@ open class Spaceship(val dx: Int, val dy: Int, val period: Int, val phases: Arra
         result = 31 * result + phases.contentHashCode()
         result = 31 * result + rule.hashCode()
         return result
+    }
+
+    override fun toString(): String {
+        return "($dx, $dy)c/$period Spaceship"
     }
 }

@@ -6,6 +6,11 @@ import parseSymbol
 import parseWeights
 import rules.RuleFamily
 import simulation.Coordinate
+import toCoordCA
+import toSymbol
+import toWeights
+import kotlin.math.abs
+import kotlin.math.max
 
 /**
  * The base class for HROT rules
@@ -15,6 +20,14 @@ abstract class BaseHROT: RuleFamily() {
      * The weights of the HROT rule
      */
     abstract val weights: IntArray?
+
+    /**
+     * The string specifying the neighbourhood of the rule in the rulestring
+     */
+    protected val neighbourhoodString: String by lazy {
+        if (weights == null) toSymbol(neighbourhood[0])?.toString() ?: ("@" + toCoordCA(neighbourhood[0]))
+        else "W" + toWeights(neighbourhood[0], weights!!)
+    }
 
     /**
      * Reads the neighbourhood specifier in the HROT rulestring

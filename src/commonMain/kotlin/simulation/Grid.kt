@@ -35,6 +35,12 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
     var generation = 0
 
     /**
+     * The current neighbourhood being used by the grid
+     */
+    val neighbourhood
+        get() = rule.neighbourhood[generation % rule.alternatingPeriod]
+
+    /**
      * The cells that changed in the previous generation and the previous previous generation...
      * Something like {{(0, 1)...}, ...} with the length of the loaded rule's alternating period.
      */
@@ -57,6 +63,18 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
      * True if bounds are updated, false otherwise
      */
     protected var boundsUpdated = false
+
+    /**
+     * The current population (i.e. the number of cells with a non-background state)
+     */
+    abstract val population: Int
+
+    /**
+     * The current population as an array of integers.
+     * Each element of the array represents the number of cells of a certain state.
+     * A background state is denoted as -1.
+     */
+     abstract val populationByState: IntArray
 
     /* Simulation */
 
@@ -147,7 +165,7 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
                 updateBounds()
                 hashMap[hash]!!.updateBounds()
 
-                val diff = hashMap[hash]!!.bounds.first - bounds.first
+                val diff = bounds.first - hashMap[hash]!!.bounds.first
                 if (!equals(hashMap[hash]!!, diff.x, diff.y)) continue
 
                 // Output the pattern
@@ -569,7 +587,7 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
     private fun iterateOverRectangle(startCoordinate: Coordinate, endCoordinate: Coordinate,
                                      func: (it: Pair<Coordinate, Int>) -> Unit) {
         // Check for the more efficient approach
-        if (population() < (endCoordinate.x - startCoordinate.x) * (endCoordinate.y - startCoordinate.y)) {
+        if (population < (endCoordinate.x - startCoordinate.x) * (endCoordinate.y - startCoordinate.y)) {
             forEach { func(it) }
         } else {
             for (x in startCoordinate.x .. endCoordinate.x) {
@@ -605,21 +623,24 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
         // Set bounds to the new value
         bounds = Pair(Coordinate(minX, minY), Coordinate(maxX, maxY))
         boundsUpdated = true
+
     }
 
     /**
-     * Gets the current population (i.e. the number of cells with a non-background state)
-     * @return Returns the current population
+     * Gets the neighbours of the non-background cells (including the cells themselves) in the neighbourhood
+     * @return Returns a set of cells that are neighbours of the non-background cells
      */
-    abstract fun population(): Int
+    open fun neighbours(): Set<Coordinate> {
+        val set = HashSet<Coordinate>(population)
+        forEach {
+            set.add(it.first)
+            for (neighbour in neighbourhood) {
+                set.add(it.first + neighbour)
+            }
+        }
 
-    /**
-     * Gets the current population as an array of integers.
-     * Each element of the array represents the number of cells of a certain state.
-     * A background state is denoted as -1.
-     * @return Returns the current population as an array of integers.
-     */
-    abstract fun populationByState(): IntArray
+        return set
+    }
 
     /**
      * Creates a deep copy of the current grid
@@ -643,11 +664,11 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
      * @return Returns true if the grids are equal and false otherwise
      */
     open fun equals(other: Grid, dx: Int, dy: Int): Boolean {
-        val check = background == other.background && population() == other.population() &&
+        val check = background == other.background && population == other.population &&
                 generation % rule.background.size == other.generation % rule.background.size
         return if (check) {
             val translation = Coordinate(dx, dy)
-            forEach { if (it.second != other[it.first + translation]) return false }
+            forEach { if (it.second != other[it.first - translation]) return false }
 
             return true
         } else false

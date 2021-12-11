@@ -4,6 +4,7 @@ import patterns.Oscillator
 import patterns.Spaceship
 import readResource
 import rules.hrot.HROT
+import rules.ruleRange
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.todo
@@ -40,14 +41,14 @@ class SparseGridTest {
 
             // Store some information about the previous grid
             val prevBounds = grid.bounds
-            val prevPopulation = grid.population()
+            val prevPopulation = grid.population
 
             // Flip the grid
             grid.flip(if (tokens[2] == "horizontal") Flip.HORIZONTAL else Flip.VERTICAL)
 
             // Test the different characteristics of the grid
             assertEquals(prevBounds, grid.bounds)
-            assertEquals(prevPopulation, grid.population())
+            assertEquals(prevPopulation, grid.population)
             assertEquals(tokens[1].replace("o", "A").replace("b", "."),
                 grid.toRLE().replace("o", "A").replace("b", "."))
         }
@@ -66,7 +67,7 @@ class SparseGridTest {
             grid.updateBounds()
 
             // Store some information about the previous grid
-            val prevPopulation = grid.population()
+            val prevPopulation = grid.population
 
             // Flip the grid
             grid.rotate(if (tokens[4] == "clockwise") Rotation.CLOCKWISE else Rotation.ANTICLOCKWISE)
@@ -74,7 +75,7 @@ class SparseGridTest {
             // Test the different characteristics of the grid
             grid.updateBounds()
             //assertEquals(Coordinate(tokens[2].toInt(), tokens[3].toInt()), grid.bounds.first)
-            assertEquals(prevPopulation, grid.population())
+            assertEquals(prevPopulation, grid.population)
             assertEquals(tokens[1].replace("o", "A").replace("b", "."),
                 grid.toRLE().replace("o", "A").replace("b", "."))
         }
@@ -91,7 +92,7 @@ class SparseGridTest {
             val grid = SparseGrid(tokens[0])
             val correctRLE = tokens[0].replace("b", ".").replace("o", "A")
 
-            assertEquals(tokens[2].toInt(), grid.population())
+            assertEquals(tokens[2].toInt(), grid.population)
             assertEquals(correctRLE, grid.toRLE().replace("o", "A").replace("b", "."))
         }
     }
@@ -108,18 +109,10 @@ class SparseGridTest {
             val correctApgcode = tokens[1].split("_").slice(1 until
                     tokens[1].split("_").size).joinToString("_")
 
-            assertEquals(tokens[2].toInt(), grid.population())
+            assertEquals(tokens[2].toInt(), grid.population)
 
             // Not yet implemented
             todo { assertEquals(correctApgcode, grid.toApgcode()) }
         }
-    }
-
-    @Test
-    fun test_for_fun() {
-        val grid = SparseGrid("2bo2b\$b3ob\$bob2o\$o2b2o\$o3bo\$5o\$b3ob\$b3o!", HROT("R2,C0,S6-9,B7-8,NM"))
-        println((grid.identify() as Spaceship).period)
-        println((grid.identify() as Spaceship).dx)
-        println((grid.identify() as Spaceship).dy)
     }
 }

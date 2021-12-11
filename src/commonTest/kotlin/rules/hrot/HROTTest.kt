@@ -1,6 +1,8 @@
 package rules.hrot
 
+import patterns.Spaceship
 import readResource
+import rules.RuleFamily
 import simulation.SparseGrid
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -85,6 +87,45 @@ class HROTTest {
                     val grid = SparseGrid(initial, HROT(rulestring))
                     grid.step(generations)
                     assertEquals(final, grid.toRLE())
+                }
+            }
+        }
+    }
+
+    @Test
+    fun calculate_rule_range_correctly() {
+        // Loading test cases
+        val testCases = readResource("rules/hrot/hrotRuleRangeTest.txt").split("\n").map { it.trim() }
+
+        var rulestring = ""
+        var rle = ""
+        var type = ""
+        var minRule = ""
+        var maxRule = ""
+
+        for (line in testCases) {
+            when {
+                // Loading rulestring
+                line.startsWith("#R") -> rulestring = line.replace("#R ", "")
+
+                // Loading RLE
+                line.startsWith("#I") -> rle = line.replace("#I ", "")
+
+                // Loading pattern type
+                line.startsWith("#T") -> type = line.replace("#T ", "")
+
+                // Loading rule range
+                line.startsWith("#MIN") -> minRule = line.replace("#MIN ", "")
+                line.startsWith("#MAX") -> maxRule = line.replace("#MAX ", "")
+
+                // Running the test case
+                !line.startsWith("#") -> {
+                    val grid = SparseGrid(rle, HROT(rulestring))
+                    val pattern = grid.identify()
+
+                    assertEquals(type, pattern.toString())
+                    assertEquals(minRule, (pattern!!.ruleRange!!.first as RuleFamily).rulestring)
+                    assertEquals(maxRule, (pattern.ruleRange!!.second as RuleFamily).rulestring)
                 }
             }
         }

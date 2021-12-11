@@ -15,6 +15,18 @@ import kotlin.math.min
 class SparseGrid(pattern: String = "", rule: Rule = HROT("B3/S23")): Grid() {
     private val dictionary: HashMap<Coordinate, Int> = hashMapOf()
 
+    override val population
+        get() = dictionary.size
+
+    override val populationByState: IntArray
+        get() {
+            val result = IntArray(rule.numStates) { 0 }
+            result[background] = -1
+
+            forEach { result[it.second]++ }
+            return result
+        }
+
     init {
         this.rule = rule
         set(Coordinate(0, 0), pattern)
@@ -57,21 +69,12 @@ class SparseGrid(pattern: String = "", rule: Rule = HROT("B3/S23")): Grid() {
         else dictionary[coordinate] ?: 0
     }
 
-    override fun population() = dictionary.size
-
-    override fun populationByState(): IntArray {
-        val result = IntArray(rule.numStates) { 0 }
-        result[background] = -1
-
-        forEach { result[it.second]++ }
-        return result
-    }
-
     override fun deepCopy(): SparseGrid {
         val grid = SparseGrid("", rule)
         grid.generation = generation
         grid.background = background
         grid.dictionary.putAll(dictionary)
+        grid.cellsChanged = cellsChanged.map { it.toHashSet() }.toTypedArray()
 
         return grid
     }

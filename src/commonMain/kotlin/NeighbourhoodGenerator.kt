@@ -77,6 +77,66 @@ fun parseSymbol(range: Int, symbol: Char): Pair<Array<Coordinate>, IntArray?> {
 }
 
 /**
+ * Converts the provided neighbourhood and weights to a string
+ * @param neighbourhood The neighbourhood to convert to a string
+ * @param weights The weights to convert to a string
+ * @return Returns the string representing the neighbourhood and weights
+ */
+fun toWeights(neighbourhood: Array<Coordinate>, weights: IntArray): String {
+    val range = neighbourhood.maxOf { max(abs(it.x), abs(it.y)) }
+
+    val result = IntArray(range) { 0 }
+    neighbourhood.forEachIndexed { index, coordinate ->
+        result[(coordinate.x + range) + (2 * range + 1) * (coordinate.y + range)] = weights[index]
+    }
+
+    return result.joinToString("")
+}
+
+/**
+ * Converts the provided neighbourhood to a CoordCA string
+ * @param neighbourhood The neighbourhood to convert to a CoordCA string
+ * @return Returns the CoordCA string representing the neighbourhood
+ */
+fun toCoordCA(neighbourhood: Array<Coordinate>): String {
+    val range = neighbourhood.maxOf { max(abs(it.x), abs(it.y)) }
+
+    val result = IntArray((2 * range + 1) * (2 * range + 1) - 1) { 0 }
+    neighbourhood.forEach { coordinate ->
+        if (coordinate.y < 0 || (coordinate.x < 0 && coordinate.y == 0))
+            result[(coordinate.x + range) + (2 * range + 1) * (coordinate.y + range)] = 1
+        else
+            result[(coordinate.x + range) + (2 * range + 1) * (coordinate.y + range) - 1] = 1
+    }
+
+    return result.joinToString("").toInt(2).toString(16)
+}
+
+/**
+ * Converts the provided neighbourhood to a symbol
+ * @param neighbourhood The neighbourhood to convert to a symbol
+ * @return Returns the symbol representing the neighbourhood
+ */
+fun toSymbol(neighbourhood: Array<Coordinate>): Char? {
+    val range = neighbourhood.maxOf { max(abs(it.x), abs(it.y)) }
+    return when (neighbourhood.toHashSet()) {
+        asterisk(range).toHashSet() -> 'A'
+        checkerboard(range).toHashSet() -> 'B'
+        circular(range).toHashSet() -> 'C'
+        hexagonal(range).toHashSet() -> 'H'
+        moore(range).toHashSet() -> 'M'
+        vonNeumann(range).toHashSet() -> 'N'
+        saltire(range).toHashSet() -> 'X'
+        euclidean(range).toHashSet() -> '2'
+        tripod(range).toHashSet() -> '3'
+        star(range).toHashSet() -> '*'
+        cross(range).toHashSet() -> '+'
+        hash(range).toHashSet() -> '#'
+        else -> null
+    }
+}
+
+/**
  * Generates a moore neighbourhood of the specified range.
  * For more information on the moore neighbourhood, see [Moore](https://conwaylife.com/wiki/Moore_neighbourhood)
  * @param range The range of the neighbourhood to generate

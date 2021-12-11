@@ -2,7 +2,6 @@ package rules.hrot
 
 import hexagonal
 import moore
-import parseWeights
 import simulation.Coordinate
 import vonNeumann
 import kotlin.math.abs
@@ -10,9 +9,8 @@ import kotlin.math.max
 
 /**
  * Represents a 2-state HROT rule
- * @constructor Constructs a HROT rule with the specified rulestring
  */
-class HROT(rulestring: String = "B3/S23") : BaseHROT() {
+class HROT : BaseHROT {
     /**
      * The birth transitions of the HROT rule
      */
@@ -37,24 +35,51 @@ class HROT(rulestring: String = "B3/S23") : BaseHROT() {
         Regex("([BSbs][0-6]*/?[BSbs][0-6]*|[BSbs]?[0-6]*/[BSbs]?[0-6]*)H")
     )
 
-    private val neighbourhoodString: String?
+    /**
+     * Constructs a HROT rule with the provided transitions and neighbourhood
+     * @param birth The birth transitions of the HROT rule
+     * @param survival The survival transitions of the HROT rule
+     * @param neighbourhood The neighbourhood of the HROT rule
+     * @param weights The weights of the HROT rule
+     */
+    constructor(birth: Iterable<Int>, survival: Iterable<Int>,
+                neighbourhood: Array<Coordinate> = moore(1), weights: IntArray? = null) {
+        this.birth = birth.toHashSet()
+        this.survival = survival.toHashSet()
 
-    init {
+        this.weights = weights
+        this.neighbourhood = arrayOf(neighbourhood)
+
+        // Setting the possible successors of each state
+        possibleSuccessors = arrayOf(Array(2) {
+            if (it == 0) intArrayOf(0, 1)
+            else {
+                if (this.survival.isEmpty()) intArrayOf(0)
+                else intArrayOf(0, 1)
+            }
+        })
+    }
+
+    /**
+     * Constructs a HROT rule with the provided rulestring
+     * @param rulestring The rulestring of the HROT rule
+     */
+    constructor(rulestring: String = "B3/S23") {
         when {
             rulestring.matches(regex[0]) -> {
                 val range = rulestring.split(",")[0].substring(1).toInt()
 
                 // Reading neighbourhood string
                 val temp = Regex("N(.*?)$").find(rulestring)
-                neighbourhoodString = if (temp == null) "M" else temp.groupValues[1]
+                val neighbourhoodString = if (temp == null) "M" else temp.groupValues[1]
 
                 val output = readNeighbourhood(range, neighbourhoodString)
                 neighbourhood = arrayOf(output.first)
                 weights = output.second
 
                 // Loading birth and survival conditions
-                val birthString = Regex("B${transitionRegex}").find(rulestring)!!.groupValues[1]
-                val survivalString = Regex("S${transitionRegex}").find(rulestring)!!.groupValues[1]
+                val birthString = Regex("B${BaseHROT.transitionRegex}").find(rulestring)!!.groupValues[1]
+                val survivalString = Regex("S${BaseHROT.transitionRegex}").find(rulestring)!!.groupValues[1]
 
                 birth = readTransition(birthString)
                 survival = readTransition(survivalString)
@@ -76,7 +101,6 @@ class HROT(rulestring: String = "B3/S23") : BaseHROT() {
                 }
 
                 // Load neighbourhood
-                neighbourhoodString = null
                 neighbourhood = when {
                     rulestring.matches(regex[1]) -> arrayOf(moore(1))
                     rulestring.matches(regex[2]) -> arrayOf(vonNeumann(1))
@@ -100,8 +124,7 @@ class HROT(rulestring: String = "B3/S23") : BaseHROT() {
 
     override fun canoniseRulestring(): String {
         val range = neighbourhood[0].maxOf { max(abs(it.x), abs(it.y)) }
-        return if (neighbourhoodString == null || (range == 1 && weights == null && (neighbourhoodString == "M" ||
-                    neighbourhoodString == "N" || neighbourhoodString == "H"))) {
+        return if (range == 1 && weights == null && neighbourhoodString in "ABCHMN2*+#") {
             "B${birth.sorted().joinToString("")}/S${survival.sorted().joinToString("")}" + when {
                 neighbourhood[0].contentEquals(moore(1)) -> ""
                 neighbourhood[0].contentEquals(vonNeumann(1)) -> "V"
@@ -110,6 +133,35 @@ class HROT(rulestring: String = "B3/S23") : BaseHROT() {
         } else {
             "R$range,C2,S${canoniseTransition(survival)}B${canoniseTransition(birth)}N${neighbourhoodString}"
         }
+    }
+
+    override fun ruleRange(transitionsToSatisfy: Iterable<List<Int>>): Pair<HROT, HROT> {
+        val maxCount = weights?.sum() ?: neighbourhood[0].size
+
+        // The minimum possible transitions
+        val minBirth = hashSetOf<Int>()
+        val minSurvival = hashSetOf<Int>()
+
+        // The maximum possible transitions
+        val maxBirth = (0 .. maxCount).toHashSet()
+        val maxSurvival = (0 .. maxCount).toHashSet()
+
+        transitionsToSatisfy.forEach {
+            // Compute the weighted sum of its neighbours
+            val count = it.subList(2, it.size).foldIndexed(0) { index, acc, value ->
+                acc + (weights?.get(index) ?: 1) * value
+            }
+
+            when {
+                it[0] == 0 && it[1] == 0 -> maxBirth.remove(count)  // No birth
+                it[0] == 0 && it[1] == 1 -> minBirth.add(count)  // Birth
+                it[0] == 1 && it[1] == 0 -> maxSurvival.remove(count)  // No survival
+                it[0] == 1 && it[1] == 1 -> minSurvival.add(count) // Survival
+            }
+        }
+
+        return Pair(HROT(minBirth, minSurvival, neighbourhood[0], weights),
+            HROT(maxBirth, maxSurvival, neighbourhood[0], weights))
     }
 
     override fun transitionFunc(cells: IntArray, cellState: Int, generation: Int, coordinate: Coordinate): Int {

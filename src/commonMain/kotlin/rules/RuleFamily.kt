@@ -1,5 +1,7 @@
 package rules
 
+import simulation.Grid
+
 /**
  * Represents a family of cellular automaton rules
  */
@@ -20,6 +22,12 @@ abstract class RuleFamily: Rule() {
      * @return Returns the canonical rulestring of the rule
      */
     protected abstract fun canoniseRulestring(): String
+
+    /**
+     * The range of rules in which the provided transitions will occur
+     * @return Returns a pair of rules, the first is the minimum rule and the second is the maximum rule
+     */
+    internal abstract fun ruleRange(transitionsToSatisfy: Iterable<List<Int>>): Pair<RuleFamily, RuleFamily>
 
     /**
      * Converts the rule into a string (in this case it returns a rulestring)

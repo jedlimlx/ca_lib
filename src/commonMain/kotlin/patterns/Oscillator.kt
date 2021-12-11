@@ -119,4 +119,8 @@ class Oscillator(period: Int, phases: Array<Grid>) : Spaceship(0, 0, period, pha
      * Constructs an oscillator given only 1 phase of the oscillator
      */
     constructor(period: Int, phase: Grid) : this(period, Array(period) { phase.step().deepCopy() })
+
+    override fun toString(): String {
+        return "$period Oscillator"
+    }
 }

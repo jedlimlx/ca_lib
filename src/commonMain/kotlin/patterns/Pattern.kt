@@ -7,14 +7,9 @@ import rules.Rule
  */
 abstract class Pattern {
     /**
-     * The minimum rule in which the pattern functions
+     * The rule range in which the pattern functions
      */
-    open val minRule: Rule? = null
-
-    /**
-     * The maximum rule in which the pattern functions
-     */
-    open val maxRule: Rule? = null
+    open val ruleRange: Pair<Rule, Rule>? = null
 
     /**
      * Some information about the pattern to display
