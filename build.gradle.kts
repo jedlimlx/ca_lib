@@ -1,9 +1,11 @@
+import org.jetbrains.dokka.gradle.DokkaTask
+
 plugins {
     id("org.jetbrains.dokka") version "1.6.0"
     kotlin("multiplatform") version "1.6.0"
 }
 
-group = "me.jedli"
+group = "org.jedlimlx"
 version = "1.0-SNAPSHOT"
 
 repositories {
@@ -57,4 +59,8 @@ kotlin {
         val nativeMain by getting
         val nativeTest by getting
     }
+}
+
+tasks.withType<DokkaTask>().configureEach {
+    outputDirectory.set(File("${System.getProperty("user.dir")}/docs"))
 }

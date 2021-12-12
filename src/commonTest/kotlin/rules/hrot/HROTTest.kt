@@ -2,6 +2,7 @@ package rules.hrot
 
 import readResource
 import rules.RuleFamily
+import rules.enumerateRules
 import simulation.SparseGrid
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -132,7 +133,6 @@ class HROTTest {
 
     @Test
     fun enumerate_all_rules() {
-        val rule = HROT("B3/S23")
-        assertEquals(128, rule.enumerate(HROT("B3/S23"), HROT("B35678/S23678")).count())
+        assertEquals(128, enumerateRules(HROT("B3/S23"), HROT("B35678/S23678")).count())
     }
 }

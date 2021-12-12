@@ -136,6 +136,8 @@ class HROT : BaseHROT {
         }
     }
 
+    override fun fromRulestring(rulestring: String): HROT = HROT(rulestring)
+
     override fun ruleRange(transitionsToSatisfy: Iterable<List<Int>>): Pair<HROT, HROT> {
         val maxCount = weights?.sum() ?: neighbourhood[0].size
 

@@ -1,7 +1,5 @@
 package rules
 
-import simulation.Grid
-
 /**
  * Represents a family of cellular automaton rules
  */
@@ -22,6 +20,13 @@ abstract class RuleFamily: Rule() {
      * @return Returns the canonical rulestring of the rule
      */
     protected abstract fun canoniseRulestring(): String
+
+    /**
+     * Creates a rule with the given rulestring
+     * @param rulestring The rulestring of the rule
+     * @return Returns the rule corresponding to that rulestring
+     */
+    internal abstract fun fromRulestring(rulestring: String): RuleFamily
 
     /**
      * The range of rules in which the provided transitions will occur

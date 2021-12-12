@@ -1,6 +1,25 @@
 package rules
 
+import rules.hrot.HROT
+import rules.hrot.HROTGenerations
 import simulation.Grid
+
+private val RULE_FAMILIES = listOf(HROT(), HROTGenerations())
+
+/**
+ * Creates a rule given its rulestring
+ * @param rulestring The rulestring of the rule
+ * @return Returns the rule corresponding to that rulestring
+ */
+fun fromRulestring(rulestring: String): RuleFamily {
+    for (family in RULE_FAMILIES) {
+        for (regex in family.regex) {
+            if (rulestring.matches(regex)) return family.fromRulestring(rulestring)
+        }
+    }
+
+    throw IllegalArgumentException("This rulestring is not valid!")
+}
 
 /**
  * The range of rules in which the provided evolution of patterns works in
@@ -48,5 +67,5 @@ fun ruleRange(phases: Array<Grid>): Pair<RuleFamily, RuleFamily> = ruleRange(pha
  * @return Returns a sequence of all rules within the rule range
  */
 fun enumerateRules(minRule: RuleFamily, maxRule: RuleFamily): Sequence<RuleFamily> {
-    TODO( "Implement rule enumeration")
+    return minRule.enumerate(minRule, maxRule)
 }
