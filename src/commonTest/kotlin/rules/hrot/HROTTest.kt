@@ -1,6 +1,5 @@
 package rules.hrot
 
-import patterns.Spaceship
 import readResource
 import rules.RuleFamily
 import simulation.SparseGrid
@@ -129,5 +128,11 @@ class HROTTest {
                 }
             }
         }
+    }
+
+    @Test
+    fun enumerate_all_rules() {
+        val rule = HROT("B3/S23")
+        assertEquals(128, rule.enumerate(HROT("B3/S23"), HROT("B35678/S23678")).count())
     }
 }

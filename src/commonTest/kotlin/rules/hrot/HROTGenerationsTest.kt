@@ -130,4 +130,11 @@ class HROTGenerationsTest {
             }
         }
     }
+
+    @Test
+    fun enumerate_all_rules() {
+        val rule = HROTGenerations("23/3/3")
+        assertEquals(128, rule.enumerate(HROTGenerations("23/3/3"),
+            HROTGenerations("23678/35678/3")).count())
+    }
 }

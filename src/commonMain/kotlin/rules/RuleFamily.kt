@@ -30,6 +30,14 @@ abstract class RuleFamily: Rule() {
     internal abstract fun ruleRange(transitionsToSatisfy: Iterable<List<Int>>): Pair<RuleFamily, RuleFamily>
 
     /**
+     * Outputs a sequence containing all rules within the specified rule range
+     * @param minRule The minimum rule of the rule range to enumerate
+     * @param maxRule The maximum rule of the rule range
+     * @return Returns a sequence containing all rules within the specified rule range
+     */
+    internal abstract fun enumerate(minRule: RuleFamily, maxRule: RuleFamily): Sequence<RuleFamily>
+
+    /**
      * Converts the rule into a string (in this case it returns a rulestring)
      * @return Returns the rulestring of the rule
      */

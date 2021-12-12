@@ -2,6 +2,7 @@ package rules.hrot
 
 import hexagonal
 import moore
+import rules.RuleFamily
 import simulation.Coordinate
 import vonNeumann
 import kotlin.math.abs
@@ -164,6 +165,38 @@ class HROT : BaseHROT {
             HROT(maxBirth, maxSurvival, neighbourhood[0], weights))
     }
 
+    override fun enumerate(minRule: RuleFamily, maxRule: RuleFamily): Sequence<HROT> {
+        require(minRule is HROT && maxRule is HROT) { "minRule and maxRule must be an instances of HROT" }
+
+        // Obtain the difference in the birth conditions
+        val birthDiff = maxRule.birth.toMutableList()
+        birthDiff.removeAll(minRule.birth)
+
+        // Obtain the difference in the survival conditions
+        val survivalDiff = maxRule.survival.toMutableList()
+        survivalDiff.removeAll(minRule.survival)
+
+        val stack = arrayListOf(Pair(minRule, 0))  // Emulate a recursion stack
+        return sequence {
+            while (stack.isNotEmpty()) {
+                val (rule, index) = stack.removeLast()
+
+                if (index == birthDiff.size + survivalDiff.size) yield(rule)  // Base case
+                else {
+                    // Add the transition to the rule
+                    val newRule = if (index < birthDiff.size)
+                        rule.newRuleWithTransitions(rule.birth + setOf(birthDiff[index]), rule.survival)
+                    else
+                        rule.newRuleWithTransitions(rule.birth, rule.survival + setOf(survivalDiff[index - birthDiff.size]))
+
+                    // 2 cases -> transition added and transition not added
+                    stack.add(Pair(newRule, index + 1))
+                    stack.add(Pair(rule, index + 1))
+                }
+            }
+        }
+    }
+
     override fun transitionFunc(cells: IntArray, cellState: Int, generation: Int, coordinate: Coordinate): Int {
         val sum = cells.foldIndexed(0) { index, acc, value -> acc + (weights?.get(index) ?: 1) * value }
         return when {
@@ -172,4 +205,7 @@ class HROT : BaseHROT {
             else -> 0
         }
     }
+
+    private fun newRuleWithTransitions(birth: Iterable<Int>, survival: Iterable<Int>): HROT =
+        HROT(birth, survival, neighbourhood[0], weights)
 }
