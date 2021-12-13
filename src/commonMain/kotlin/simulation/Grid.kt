@@ -4,6 +4,7 @@ import Utils
 import patterns.Oscillator
 import patterns.Pattern
 import patterns.Spaceship
+import rules.PLACEHOLDER_RULE
 import rules.Rule
 import rules.hrot.HROT
 import kotlin.math.max
@@ -16,7 +17,7 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
     /**
      * The rule of the cellular automaton grid
      */
-    var rule: Rule = HROT("B3/S23")
+    var rule: Rule = PLACEHOLDER_RULE
         set(value) {
             field = value
 
