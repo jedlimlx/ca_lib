@@ -98,10 +98,16 @@ $dokka.location:rules.hrot/HROTGenerations/survival/#/PointingToDeclaration/ca_
 $dokka.location:rules.hrot/HROTGenerations/transitionFunc/#kotlin.IntArray#kotlin.Int#kotlin.Int#simulation.Coordinate/PointingToDeclaration/ca_lib/rules.hrot/-h-r-o-t-generations/transition-func.html
 $dokka.location:rules.hrot/HROTGenerations/weights/#/PointingToDeclaration/ca_lib/rules.hrot/-h-r-o-t-generations/weights.html
 $dokka.location:rules////PointingToDeclaration/ca_lib/rules/index.html
+$dokka.location:rules//PLACEHOLDER_RULE/#/PointingToDeclaration/ca_lib/rules/-p-l-a-c-e-h-o-l-d-e-r_-r-u-l-e.html
 $dokka.location:rules//enumerateRules/#rules.RuleFamily#rules.RuleFamily/PointingToDeclaration/ca_lib/rules/enumerate-rules.html
 $dokka.location:rules//fromRulestring/#kotlin.String/PointingToDeclaration/ca_lib/rules/from-rulestring.html
 $dokka.location:rules//ruleRange/#kotlin.Array[simulation.Grid]/PointingToDeclaration/ca_lib/rules/rule-range.html
 $dokka.location:rules//ruleRange/#kotlin.collections.List[simulation.Grid]/PointingToDeclaration/ca_lib/rules/rule-range.html
+$dokka.location:rules/Placeholder///PointingToDeclaration/ca_lib/rules/-placeholder/index.html
+$dokka.location:rules/Placeholder/Placeholder/#/PointingToDeclaration/ca_lib/rules/-placeholder/-placeholder.html
+$dokka.location:rules/Placeholder/neighbourhood/#/PointingToDeclaration/ca_lib/rules/-placeholder/neighbourhood.html
+$dokka.location:rules/Placeholder/possibleSuccessors/#/PointingToDeclaration/ca_lib/rules/-placeholder/possible-successors.html
+$dokka.location:rules/Placeholder/transitionFunc/#kotlin.IntArray#kotlin.Int#kotlin.Int#simulation.Coordinate/PointingToDeclaration/ca_lib/rules/-placeholder/transition-func.html
 $dokka.location:rules/Rule///PointingToDeclaration/ca_lib/rules/-rule/index.html
 $dokka.location:rules/Rule/Rule/#/PointingToDeclaration/ca_lib/rules/-rule/-rule.html
 $dokka.location:rules/Rule/alternatingPeriod/#/PointingToDeclaration/ca_lib/rules/-rule/alternating-period.html
@@ -129,6 +135,16 @@ $dokka.location:simulation/Coordinate/toString/#/PointingToDeclaration/ca_lib/s
 $dokka.location:simulation/Coordinate/unaryMinus/#/PointingToDeclaration/ca_lib/simulation/-coordinate/unary-minus.html
 $dokka.location:simulation/Coordinate/x/#/PointingToDeclaration/ca_lib/simulation/-coordinate/x.html
 $dokka.location:simulation/Coordinate/y/#/PointingToDeclaration/ca_lib/simulation/-coordinate/y.html
+$dokka.location:simulation/DenseGrid///PointingToDeclaration/ca_lib/simulation/-dense-grid/index.html
+$dokka.location:simulation/DenseGrid/DenseGrid/#kotlin.String#rules.Rule#kotlin.Int#kotlin.Int#simulation.Coordinate#kotlin.Double/PointingToDeclaration/ca_lib/simulation/-dense-grid/-dense-grid.html
+$dokka.location:simulation/DenseGrid/deepCopy/#/PointingToDeclaration/ca_lib/simulation/-dense-grid/deep-copy.html
+$dokka.location:simulation/DenseGrid/expansion_factor/#/PointingToDeclaration/ca_lib/simulation/-dense-grid/expansion_factor.html
+$dokka.location:simulation/DenseGrid/get/#simulation.Coordinate#kotlin.Boolean/PointingToDeclaration/ca_lib/simulation/-dense-grid/get.html
+$dokka.location:simulation/DenseGrid/iterator/#/PointingToDeclaration/ca_lib/simulation/-dense-grid/iterator.html
+$dokka.location:simulation/DenseGrid/population/#/PointingToDeclaration/ca_lib/simulation/-dense-grid/population.html
+$dokka.location:simulation/DenseGrid/populationByState/#/PointingToDeclaration/ca_lib/simulation/-dense-grid/population-by-state.html
+$dokka.location:simulation/DenseGrid/set/#simulation.Coordinate#kotlin.Int/PointingToDeclaration/ca_lib/simulation/-dense-grid/set.html
+$dokka.location:simulation/DenseGrid/startingCoordinate/#/PointingToDeclaration/ca_lib/simulation/-dense-grid/starting-coordinate.html
 $dokka.location:simulation/Flip.HORIZONTAL///PointingToDeclaration/ca_lib/simulation/-flip/-h-o-r-i-z-o-n-t-a-l/index.html
 $dokka.location:simulation/Flip.VERTICAL///PointingToDeclaration/ca_lib/simulation/-flip/-v-e-r-t-i-c-a-l/index.html
 $dokka.location:simulation/Flip///PointingToDeclaration/ca_lib/simulation/-flip/index.html
@@ -173,13 +189,6 @@ $dokka.location:simulation/Grid/toRLE/#/PointingToDeclaration/ca_lib/simulation
 $dokka.location:simulation/Grid/toRLE/#simulation.Coordinate#simulation.Coordinate/PointingToDeclaration/ca_lib/simulation/-grid/to-r-l-e.html
 $dokka.location:simulation/Grid/toString/#/PointingToDeclaration/ca_lib/simulation/-grid/to-string.html
 $dokka.location:simulation/Grid/updateBounds/#/PointingToDeclaration/ca_lib/simulation/-grid/update-bounds.html
-$dokka.location:simulation/GridIterator///PointingToDeclaration/ca_lib/simulation/-grid-iterator/index.html
-$dokka.location:simulation/GridIterator/GridIterator/#kotlin.collections.HashMap[simulation.Coordinate,kotlin.Int]#kotlin.Int/PointingToDeclaration/ca_lib/simulation/-grid-iterator/-grid-iterator.html
-$dokka.location:simulation/GridIterator/background/#/PointingToDeclaration/ca_lib/simulation/-grid-iterator/background.html
-$dokka.location:simulation/GridIterator/hasNext/#/PointingToDeclaration/ca_lib/simulation/-grid-iterator/has-next.html
-$dokka.location:simulation/GridIterator/iterator/#/PointingToDeclaration/ca_lib/simulation/-grid-iterator/iterator.html
-$dokka.location:simulation/GridIterator/next/#/PointingToDeclaration/ca_lib/simulation/-grid-iterator/next.html
-$dokka.location:simulation/GridIterator/remove/#/PointingToDeclaration/ca_lib/simulation/-grid-iterator/remove.html
 $dokka.location:simulation/Rotation.ANTICLOCKWISE///PointingToDeclaration/ca_lib/simulation/-rotation/-a-n-t-i-c-l-o-c-k-w-i-s-e/index.html
 $dokka.location:simulation/Rotation.CLOCKWISE///PointingToDeclaration/ca_lib/simulation/-rotation/-c-l-o-c-k-w-i-s-e/index.html
 $dokka.location:simulation/Rotation///PointingToDeclaration/ca_lib/simulation/-rotation/index.html
@@ -192,8 +201,18 @@ $dokka.location:simulation/SparseGrid/iterator/#/PointingToDeclaration/ca_lib/s
 $dokka.location:simulation/SparseGrid/population/#/PointingToDeclaration/ca_lib/simulation/-sparse-grid/population.html
 $dokka.location:simulation/SparseGrid/populationByState/#/PointingToDeclaration/ca_lib/simulation/-sparse-grid/population-by-state.html
 $dokka.location:simulation/SparseGrid/set/#simulation.Coordinate#kotlin.Int/PointingToDeclaration/ca_lib/simulation/-sparse-grid/set.html
+$dokka.location:soup////PointingToDeclaration/ca_lib/soup/index.html
+$dokka.location:soup//enumerateC1/#kotlin.Int#kotlin.Int#kotlin.IntArray/PointingToDeclaration/ca_lib/soup/enumerate-c1.html
+$dokka.location:soup//enumerateD2/#kotlin.Int#kotlin.Int#kotlin.IntArray#kotlin.Boolean/PointingToDeclaration/ca_lib/soup/enumerate-d2.html
+$dokka.location:soup//enumerateD4/#kotlin.Int#kotlin.Int#kotlin.IntArray#kotlin.Boolean#kotlin.Boolean/PointingToDeclaration/ca_lib/soup/enumerate-d4.html
+$dokka.location:soup//enumerateSoup/#kotlin.Int#kotlin.Int#kotlin.IntArray#kotlin.Function1[simulation.Coordinate,kotlin.collections.List[simulation.Coordinate]]/PointingToDeclaration/ca_lib/soup/enumerate-soup.html
+$dokka.location:soup//generateC1/#kotlin.Int#kotlin.Int#kotlin.DoubleArray#kotlin.Int?/PointingToDeclaration/ca_lib/soup/generate-c1.html
+$dokka.location:soup//generateD2/#kotlin.Int#kotlin.Int#kotlin.DoubleArray#kotlin.Int?#kotlin.Boolean/PointingToDeclaration/ca_lib/soup/generate-d2.html
+$dokka.location:soup//generateD4/#kotlin.Int#kotlin.Int#kotlin.DoubleArray#kotlin.Int?#kotlin.Boolean#kotlin.Boolean/PointingToDeclaration/ca_lib/soup/generate-d4.html
+$dokka.location:soup//generateSoup/#kotlin.Int#kotlin.Int#kotlin.DoubleArray#kotlin.Int?#kotlin.Function1[simulation.Coordinate,kotlin.collections.List[simulation.Coordinate]]/PointingToDeclaration/ca_lib/soup/generate-soup.html
 patterns
 rules
 rules.hrot
 simulation
+soup
 

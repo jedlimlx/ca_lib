@@ -75,7 +75,7 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
      * Each element of the array represents the number of cells of a certain state.
      * A background state is denoted as -1.
      */
-     abstract val populationByState: IntArray
+    abstract val populationByState: IntArray
 
     /* Simulation */
 
@@ -508,7 +508,7 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
      * @param y y-coordinate of the cell
      * @param state State to set the cell to
      */
-    operator fun set(x: Int, y: Int, state: Int) {
+    open operator fun set(x: Int, y: Int, state: Int) {
         this[Coordinate(x, y)] = state
     }
 
@@ -517,7 +517,7 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
      * @param coordinate The coordinate where the top-left corner of the pattern is placed
      * @param pattern The pattern to add (automatically detects if its an apgcode or an RLE)
      */
-    operator fun set(coordinate: Coordinate, pattern: String) {
+    open operator fun set(coordinate: Coordinate, pattern: String) {
         if (pattern.matches(Regex("(x[pqs]_)?[0-9a-z_]*"))) addApgcode(coordinate, pattern)
         else addRLE(coordinate, pattern)
     }
@@ -535,7 +535,7 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
      * @param y y-coordinate of the cell to get the state for
      * @return Returns the state of the cell
      */
-    operator fun get(x: Int, y: Int, withoutBg: Boolean = false): Int = this[Coordinate(x, y), withoutBg]
+    open operator fun get(x: Int, y: Int, withoutBg: Boolean = false): Int = this[Coordinate(x, y), withoutBg]
 
     /**
      * Generates a new grid with the cells with x coordinate within xIntRange and with y coordinate within yIntRange.
@@ -560,7 +560,7 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
      * @param dx The amount to shift the grid in the x-direction
      * @param dy The amount to shift the grid in the y-direction
      */
-    operator fun invoke(dx: Int, dy: Int) {
+    open operator fun invoke(dx: Int, dy: Int) {
         shift(dx, dy)
     }
 
@@ -568,7 +568,7 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
      * Rotates the grid clockwise or anti-clockwise
      * @param rotation The direction to rotate the grid
      */
-    operator fun invoke(rotation: Rotation) {
+    open operator fun invoke(rotation: Rotation) {
         rotate(rotation)
     }
 
@@ -576,7 +576,7 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
      * Flips the grid horizontally or vertically
      * @param flip The direction to flip the grid
      */
-    operator fun invoke(flip: Flip) {
+    open operator fun invoke(flip: Flip) {
         flip(flip)
     }
 
@@ -624,7 +624,6 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
         // Set bounds to the new value
         bounds = Pair(Coordinate(minX, minY), Coordinate(maxX, maxY))
         boundsUpdated = true
-
     }
 
     /**

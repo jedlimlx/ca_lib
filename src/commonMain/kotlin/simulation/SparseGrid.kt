@@ -10,6 +10,7 @@ import kotlin.math.min
 /**
  * A representation of a cellular automaton grid via a sparse matrix.
  * This is suitable for cellular automaton that have large empty regions.
+ * For smaller, denser patterns, [DenseGrid] will be more efficient
  * @constructor Constructs a grid based on the pattern provided
  */
 class SparseGrid(pattern: String = "", rule: Rule = HROT("B3/S23")): Grid() {
@@ -79,10 +80,10 @@ class SparseGrid(pattern: String = "", rule: Rule = HROT("B3/S23")): Grid() {
         return grid
     }
 
-    override fun iterator(): MutableIterator<Pair<Coordinate, Int>> = GridIterator(dictionary, background)
+    override fun iterator(): MutableIterator<Pair<Coordinate, Int>> = SparseGridIterator(dictionary, background)
 }
 
-class GridIterator(dictionary: HashMap<Coordinate, Int>, val background: Int): MutableIterator<Pair<Coordinate, Int>> {
+internal class SparseGridIterator(dictionary: HashMap<Coordinate, Int>, val background: Int): MutableIterator<Pair<Coordinate, Int>> {
     val iterator = dictionary.iterator()
 
     override fun hasNext(): Boolean = iterator.hasNext()

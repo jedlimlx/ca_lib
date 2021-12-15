@@ -1,10 +1,6 @@
 package simulation
 
-import patterns.Oscillator
-import patterns.Spaceship
 import readResource
-import rules.hrot.HROT
-import rules.ruleRange
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.todo
