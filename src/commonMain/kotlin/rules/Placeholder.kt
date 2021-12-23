@@ -2,9 +2,9 @@ package rules
 
 import simulation.Coordinate
 
-val PLACEHOLDER_RULE = Placeholder()
+internal val PLACEHOLDER_RULE = Placeholder()
 
-class Placeholder: Rule() {
+internal class Placeholder: Rule() {
     override val neighbourhood: Array<Array<Coordinate>> = arrayOf(arrayOf())
     override val possibleSuccessors: Array<Array<IntArray>> = arrayOf(arrayOf(intArrayOf(0, 1), intArrayOf(0, 1)))
 

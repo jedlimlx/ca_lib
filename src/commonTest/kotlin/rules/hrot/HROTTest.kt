@@ -3,6 +3,8 @@ package rules.hrot
 import readResource
 import rules.RuleFamily
 import rules.enumerateRules
+import rules.ruleloader.builders.ruletable
+import rules.ruleloader.ruletable.PermuteSymmetry
 import simulation.SparseGrid
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -134,5 +136,37 @@ class HROTTest {
     @Test
     fun enumerate_all_rules() {
         assertEquals(128, enumerateRules(HROT("B3/S23"), HROT("B35678/S23678")).count())
+    }
+
+    @Test
+    fun test() {
+        println(ruletable {
+            name { "StarWars" }
+            table(4, symmetry = PermuteSymmetry()) {
+                variable("any") { 0..3 }
+                variable("dead") { listOf(0, 2, 3) }
+
+                comment("Birth on 2")
+                transition { "0 1 1 dead dead dead dead dead dead 1" }
+
+                comment("Survival on 3, 4, 5")
+                transitions {
+                    listOf(
+                        "1 1 1 1 dead dead dead dead dead 1",
+                        "1 1 1 1 1 dead dead dead dead 1",
+                        "1 1 1 1 1 1 dead dead dead 1"
+                    )
+                }
+
+                comment("Everything else dies")
+                transitions {
+                    listOf(
+                        "1 any any any any any any any any 2",
+                        "2 any any any any any any any any 3",
+                        "3 any any any any any any any any 0"
+                    )
+                }
+            }
+        })
     }
 }

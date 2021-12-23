@@ -1,6 +1,7 @@
 package simulation
 
 import Utils
+import rules.PLACEHOLDER_RULE
 import rules.Rule
 import rules.hrot.HROT
 import kotlin.math.max
@@ -13,7 +14,7 @@ import kotlin.math.min
  * For smaller, denser patterns, [DenseGrid] will be more efficient
  * @constructor Constructs a grid based on the pattern provided
  */
-class SparseGrid(pattern: String = "", rule: Rule = HROT("B3/S23")): Grid() {
+class SparseGrid(pattern: String = "", rule: Rule = PLACEHOLDER_RULE): Grid() {
     private val dictionary: HashMap<Coordinate, Int> = hashMapOf()
 
     override val population

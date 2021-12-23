@@ -1,6 +1,7 @@
 package simulation
 
 import Utils
+import rules.PLACEHOLDER_RULE
 import rules.Rule
 import rules.hrot.HROT
 import kotlin.math.floor
@@ -21,7 +22,7 @@ import kotlin.math.min
  * @property startingCoordinate The coordinate of the 1st cell in the 2D array
  * @property expansion_factor The array will expand by this much more than necessary to improve performance.
  */
-class DenseGrid(pattern: String = "", rule: Rule = HROT("B3/S23"),
+class DenseGrid(pattern: String = "", rule: Rule = PLACEHOLDER_RULE,
                 initialWidth: Int = 16, initialHeight: Int = 16,
                 var startingCoordinate: Coordinate = Coordinate(), val expansion_factor: Double = 1.1): Grid() {
 

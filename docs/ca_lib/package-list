@@ -97,17 +97,81 @@ $dokka.location:rules.hrot/HROTGenerations/regex/#/PointingToDeclaration/ca_lib
 $dokka.location:rules.hrot/HROTGenerations/survival/#/PointingToDeclaration/ca_lib/rules.hrot/-h-r-o-t-generations/survival.html
 $dokka.location:rules.hrot/HROTGenerations/transitionFunc/#kotlin.IntArray#kotlin.Int#kotlin.Int#simulation.Coordinate/PointingToDeclaration/ca_lib/rules.hrot/-h-r-o-t-generations/transition-func.html
 $dokka.location:rules.hrot/HROTGenerations/weights/#/PointingToDeclaration/ca_lib/rules.hrot/-h-r-o-t-generations/weights.html
+$dokka.location:rules.ruleloader.builders////PointingToDeclaration/ca_lib/rules.ruleloader.builders/index.html
+$dokka.location:rules.ruleloader.builders//ruletable/#kotlin.Function1[rules.ruleloader.builders.RuletableBuilder,kotlin.Unit]/PointingToDeclaration/ca_lib/rules.ruleloader.builders/ruletable.html
+$dokka.location:rules.ruleloader.builders/RuletableBuilder///PointingToDeclaration/ca_lib/rules.ruleloader.builders/-ruletable-builder/index.html
+$dokka.location:rules.ruleloader.builders/RuletableBuilder/RuletableBuilder/#/PointingToDeclaration/ca_lib/rules.ruleloader.builders/-ruletable-builder/-ruletable-builder.html
+$dokka.location:rules.ruleloader.builders/RuletableBuilder/build/#/PointingToDeclaration/ca_lib/rules.ruleloader.builders/-ruletable-builder/build.html
+$dokka.location:rules.ruleloader.builders/RuletableBuilder/name/#kotlin.Function0[kotlin.String]/PointingToDeclaration/ca_lib/rules.ruleloader.builders/-ruletable-builder/name.html
+$dokka.location:rules.ruleloader.builders/RuletableBuilder/table/#kotlin.Int#kotlin.Array[simulation.Coordinate]#rules.ruleloader.ruletable.Symmetry?#kotlin.Function1[rules.ruleloader.builders.RuletableDirectiveBuilder,kotlin.Unit]/PointingToDeclaration/ca_lib/rules.ruleloader.builders/-ruletable-builder/table.html
+$dokka.location:rules.ruleloader.builders/RuletableDirectiveBuilder///PointingToDeclaration/ca_lib/rules.ruleloader.builders/-ruletable-directive-builder/index.html
+$dokka.location:rules.ruleloader.builders/RuletableDirectiveBuilder/RuletableDirectiveBuilder/#kotlin.Int#kotlin.Array[simulation.Coordinate]#rules.ruleloader.ruletable.Symmetry?/PointingToDeclaration/ca_lib/rules.ruleloader.builders/-ruletable-directive-builder/-ruletable-directive-builder.html
+$dokka.location:rules.ruleloader.builders/RuletableDirectiveBuilder/build/#/PointingToDeclaration/ca_lib/rules.ruleloader.builders/-ruletable-directive-builder/build.html
+$dokka.location:rules.ruleloader.builders/RuletableDirectiveBuilder/comment/#kotlin.String/PointingToDeclaration/ca_lib/rules.ruleloader.builders/-ruletable-directive-builder/comment.html
+$dokka.location:rules.ruleloader.builders/RuletableDirectiveBuilder/neighbourhood/#/PointingToDeclaration/ca_lib/rules.ruleloader.builders/-ruletable-directive-builder/neighbourhood.html
+$dokka.location:rules.ruleloader.builders/RuletableDirectiveBuilder/numStates/#/PointingToDeclaration/ca_lib/rules.ruleloader.builders/-ruletable-directive-builder/num-states.html
+$dokka.location:rules.ruleloader.builders/RuletableDirectiveBuilder/symmetry/#/PointingToDeclaration/ca_lib/rules.ruleloader.builders/-ruletable-directive-builder/symmetry.html
+$dokka.location:rules.ruleloader.builders/RuletableDirectiveBuilder/transition/#kotlin.Function0[kotlin.String]/PointingToDeclaration/ca_lib/rules.ruleloader.builders/-ruletable-directive-builder/transition.html
+$dokka.location:rules.ruleloader.builders/RuletableDirectiveBuilder/transitions/#kotlin.Function0[kotlin.collections.List[kotlin.String]]/PointingToDeclaration/ca_lib/rules.ruleloader.builders/-ruletable-directive-builder/transitions.html
+$dokka.location:rules.ruleloader.builders/RuletableDirectiveBuilder/variable/#kotlin.String#kotlin.Function0[kotlin.collections.Iterable[kotlin.Int]]/PointingToDeclaration/ca_lib/rules.ruleloader.builders/-ruletable-directive-builder/variable.html
+$dokka.location:rules.ruleloader.ruletable////PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/index.html
+$dokka.location:rules.ruleloader.ruletable/DisjointCyclesSymmetry///PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-disjoint-cycles-symmetry/index.html
+$dokka.location:rules.ruleloader.ruletable/DisjointCyclesSymmetry/DisjointCyclesSymmetry/#kotlin.Array[kotlin.Array[kotlin.IntArray]]/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-disjoint-cycles-symmetry/-disjoint-cycles-symmetry.html
+$dokka.location:rules.ruleloader.ruletable/DisjointCyclesSymmetry/DisjointCyclesSymmetry/#kotlin.String/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-disjoint-cycles-symmetry/-disjoint-cycles-symmetry.html
+$dokka.location:rules.ruleloader.ruletable/DisjointCyclesSymmetry/applySymmetry/#kotlin.collections.List[TypeParam(bounds=[kotlin.Any?])]/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-disjoint-cycles-symmetry/apply-symmetry.html
+$dokka.location:rules.ruleloader.ruletable/DisjointCyclesSymmetry/disjointCycles/#/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-disjoint-cycles-symmetry/disjoint-cycles.html
+$dokka.location:rules.ruleloader.ruletable/PermuteSymmetry///PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-permute-symmetry/index.html
+$dokka.location:rules.ruleloader.ruletable/PermuteSymmetry/PermuteSymmetry/#/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-permute-symmetry/-permute-symmetry.html
+$dokka.location:rules.ruleloader.ruletable/PermuteSymmetry/applySymmetry/#kotlin.collections.List[TypeParam(bounds=[kotlin.Any?])]/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-permute-symmetry/apply-symmetry.html
+$dokka.location:rules.ruleloader.ruletable/RuletableDirective///PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-ruletable-directive/index.html
+$dokka.location:rules.ruleloader.ruletable/RuletableDirective/RuletableDirective/#kotlin.Int#kotlin.Array[simulation.Coordinate]/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-ruletable-directive/-ruletable-directive.html
+$dokka.location:rules.ruleloader.ruletable/RuletableDirective/addComment/#kotlin.String/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-ruletable-directive/add-comment.html
+$dokka.location:rules.ruleloader.ruletable/RuletableDirective/addTransition/#rules.ruleloader.ruletable.Transition/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-ruletable-directive/add-transition.html
+$dokka.location:rules.ruleloader.ruletable/RuletableDirective/addVariable/#rules.ruleloader.ruletable.Variable/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-ruletable-directive/add-variable.html
+$dokka.location:rules.ruleloader.ruletable/RuletableDirective/comments/#/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-ruletable-directive/comments.html
+$dokka.location:rules.ruleloader.ruletable/RuletableDirective/export/#/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-ruletable-directive/export.html
+$dokka.location:rules.ruleloader.ruletable/RuletableDirective/neighbourhood/#/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-ruletable-directive/neighbourhood.html
+$dokka.location:rules.ruleloader.ruletable/RuletableDirective/numStates/#/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-ruletable-directive/num-states.html
+$dokka.location:rules.ruleloader.ruletable/RuletableDirective/transitions/#/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-ruletable-directive/transitions.html
+$dokka.location:rules.ruleloader.ruletable/RuletableDirective/variables/#/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-ruletable-directive/variables.html
+$dokka.location:rules.ruleloader.ruletable/Symmetry///PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-symmetry/index.html
+$dokka.location:rules.ruleloader.ruletable/Symmetry/Symmetry/#/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-symmetry/-symmetry.html
+$dokka.location:rules.ruleloader.ruletable/Symmetry/applySymmetry/#kotlin.collections.List[TypeParam(bounds=[kotlin.Any?])]/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-symmetry/apply-symmetry.html
+$dokka.location:rules.ruleloader.ruletable/Symmetry/invoke/#kotlin.collections.List[TypeParam(bounds=[kotlin.Any?])]/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-symmetry/invoke.html
+$dokka.location:rules.ruleloader.ruletable/Transition///PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-transition/index.html
+$dokka.location:rules.ruleloader.ruletable/Transition/Transition/#kotlin.collections.Map[kotlin.Int,kotlin.Int]#kotlin.collections.Map[kotlin.Int,rules.ruleloader.ruletable.Variable]/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-transition/-transition.html
+$dokka.location:rules.ruleloader.ruletable/Transition/size/#/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-transition/size.html
+$dokka.location:rules.ruleloader.ruletable/Transition/toString/#/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-transition/to-string.html
+$dokka.location:rules.ruleloader.ruletable/Transition/values/#/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-transition/values.html
+$dokka.location:rules.ruleloader.ruletable/Transition/variables/#/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-transition/variables.html
+$dokka.location:rules.ruleloader.ruletable/Variable///PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-variable/index.html
+$dokka.location:rules.ruleloader.ruletable/Variable/Variable/#kotlin.String#kotlin.collections.Set[kotlin.Int]#kotlin.Boolean/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-variable/-variable.html
+$dokka.location:rules.ruleloader.ruletable/Variable/identifier/#kotlin.Int/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-variable/identifier.html
+$dokka.location:rules.ruleloader.ruletable/Variable/name/#/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-variable/name.html
+$dokka.location:rules.ruleloader.ruletable/Variable/toString/#/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-variable/to-string.html
+$dokka.location:rules.ruleloader.ruletable/Variable/toString/#kotlin.Int/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-variable/to-string.html
+$dokka.location:rules.ruleloader.ruletable/Variable/unbounded/#/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-variable/unbounded.html
+$dokka.location:rules.ruleloader.ruletable/Variable/values/#/PointingToDeclaration/ca_lib/rules.ruleloader.ruletable/-variable/values.html
+$dokka.location:rules.ruleloader////PointingToDeclaration/ca_lib/rules.ruleloader/index.html
+$dokka.location:rules.ruleloader/Directive///PointingToDeclaration/ca_lib/rules.ruleloader/-directive/index.html
+$dokka.location:rules.ruleloader/Directive/Directive/#kotlin.String/PointingToDeclaration/ca_lib/rules.ruleloader/-directive/-directive.html
+$dokka.location:rules.ruleloader/Directive/export/#/PointingToDeclaration/ca_lib/rules.ruleloader/-directive/export.html
+$dokka.location:rules.ruleloader/Directive/name/#/PointingToDeclaration/ca_lib/rules.ruleloader/-directive/name.html
+$dokka.location:rules.ruleloader/Directive/toString/#/PointingToDeclaration/ca_lib/rules.ruleloader/-directive/to-string.html
+$dokka.location:rules.ruleloader/RuleDirective///PointingToDeclaration/ca_lib/rules.ruleloader/-rule-directive/index.html
+$dokka.location:rules.ruleloader/RuleDirective/RuleDirective/#kotlin.String/PointingToDeclaration/ca_lib/rules.ruleloader/-rule-directive/-rule-directive.html
+$dokka.location:rules.ruleloader/Ruletable///PointingToDeclaration/ca_lib/rules.ruleloader/-ruletable/index.html
+$dokka.location:rules.ruleloader/Ruletable/Ruletable/#kotlin.String#kotlin.collections.List[rules.ruleloader.Directive]#kotlin.collections.List[rules.ruleloader.RuleDirective]/PointingToDeclaration/ca_lib/rules.ruleloader/-ruletable/-ruletable.html
+$dokka.location:rules.ruleloader/Ruletable/directive/#/PointingToDeclaration/ca_lib/rules.ruleloader/-ruletable/directive.html
+$dokka.location:rules.ruleloader/Ruletable/export/#/PointingToDeclaration/ca_lib/rules.ruleloader/-ruletable/export.html
+$dokka.location:rules.ruleloader/Ruletable/name/#/PointingToDeclaration/ca_lib/rules.ruleloader/-ruletable/name.html
+$dokka.location:rules.ruleloader/Ruletable/ruleDirectives/#/PointingToDeclaration/ca_lib/rules.ruleloader/-ruletable/rule-directives.html
+$dokka.location:rules.ruleloader/Ruletable/toString/#/PointingToDeclaration/ca_lib/rules.ruleloader/-ruletable/to-string.html
 $dokka.location:rules////PointingToDeclaration/ca_lib/rules/index.html
-$dokka.location:rules//PLACEHOLDER_RULE/#/PointingToDeclaration/ca_lib/rules/-p-l-a-c-e-h-o-l-d-e-r_-r-u-l-e.html
 $dokka.location:rules//enumerateRules/#rules.RuleFamily#rules.RuleFamily/PointingToDeclaration/ca_lib/rules/enumerate-rules.html
 $dokka.location:rules//fromRulestring/#kotlin.String/PointingToDeclaration/ca_lib/rules/from-rulestring.html
 $dokka.location:rules//ruleRange/#kotlin.Array[simulation.Grid]/PointingToDeclaration/ca_lib/rules/rule-range.html
 $dokka.location:rules//ruleRange/#kotlin.collections.List[simulation.Grid]/PointingToDeclaration/ca_lib/rules/rule-range.html
-$dokka.location:rules/Placeholder///PointingToDeclaration/ca_lib/rules/-placeholder/index.html
-$dokka.location:rules/Placeholder/Placeholder/#/PointingToDeclaration/ca_lib/rules/-placeholder/-placeholder.html
-$dokka.location:rules/Placeholder/neighbourhood/#/PointingToDeclaration/ca_lib/rules/-placeholder/neighbourhood.html
-$dokka.location:rules/Placeholder/possibleSuccessors/#/PointingToDeclaration/ca_lib/rules/-placeholder/possible-successors.html
-$dokka.location:rules/Placeholder/transitionFunc/#kotlin.IntArray#kotlin.Int#kotlin.Int#simulation.Coordinate/PointingToDeclaration/ca_lib/rules/-placeholder/transition-func.html
 $dokka.location:rules/Rule///PointingToDeclaration/ca_lib/rules/-rule/index.html
 $dokka.location:rules/Rule/Rule/#/PointingToDeclaration/ca_lib/rules/-rule/-rule.html
 $dokka.location:rules/Rule/alternatingPeriod/#/PointingToDeclaration/ca_lib/rules/-rule/alternating-period.html
@@ -213,6 +277,9 @@ $dokka.location:soup//generateSoup/#kotlin.Int#kotlin.Int#kotlin.DoubleArray#kot
 patterns
 rules
 rules.hrot
+rules.ruleloader
+rules.ruleloader.builders
+rules.ruleloader.ruletable
 simulation
 soup
 
