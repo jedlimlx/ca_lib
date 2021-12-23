@@ -4,6 +4,7 @@ import readResource
 import rules.RuleFamily
 import rules.enumerateRules
 import rules.fromRulestring
+import rules.randomRules
 import simulation.SparseGrid
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -137,5 +138,16 @@ class HROTGenerationsTest {
     fun enumerate_all_rules() {
         assertEquals(128, enumerateRules(HROTGenerations("23/3/3"),
             HROTGenerations("23678/35678/3")).count())
+    }
+
+
+    @Test
+    fun check_deterministic() {
+        assertEquals(
+            randomRules(HROTGenerations("23/3/3"), HROTGenerations("23678/35678/3"), 10)
+                .take(100).map { it.toString() }.toList(),
+            randomRules(HROTGenerations("23/3/3"), HROTGenerations("23678/35678/3"), 10)
+                .take(100).map { it.toString() }.toList()
+        )
     }
 }

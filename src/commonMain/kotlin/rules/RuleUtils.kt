@@ -69,3 +69,23 @@ fun ruleRange(phases: Array<Grid>): Pair<RuleFamily, RuleFamily> = ruleRange(pha
 fun enumerateRules(minRule: RuleFamily, maxRule: RuleFamily): Sequence<RuleFamily> {
     return minRule.enumerate(minRule, maxRule)
 }
+
+/**
+ * An infinite sequence of random rules in which the provided evolution of patterns works in
+ * @param minRule The minimum rule of the rule range to enumerate
+ * @param maxRule The maximum rule of the rule range to enumerate
+ * @return Returns an infinite sequence of random rules within the rule range
+ */
+fun randomRules(minRule: RuleFamily, maxRule: RuleFamily, seed: Int? = null): Sequence<RuleFamily> {
+    return minRule.random(minRule, maxRule, seed)
+}
+
+/**
+ * A random rule in which the provided evolution of patterns works in
+ * @param minRule The minimum rule of the rule range to enumerate
+ * @param maxRule The maximum rule of the rule range to enumerate
+ * @return Returns a random rule within the rule range
+ */
+fun randomRule(minRule: RuleFamily, maxRule: RuleFamily, seed: Int? = null): RuleFamily {
+    return minRule.random(minRule, maxRule, seed).take(1).toList()[0]
+}

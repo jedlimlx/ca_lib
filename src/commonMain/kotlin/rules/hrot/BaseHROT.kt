@@ -11,6 +11,7 @@ import toSymbol
 import toWeights
 import kotlin.math.abs
 import kotlin.math.max
+import kotlin.random.Random
 
 /**
  * The base class for HROT rules
@@ -91,6 +92,19 @@ abstract class BaseHROT: RuleFamily() {
 
         if (rulestring.isEmpty()) rulestring.append(",")
         return rulestring.toString()
+    }
+
+    /**
+     * Generates a random transition between the 2 minimum and maximum transitions
+     * @return Returns the random transition
+     */
+    protected fun randomTransition(min: Iterable<Int>, max: Iterable<Int>, seed: Int? = null): Set<Int> {
+        val new = min.toHashSet()
+
+        val random = if (seed != null) Random(seed) else Random
+        (max - min).forEach { if (random.nextBoolean()) new.add(it) }
+
+        return new
     }
 
     companion object {

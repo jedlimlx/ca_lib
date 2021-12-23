@@ -7,6 +7,7 @@ import simulation.Coordinate
 import vonNeumann
 import kotlin.math.abs
 import kotlin.math.max
+import kotlin.random.Random
 
 /**
  * Represents a 2-state HROT rule
@@ -196,6 +197,16 @@ class HROT : BaseHROT {
                     stack.add(Pair(rule, index + 1))
                 }
             }
+        }
+    }
+
+    override fun random(minRule: RuleFamily, maxRule: RuleFamily, seed: Int?): Sequence<HROT> {
+        require(minRule is HROT && maxRule is HROT) { "minRule and maxRule must be an instances of HROT" }
+
+        val random = if (seed != null) Random(seed) else Random
+        return generateSequence {
+            minRule.newRuleWithTransitions(randomTransition(minRule.birth, maxRule.birth, random.nextInt()),
+                randomTransition(minRule.survival, maxRule.survival, random.nextInt()))
         }
     }
 

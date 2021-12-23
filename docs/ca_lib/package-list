@@ -170,6 +170,8 @@ $dokka.location:rules.ruleloader/Ruletable/toString/#/PointingToDeclaration/ca_
 $dokka.location:rules////PointingToDeclaration/ca_lib/rules/index.html
 $dokka.location:rules//enumerateRules/#rules.RuleFamily#rules.RuleFamily/PointingToDeclaration/ca_lib/rules/enumerate-rules.html
 $dokka.location:rules//fromRulestring/#kotlin.String/PointingToDeclaration/ca_lib/rules/from-rulestring.html
+$dokka.location:rules//randomRule/#rules.RuleFamily#rules.RuleFamily#kotlin.Int?/PointingToDeclaration/ca_lib/rules/random-rule.html
+$dokka.location:rules//randomRules/#rules.RuleFamily#rules.RuleFamily#kotlin.Int?/PointingToDeclaration/ca_lib/rules/random-rules.html
 $dokka.location:rules//ruleRange/#kotlin.Array[simulation.Grid]/PointingToDeclaration/ca_lib/rules/rule-range.html
 $dokka.location:rules//ruleRange/#kotlin.collections.List[simulation.Grid]/PointingToDeclaration/ca_lib/rules/rule-range.html
 $dokka.location:rules/Rule///PointingToDeclaration/ca_lib/rules/-rule/index.html
@@ -182,6 +184,7 @@ $dokka.location:rules/Rule/possibleSuccessors/#/PointingToDeclaration/ca_lib/ru
 $dokka.location:rules/Rule/transitionFunc/#kotlin.IntArray#kotlin.Int#kotlin.Int#simulation.Coordinate/PointingToDeclaration/ca_lib/rules/-rule/transition-func.html
 $dokka.location:rules/RuleFamily///PointingToDeclaration/ca_lib/rules/-rule-family/index.html
 $dokka.location:rules/RuleFamily/RuleFamily/#/PointingToDeclaration/ca_lib/rules/-rule-family/-rule-family.html
+$dokka.location:rules/RuleFamily/rangeTo/#rules.RuleFamily/PointingToDeclaration/ca_lib/rules/-rule-family/range-to.html
 $dokka.location:rules/RuleFamily/regex/#/PointingToDeclaration/ca_lib/rules/-rule-family/regex.html
 $dokka.location:rules/RuleFamily/rulestring/#/PointingToDeclaration/ca_lib/rules/-rule-family/rulestring.html
 $dokka.location:rules/RuleFamily/toString/#/PointingToDeclaration/ca_lib/rules/-rule-family/to-string.html
