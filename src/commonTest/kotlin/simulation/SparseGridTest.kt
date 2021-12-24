@@ -19,7 +19,7 @@ class SparseGridTest {
 
             assertEquals(tokens[0].replace("o", "A").replace("b", "."),
                 grid.toRLE().replace("o", "A").replace("b", "."))
-            assertEquals(Coordinate(tokens[1].toInt(), tokens[2].toInt()), grid.bounds.first)
+            assertEquals(Coordinate(tokens[1].toInt(), tokens[2].toInt()), grid.bounds.start)
         }
     }
 

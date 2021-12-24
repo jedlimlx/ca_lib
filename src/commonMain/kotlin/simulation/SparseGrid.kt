@@ -45,22 +45,21 @@ class SparseGrid(pattern: String = "", rule: Rule = PLACEHOLDER_RULE): Grid() {
             dictionary.remove(coordinate)
 
             // If a cell on the boundary is removed, the bounds are no longer accurate
-            if (boundsUpdated && (coordinate.x == bounds.first.x || coordinate.y == bounds.first.y ||
-                    coordinate.x == bounds.second.x || coordinate.y == bounds.second.y))
+            if (boundsUpdated && (coordinate.x == bounds.start.x || coordinate.y == bounds.start.y ||
+                    coordinate.x == bounds.start.x || coordinate.y == bounds.end.y))
                 boundsUpdated = false
         } else {
             dictionary[coordinate] = Utils.convert(state, background)
 
             // If the cell is added outside the current bounds
-            if (boundsUpdated && bounds.first.x >= coordinate.x && coordinate.x >= bounds.second.x
-                && bounds.first.y >= coordinate.y && coordinate.y >= bounds.second.y) {
-                val minX = min(bounds.first.x, coordinate.x)
-                val maxX = max(bounds.second.x, coordinate.x)
-                val minY = min(bounds.first.y, coordinate.y)
-                val maxY = max(bounds.second.y, coordinate.y)
+            if (boundsUpdated && coordinate !in bounds) {
+                val minX = min(bounds.start.x, coordinate.x)
+                val maxX = max(bounds.end.x, coordinate.x)
+                val minY = min(bounds.start.y, coordinate.y)
+                val maxY = max(bounds.end.y, coordinate.y)
 
                 // Set bounds to the new value
-                bounds = Pair(Coordinate(minX, minY), Coordinate(maxX, maxY))
+                bounds = Coordinate(minX, minY) .. Coordinate(maxX, maxY)
                 boundsUpdated = true
             }
         }

@@ -6,7 +6,6 @@ import patterns.Pattern
 import patterns.Spaceship
 import rules.PLACEHOLDER_RULE
 import rules.Rule
-import rules.hrot.HROT
 import kotlin.math.max
 import kotlin.math.min
 
@@ -57,7 +56,7 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
      * The bounds of the pattern within the grid. Note that bounds **do not** update automatically.
      * To update them use [updateBounds].
      */
-    var bounds = Pair(Coordinate(Int.MAX_VALUE, Int.MAX_VALUE), Coordinate(-Int.MAX_VALUE, -Int.MAX_VALUE))
+    var bounds = Coordinate(Int.MAX_VALUE, Int.MAX_VALUE) .. Coordinate(-Int.MAX_VALUE, -Int.MAX_VALUE)
         protected set
 
     /**
@@ -166,7 +165,7 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
                 updateBounds()
                 hashMap[hash]!!.updateBounds()
 
-                val diff = bounds.first - hashMap[hash]!!.bounds.first
+                val diff = bounds.start - hashMap[hash]!!.bounds.start
                 if (!equals(hashMap[hash]!!, diff.x, diff.y)) continue
 
                 // Output the pattern
@@ -200,27 +199,26 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
      */
     open fun shift(dx: Int, dy: Int): Grid {
         updateBounds()
-        return shift(bounds.first, bounds.second, dx, dy)
+        return shift(bounds, dx, dy)
     }
 
     /**
      * Shifts the cells within the specified bounds by (dx, dy)
-     * @param startCoordinate The starting coordinates of the bounds
-     * @param endCoordinate The end coordinates of the bounds
+     * @param range The bounds containing the cells to be shifted
      * @param dx The amount to shift the cells in the x-direction
      * @param dy The amount to shift the cells in the y-direction
      * @return Returns the grid object (the object is the same as the one on which the command is called)
      */
-    open fun shift(startCoordinate: Coordinate, endCoordinate: Coordinate, dx: Int, dy: Int): Grid {
+    open fun shift(range: CoordinateRange, dx: Int, dy: Int): Grid {
         // Make a deep-copy to take reference from
         val grid = deepCopy()
 
         // Clear the portion that will be shifted
-        clear(startCoordinate, endCoordinate)
+        clear(range)
 
         // Shift stuff
         val shiftCoordinate = Coordinate(dx, dy)
-        grid.iterateOverRectangle(startCoordinate, endCoordinate) {
+        grid.iterateOverRectangle(range) {
             this[it.first + shiftCoordinate] = it.second
         }
 
@@ -235,7 +233,7 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
      */
     open fun flip(flip: Flip): Grid {
         updateBounds()
-        return flip(bounds.first, bounds.second, flip)
+        return flip(bounds, flip)
     }
 
     /**
@@ -243,22 +241,17 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
      * @param flip The direction to flip the cells
      * @return Returns the grid object (the object is the same as the one on which the command is called)
      */
-    open fun flip(startCoordinate: Coordinate, endCoordinate: Coordinate, flip: Flip): Grid {
+    open fun flip(range: CoordinateRange, flip: Flip): Grid {
         // Make a deep-copy to take reference from
         val gridCopy = deepCopy()
+        val (startCoordinate, endCoordinate) = range
 
         if (flip == Flip.HORIZONTAL) {
-            for (x in startCoordinate.x .. endCoordinate.x) {
-                for (y in startCoordinate.y .. endCoordinate.y) {
-                    this[endCoordinate.x - x + startCoordinate.x, y] = gridCopy[x, y]
-                }
-            }
+            for ((x, y) in range)
+                this[endCoordinate.x - x + startCoordinate.x, y] = gridCopy[x, y]
         } else {
-            for (x in startCoordinate.x .. endCoordinate.x) {
-                for (y in startCoordinate.y .. endCoordinate.y) {
-                    this[x, endCoordinate.y - y + startCoordinate.y] = gridCopy[x, y]
-                }
-            }
+            for ((x, y) in range)
+                this[x, endCoordinate.y - y + startCoordinate.y] = gridCopy[x, y]
         }
 
         return this
@@ -270,20 +263,19 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
      */
     open fun rotate(rotation: Rotation) {
         updateBounds()
-        rotate(bounds.first, bounds.second, rotation)
+        rotate(bounds, rotation)
     }
 
     /**
      * Rotates the cells within the specified bounds clockwise or anti-clockwise
-     * @param startCoordinate The starting coordinates of the bounds
-     * @param endCoordinate The end coordinates of the bounds
+     * @param range The bounds containing the cells to be rotated
      * @param rotation The direction to rotate the cells
      */
-    open fun rotate(startCoordinate: Coordinate, endCoordinate: Coordinate, rotation: Rotation) {
+    open fun rotate(range: CoordinateRange, rotation: Rotation) {
         val grid = deepCopy() // Make a deep copy for reference
 
         // Allow editing of the variable values
-        var endCoordinate = endCoordinate
+        var (startCoordinate, endCoordinate) = range
 
         if ((endCoordinate.x - startCoordinate.x) % 2 == 1) {
             endCoordinate = Coordinate(endCoordinate.x + 1, endCoordinate.y)
@@ -296,18 +288,16 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
         val centerX = (endCoordinate.x - startCoordinate.x) / 2 + startCoordinate.x
         val centerY = (endCoordinate.y - startCoordinate.y) / 2 + startCoordinate.y
 
-        clear(startCoordinate, endCoordinate)
+        clear(range)
 
         // Perform the rotation
         // TODO (Make the pattern rotate about the centre?)
-        for (x in startCoordinate.x .. endCoordinate.x) {
-            for (y in startCoordinate.y .. endCoordinate.y) {
-                val dx = x - centerX
-                val dy = y - centerY
+        for ((x, y) in range) {
+            val dx = x - centerX
+            val dy = y - centerY
 
-                if (rotation == Rotation.CLOCKWISE) this[centerX - dy, centerY + dx] = grid[x, y]
-                else this[centerX + dy, centerY - dx] = grid[x, y]
-            }
+            if (rotation == Rotation.CLOCKWISE) this[centerX - dy, centerY + dx] = grid[x, y]
+            else this[centerX + dy, centerY - dx] = grid[x, y]
         }
     }
 
@@ -320,14 +310,11 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
 
     /**
      * Clears all cells within the specified bounds
-     * @param startCoordinate The starting coordinates of the bounds
-     * @param endCoordinate The end coordinates of the bounds
+     * @param range The bounds containing the cells to be cleared
      */
-    open fun clear(startCoordinate: Coordinate, endCoordinate: Coordinate) {
-        for (x in startCoordinate.x .. endCoordinate.x) {
-            for (y in startCoordinate.y .. endCoordinate.y) {
-                this[x, y] = background
-            }
+    open fun clear(range: CoordinateRange) {
+        for (coordinate in range) {
+            this[coordinate] = background
         }
     }
 
@@ -423,16 +410,17 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
      */
     open fun toRLE(): String {
         updateBounds()
-        return toRLE(bounds.first, bounds.second)
+        return toRLE(bounds)
     }
 
     /**
      * Converts the grid between the start and end coordinate to an RLE
-     * @param startCoordinate The start coordinate
-     * @param endCoordinate The end coordinate
+     * @param range The range of coordinates to convert to RLE
      * @return Returns the RLE
      */
-    open fun toRLE(startCoordinate: Coordinate, endCoordinate: Coordinate): String {
+    open fun toRLE(range: CoordinateRange): String {
+        val (startCoordinate, endCoordinate) = range
+
         // First, add characters to a string
         val buffer = arrayListOf<Char>()
         val rleArray = arrayListOf<Char>()
@@ -485,11 +473,10 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
 
     /**
      * Converts the grid between the start and end coordinate to an apgcode
-     * @param startCoordinate The start coordinate
-     * @param endCoordinate The end coordinate
+     * @param range The range of coordinates to convert to RLE
      * @return Returns the apgcode
      */
-    open fun toApgcode(startCoordinate: Coordinate = bounds.first, endCoordinate: Coordinate = bounds.second): String {
+    open fun toApgcode(range: CoordinateRange = bounds): String {
         TODO("Implement grid -> apgcode converter")
     }
 
@@ -541,6 +528,7 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
      * Generates a new grid with the cells with x coordinate within xIntRange and with y coordinate within yIntRange.
      * @param xIntRange The range of x coordinates
      * @param yIntRange The range of y coordinates
+     * @return Returns the new grid
      */
     open operator fun get(xIntRange: IntRange, yIntRange: IntRange): Grid {
         val newGrid = deepCopy()
@@ -552,6 +540,19 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
             }
         }
 
+        return newGrid
+    }
+
+    /**
+     * Generates a new grid with the cells within the specified coordinate range
+     * @param range The range of coordinates
+     * @return Returns the new grid
+     */
+    open operator fun get(range: CoordinateRange): Grid {
+        val newGrid = deepCopy()
+        newGrid.clear()
+
+        for ((x, y) in range) newGrid[x, y] = this[x, y]
         return newGrid
     }
 
@@ -585,18 +586,11 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
     /**
      * Iterate over all non-zero cells in a rectangle
      */
-    private fun iterateOverRectangle(startCoordinate: Coordinate, endCoordinate: Coordinate,
+    private fun iterateOverRectangle(range: CoordinateRange,
                                      func: (it: Pair<Coordinate, Int>) -> Unit) {
         // Check for the more efficient approach
-        if (population < (endCoordinate.x - startCoordinate.x) * (endCoordinate.y - startCoordinate.y)) {
-            forEach { func(it) }
-        } else {
-            for (x in startCoordinate.x .. endCoordinate.x) {
-                for (y in startCoordinate.y .. endCoordinate.y) {
-                    func(Pair(Coordinate(x, y), this[x, y]))
-                }
-            }
-        }
+        if (population < range.area) forEach { if (it.first in range) func(it) }
+        else for ((x, y) in range) func(Pair(Coordinate(x, y), this[x, y]))
     }
 
     /**
@@ -607,11 +601,11 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
         if (boundsUpdated) return
 
         // Reset bounds
-        bounds = Pair(Coordinate(Int.MAX_VALUE, Int.MAX_VALUE), Coordinate(-Int.MAX_VALUE, -Int.MAX_VALUE))
+        bounds = Coordinate(Int.MAX_VALUE, Int.MAX_VALUE) .. Coordinate(-Int.MAX_VALUE, -Int.MAX_VALUE)
 
         // Use vars instead of the immutable Coordinate
-        var (minX, minY) = bounds.first
-        var (maxX, maxY) = bounds.second
+        var (minX, minY) = bounds.start
+        var (maxX, maxY) = bounds.end
 
         // Loop over all cells
         forEach {
@@ -622,7 +616,7 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
         }
 
         // Set bounds to the new value
-        bounds = Pair(Coordinate(minX, minY), Coordinate(maxX, maxY))
+        bounds = Coordinate(minX, minY) .. Coordinate(maxX, maxY)
         boundsUpdated = true
     }
 
@@ -690,16 +684,17 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
      */
     override fun hashCode(): Int {
         updateBounds()
-        return hashCode(bounds.first, bounds.second)
+        return hashCode(bounds)
     }
 
     /**
      * Gets the hash of the grid.
-     * @param startCoordinate The start coordinate of the region where the hash is calculated
-     * @param endCoordinate The end coordinate of the region where the hash is calculated
-     * @return Returns the grid's hash (uses Golly's hash algorithm).
+     * @param range The region to be hashed
+     * @return Returns the region's hash (uses Golly's hash algorithm).
      */
-    open fun hashCode(startCoordinate: Coordinate, endCoordinate: Coordinate): Int {
+    open fun hashCode(range: CoordinateRange): Int {
+        val (startCoordinate, endCoordinate) = range
+
         var hash = 31415962
         for (y in startCoordinate.y .. endCoordinate.y) {
             val yShift: Int = y - startCoordinate.y

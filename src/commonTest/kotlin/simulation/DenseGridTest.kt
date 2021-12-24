@@ -4,8 +4,6 @@ import readResource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.todo
-import kotlin.time.ExperimentalTime
-import kotlin.time.measureTime
 
 class DenseGridTest {
     @Test
@@ -21,7 +19,7 @@ class DenseGridTest {
 
             assertEquals(tokens[0].replace("o", "A").replace("b", "."),
                 grid.toRLE().replace("o", "A").replace("b", "."))
-            assertEquals(Coordinate(tokens[1].toInt(), tokens[2].toInt()), grid.bounds.first)
+            assertEquals(Coordinate(tokens[1].toInt(), tokens[2].toInt()), grid.bounds.start)
         }
     }
 
