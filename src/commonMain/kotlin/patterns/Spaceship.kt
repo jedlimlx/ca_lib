@@ -12,7 +12,7 @@ import simulation.Grid
  * @property period The period of the spaceship
  * @property phases An array of grids representing the phases of the spacship
  */
-open class Spaceship(val dx: Int, val dy: Int, val period: Int, val phases: Array<Grid>): Pattern() {
+open class Spaceship(val dx: Int, val dy: Int, val period: Int, val phases: Array<Grid>) : Pattern() {
     /**
      * The rule that the spaceship operates in
      */

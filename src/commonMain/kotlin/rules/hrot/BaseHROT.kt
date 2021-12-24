@@ -9,14 +9,12 @@ import simulation.Coordinate
 import toCoordCA
 import toSymbol
 import toWeights
-import kotlin.math.abs
-import kotlin.math.max
 import kotlin.random.Random
 
 /**
  * The base class for HROT rules
  */
-abstract class BaseHROT: RuleFamily() {
+abstract class BaseHROT : RuleFamily() {
     /**
      * The weights of the HROT rule
      */
@@ -56,7 +54,7 @@ abstract class BaseHROT: RuleFamily() {
             transition.split(",").forEach {
                 if ("-" in it) {
                     val tokens = it.split("-")
-                    for (i in tokens[0].toInt() .. tokens[1].toInt()) set.add(i)
+                    for (i in tokens[0].toInt()..tokens[1].toInt()) set.add(i)
                 } else if (it.isNotEmpty()) set.add(it.toInt())
             }
 

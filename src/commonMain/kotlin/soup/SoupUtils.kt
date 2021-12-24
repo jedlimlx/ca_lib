@@ -17,9 +17,11 @@ import kotlin.random.Random
  * @param seed The seed of random number generator used to generate the soup
  * @return Returns the soup that was generated
  */
-fun generateC1(width: Int = 16, height: Int = 16,
-               density: DoubleArray = doubleArrayOf(0.5, 0.5),
-               seed: Int? = null) = generateSoup(width, height, density, seed) { listOf(it) }
+fun generateC1(
+    width: Int = 16, height: Int = 16,
+    density: DoubleArray = doubleArrayOf(0.5, 0.5),
+    seed: Int? = null
+) = generateSoup(width, height, density, seed) { listOf(it) }
 
 /**
  * Generates a random soup of symmetry D2 with the specified parameters
@@ -30,9 +32,11 @@ fun generateC1(width: Int = 16, height: Int = 16,
  * @param odd If the outputted soup even or odd symmetric?
  * @return Returns the soup that was generated
  */
-fun generateD2(width: Int = 16, height: Int = 16,
-               density: DoubleArray = doubleArrayOf(0.5, 0.5),
-               seed: Int? = null, odd: Boolean = false) = generateSoup(width, height, density, seed) {
+fun generateD2(
+    width: Int = 16, height: Int = 16,
+    density: DoubleArray = doubleArrayOf(0.5, 0.5),
+    seed: Int? = null, odd: Boolean = false
+) = generateSoup(width, height, density, seed) {
     listOf(it, if (odd) Coordinate(-it.x, it.y) else Coordinate(-it.x - 1, it.y))
 }
 
@@ -46,9 +50,11 @@ fun generateD2(width: Int = 16, height: Int = 16,
  * @param oddY If the outputted soup even or odd symmetric about the y-axis?
  * @return Returns the soup that was generated
  */
-fun generateD4(width: Int = 16, height: Int = 16,
-               density: DoubleArray = doubleArrayOf(0.5, 0.5),
-               seed: Int? = null, oddX: Boolean = false, oddY: Boolean = false) = generateSoup(width, height, density, seed) {
+fun generateD4(
+    width: Int = 16, height: Int = 16,
+    density: DoubleArray = doubleArrayOf(0.5, 0.5),
+    seed: Int? = null, oddX: Boolean = false, oddY: Boolean = false
+) = generateSoup(width, height, density, seed) {
     if (oddY) {
         listOf(
             it,
@@ -75,15 +81,17 @@ fun generateD4(width: Int = 16, height: Int = 16,
  * @param cellsToPlace A function that outputs the places to put a given state when the coordinate of a cell in inputted (used for symmetric soups)
  * @return Returns the soup that was generated
  */
-fun generateSoup(width: Int = 16, height: Int = 16,
-                 density: DoubleArray = doubleArrayOf(0.5, 0.5),
-                 seed: Int? = null, cellsToPlace: (it: Coordinate) -> List<Coordinate>): Grid {
+fun generateSoup(
+    width: Int = 16, height: Int = 16,
+    density: DoubleArray = doubleArrayOf(0.5, 0.5),
+    seed: Int? = null, cellsToPlace: (it: Coordinate) -> List<Coordinate>
+): Grid {
     // Initialise the random number generator
     val rand = if (seed == null) Random else Random(seed)
 
     // Generate the soup
     val soup = SparseGrid("")
-    val cummulative = density.mapIndexed { index, _ -> density.slice(0 .. index).sum() }
+    val cummulative = density.mapIndexed { index, _ -> density.slice(0..index).sum() }
     for (x in 0 until width) {
         for (y in 0 until height) {
             val randomNumber = rand.nextDouble()
@@ -110,8 +118,10 @@ fun generateSoup(width: Int = 16, height: Int = 16,
  * @param statesToInclude The states to include in the soups
  * @return Returns the soup that was generated
  */
-fun enumerateC1(width: Int = 16, height: Int = 16,
-                statesToInclude: IntArray = intArrayOf(0, 1)) = enumerateSoup(width, height, statesToInclude) { listOf(it) }
+fun enumerateC1(
+    width: Int = 16, height: Int = 16,
+    statesToInclude: IntArray = intArrayOf(0, 1)
+) = enumerateSoup(width, height, statesToInclude) { listOf(it) }
 
 /**
  * Generates a random soup of symmetry C1 with the specified parameters
@@ -121,8 +131,10 @@ fun enumerateC1(width: Int = 16, height: Int = 16,
  * @param odd If the outputted soup even or odd symmetric?
  * @return Returns the soup that was generated
  */
-fun enumerateD2(width: Int = 16, height: Int = 16,
-                statesToInclude: IntArray = intArrayOf(0, 1), odd: Boolean = false) = enumerateSoup(width, height, statesToInclude) {
+fun enumerateD2(
+    width: Int = 16, height: Int = 16,
+    statesToInclude: IntArray = intArrayOf(0, 1), odd: Boolean = false
+) = enumerateSoup(width, height, statesToInclude) {
     listOf(it, if (odd) Coordinate(-it.x, it.y) else Coordinate(-it.x - 1, it.y))
 }
 
@@ -135,9 +147,11 @@ fun enumerateD2(width: Int = 16, height: Int = 16,
  * @param oddY If the outputted soup even or odd symmetric about the y-axis?
  * @return Returns the soup that was generated
  */
-fun enumerateD4(width: Int = 16, height: Int = 16,
-                statesToInclude: IntArray = intArrayOf(0, 1),
-                oddX: Boolean = false, oddY: Boolean = false) = enumerateSoup(width, height, statesToInclude) {
+fun enumerateD4(
+    width: Int = 16, height: Int = 16,
+    statesToInclude: IntArray = intArrayOf(0, 1),
+    oddX: Boolean = false, oddY: Boolean = false
+) = enumerateSoup(width, height, statesToInclude) {
     if (oddY) {
         listOf(
             it,
@@ -163,8 +177,10 @@ fun enumerateD4(width: Int = 16, height: Int = 16,
  * @param cellsToPlace
  * @return Returns the soup that was generated
  */
-fun enumerateSoup(width: Int, height: Int, statesToInclude: IntArray = intArrayOf(0, 1),
-                  cellsToPlace: (it: Coordinate) -> List<Coordinate>): Sequence<Grid> {
+fun enumerateSoup(
+    width: Int, height: Int, statesToInclude: IntArray = intArrayOf(0, 1),
+    cellsToPlace: (it: Coordinate) -> List<Coordinate>
+): Sequence<Grid> {
     val stack = arrayListOf(Pair(SparseGrid(), 0))
     return sequence {
         while (stack.isNotEmpty()) {

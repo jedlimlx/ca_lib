@@ -30,9 +30,13 @@ abstract class Rule {
     open val background: IntArray by lazy {
         val bgList = arrayListOf(0)
         while (bgList.size == 1 || (bgList[bgList.size - 1] != bgList[0] && (bgList.size - 1) % alternatingPeriod == 0)) {
-            bgList.add(transitionFunc(IntArray(neighbourhood[(bgList.size - 1) % alternatingPeriod].size) { bgList[bgList.size - 1] },
-                bgList[bgList.size - 1],
-                neighbourhood[(bgList.size - 1) % alternatingPeriod].size, Coordinate()))
+            bgList.add(
+                transitionFunc(
+                    IntArray(neighbourhood[(bgList.size - 1) % alternatingPeriod].size) { bgList[bgList.size - 1] },
+                    bgList[bgList.size - 1],
+                    neighbourhood[(bgList.size - 1) % alternatingPeriod].size, Coordinate()
+                )
+            )
         }
 
         bgList.slice(0 until bgList.size - 1).toIntArray()

@@ -20,8 +20,8 @@ fun parseCoordCA(range: Int, string: String): Array<Coordinate> {
     ) + flattenedNeighbourhood // Replace it with the corrected one
 
     val neighbourhood = ArrayList<Coordinate>()
-    for (i in -range .. range) {
-        for (j in -range .. range) {
+    for (i in -range..range) {
+        for (j in -range..range) {
             if (i != 0 || j != 0) {
                 val index = (i + range) * (2 * range + 1) + (j + range)
                 if (i == 0 && j > 0 || i > 0) {
@@ -150,7 +150,7 @@ fun moore(range: Int): Array<Coordinate> = generateWithPred(range) { _, _ -> tru
  * @param range The range of the neighbourhood to generate
  * @return Returns the neighbourhood as an array of coordinates
  */
-fun vonNeumann(range: Int): Array<Coordinate> = generateWithPred(range) { i, j -> abs(i) + abs(j) <= range}
+fun vonNeumann(range: Int): Array<Coordinate> = generateWithPred(range) { i, j -> abs(i) + abs(j) <= range }
 
 /**
  * Generates a cross neighbourhood of the specified range
@@ -178,7 +178,8 @@ fun star(range: Int): Array<Coordinate> = generateWithPred(range) { i, j -> abs(
  * @param range The range of the neighbourhood to generate
  * @return Returns the neighbourhood as an array of coordinates
  */
-fun circular(range: Int): Array<Coordinate> = generateWithPred(range) { i, j -> (i * i + j * j) <= range * range + range }
+fun circular(range: Int): Array<Coordinate> =
+    generateWithPred(range) { i, j -> (i * i + j * j) <= range * range + range }
 
 /**
  * Generates a euclidean neighbourhood of the specified range
@@ -207,8 +208,8 @@ fun checkerboard(range: Int): Array<Coordinate> = generateWithPred(range) { i, j
  * @param range The range of the neighbourhood to generate
  * @return Returns the neighbourhood as an array of coordinates
  */
-fun hexagonal(range: Int): Array<Coordinate> = generateWithPred(range) {
-        i, j -> i >= 0 && j >= 0 || i <= 0 && j <= 0 || i <= range + j && j < 0 || i >= -(range - j) && j > 0
+fun hexagonal(range: Int): Array<Coordinate> = generateWithPred(range) { i, j ->
+    i >= 0 && j >= 0 || i <= 0 && j <= 0 || i <= range + j && j < 0 || i >= -(range - j) && j > 0
 }
 
 /**
@@ -216,8 +217,8 @@ fun hexagonal(range: Int): Array<Coordinate> = generateWithPred(range) {
  * @param range The range of the neighbourhood to generate
  * @return Returns the neighbourhood as an array of coordinates
  */
-fun tripod(range: Int): Array<Coordinate> = generateWithPred(range) {
-        i, j -> (j <= 0 && i <= 0 && (i == 0 || j == 0)) || (j > 0 && i == j)
+fun tripod(range: Int): Array<Coordinate> = generateWithPred(range) { i, j ->
+    (j <= 0 && i <= 0 && (i == 0 || j == 0)) || (j > 0 && i == j)
 }
 
 /**
@@ -250,10 +251,14 @@ fun gaussian(range: Int): Pair<Array<Coordinate>, IntArray> {
  * @param ignoreCentre Should the centre cellbe ignored in the final neighbourhood
  * @return Returns the neighbourhood as an array of coordinates
  */
-private fun generateWithPred(range: Int, ignoreCentre: Boolean = true, predicate: (i: Int, j: Int) -> Boolean): Array<Coordinate> {
+private fun generateWithPred(
+    range: Int,
+    ignoreCentre: Boolean = true,
+    predicate: (i: Int, j: Int) -> Boolean
+): Array<Coordinate> {
     val lst = arrayListOf<Coordinate>()
-    for (j in -range .. range) {
-        for (i in -range .. range) {
+    for (j in -range..range) {
+        for (i in -range..range) {
             if (i == 0 && j == 0 && ignoreCentre) continue
             if (predicate(i, j)) lst.add(Coordinate(i, j))
         }

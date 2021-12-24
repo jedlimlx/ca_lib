@@ -1,7 +1,5 @@
 package simulation
 
-import rules.hrot.HROT
-
 /**
  * Represents a coordinate (x, y) in the grid
  * @constructor Constructs coordinate (x, y)
@@ -54,7 +52,7 @@ class Coordinate(val x: Int = 0, val y: Int = 0) : Comparable<Coordinate> {
     }
 
     override fun hashCode(): Int = x + 10000 * y
-    override fun toString(): String ="($x, $y)"
+    override fun toString(): String = "($x, $y)"
 }
 
 /**
@@ -64,8 +62,10 @@ class Coordinate(val x: Int = 0, val y: Int = 0) : Comparable<Coordinate> {
  * @property start The starting coordinate of the range
  * @property endInclusive The end coordinate of the range
  */
-class CoordinateRange(override val start: Coordinate,
-                      override val endInclusive: Coordinate) : Iterable<Coordinate>, ClosedRange<Coordinate> {
+class CoordinateRange(
+    override val start: Coordinate,
+    override val endInclusive: Coordinate
+) : Iterable<Coordinate>, ClosedRange<Coordinate> {
     /**
      * An alias of [endInclusive]
      */

@@ -90,7 +90,7 @@ class Oscillator(period: Int, phases: Array<Grid>) : Spaceship(0, 0, period, pha
     /**
      * The temperature of the oscillator
      */
-    val temperature by lazy { heat.map { it / activeCells.toDouble() }  }
+    val temperature by lazy { heat.map { it / activeCells.toDouble() } }
 
     /**
      * The volatility of the oscillator

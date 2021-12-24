@@ -3,7 +3,6 @@ package simulation
 import Utils
 import rules.PLACEHOLDER_RULE
 import rules.Rule
-import rules.hrot.HROT
 import kotlin.math.max
 import kotlin.math.min
 
@@ -14,7 +13,7 @@ import kotlin.math.min
  * For smaller, denser patterns, [DenseGrid] will be more efficient
  * @constructor Constructs a grid based on the pattern provided
  */
-class SparseGrid(pattern: String = "", rule: Rule = PLACEHOLDER_RULE): Grid() {
+class SparseGrid(pattern: String = "", rule: Rule = PLACEHOLDER_RULE) : Grid() {
     private val dictionary: HashMap<Coordinate, Int> = hashMapOf()
 
     override val population
@@ -46,7 +45,8 @@ class SparseGrid(pattern: String = "", rule: Rule = PLACEHOLDER_RULE): Grid() {
 
             // If a cell on the boundary is removed, the bounds are no longer accurate
             if (boundsUpdated && (coordinate.x == bounds.start.x || coordinate.y == bounds.start.y ||
-                    coordinate.x == bounds.start.x || coordinate.y == bounds.end.y))
+                        coordinate.x == bounds.start.x || coordinate.y == bounds.end.y)
+            )
                 boundsUpdated = false
         } else {
             dictionary[coordinate] = Utils.convert(state, background)
@@ -59,7 +59,7 @@ class SparseGrid(pattern: String = "", rule: Rule = PLACEHOLDER_RULE): Grid() {
                 val maxY = max(bounds.end.y, coordinate.y)
 
                 // Set bounds to the new value
-                bounds = Coordinate(minX, minY) .. Coordinate(maxX, maxY)
+                bounds = Coordinate(minX, minY)..Coordinate(maxX, maxY)
                 boundsUpdated = true
             }
         }
@@ -83,7 +83,8 @@ class SparseGrid(pattern: String = "", rule: Rule = PLACEHOLDER_RULE): Grid() {
     override fun iterator(): MutableIterator<Pair<Coordinate, Int>> = SparseGridIterator(dictionary, background)
 }
 
-internal class SparseGridIterator(dictionary: HashMap<Coordinate, Int>, val background: Int): MutableIterator<Pair<Coordinate, Int>> {
+internal class SparseGridIterator(dictionary: HashMap<Coordinate, Int>, val background: Int) :
+    MutableIterator<Pair<Coordinate, Int>> {
     val iterator = dictionary.iterator()
 
     override fun hasNext(): Boolean = iterator.hasNext()

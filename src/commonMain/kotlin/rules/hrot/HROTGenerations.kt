@@ -38,6 +38,7 @@ class HROTGenerations : BaseHROT {
         Regex("[BbSs]?[0-8]*/[BbSs]?[0-8]*/[Cc]?[0-9]+[VH]?"),
         Regex("[CcGg][0-9]+[BbSs][0-8]*[BbSs][0-8]*[VH]?")
     )
+
     /**
      * Constructs a HROT generations rule with the specified parameters
      * @param birth The birth transitions of the HROT generations rule
@@ -45,8 +46,10 @@ class HROTGenerations : BaseHROT {
      * @param neighbourhood The neighbourhood of the HROT generations rule
      * @param weights The weights of the HROT generations rule
      */
-    constructor(birth: Iterable<Int>, survival: Iterable<Int>, numStates: Int,
-                neighbourhood: Array<Coordinate> = moore(1), weights: IntArray? = null) {
+    constructor(
+        birth: Iterable<Int>, survival: Iterable<Int>, numStates: Int,
+        neighbourhood: Array<Coordinate> = moore(1), weights: IntArray? = null
+    ) {
         this.numStates = numStates
 
         this.birth = birth.toHashSet()
@@ -94,18 +97,22 @@ class HROTGenerations : BaseHROT {
                 val tokensStripped = rulestring.replace(Regex("[BbSsCcGg]"), "").split("/")
 
                 // Reading birth and survival conditions
-                birth = readTransition(if ("b" in tokens[0].lowercase()) tokensStripped[0] else tokensStripped[1], false)
-                survival = readTransition(if ("s" in tokens[1].lowercase()) tokensStripped[1] else tokensStripped[0], false)
+                birth =
+                    readTransition(if ("b" in tokens[0].lowercase()) tokensStripped[0] else tokensStripped[1], false)
+                survival =
+                    readTransition(if ("s" in tokens[1].lowercase()) tokensStripped[1] else tokensStripped[0], false)
 
                 // Reading number of states
-                numStates = tokens[2].replace(Regex("[CcGg]") , "").toInt()
+                numStates = tokens[2].replace(Regex("[CcGg]"), "").toInt()
 
                 // Loading neighbourhood
-                neighbourhood = arrayOf(when (rulestring[rulestring.length - 1]) {
-                    'V' -> vonNeumann(1)
-                    'H' -> hexagonal(1)
-                    else -> moore(1)
-                })
+                neighbourhood = arrayOf(
+                    when (rulestring[rulestring.length - 1]) {
+                        'V' -> vonNeumann(1)
+                        'H' -> hexagonal(1)
+                        else -> moore(1)
+                    }
+                )
 
                 weights = null
             }
@@ -121,11 +128,13 @@ class HROTGenerations : BaseHROT {
                 numStates = Regex("[CcGg]([0-9]+)").findAll(rulestring).map { it.groupValues[1] }.toList()[0].toInt()
 
                 // Loading neighbourhood
-                neighbourhood = arrayOf(when (rulestring[rulestring.length - 1]) {
-                    'V' -> vonNeumann(1)
-                    'H' -> hexagonal(1)
-                    else -> moore(1)
-                })
+                neighbourhood = arrayOf(
+                    when (rulestring[rulestring.length - 1]) {
+                        'V' -> vonNeumann(1)
+                        'H' -> hexagonal(1)
+                        else -> moore(1)
+                    }
+                )
 
                 weights = null
             }
@@ -163,8 +172,8 @@ class HROTGenerations : BaseHROT {
         val minSurvival = hashSetOf<Int>()
 
         // The maximum possible transitions
-        val maxBirth = (0 .. maxCount).toHashSet()
-        val maxSurvival = (0 .. maxCount).toHashSet()
+        val maxBirth = (0..maxCount).toHashSet()
+        val maxSurvival = (0..maxCount).toHashSet()
 
         transitionsToSatisfy.forEach {
             // Compute the weighted sum of its neighbours
@@ -180,8 +189,10 @@ class HROTGenerations : BaseHROT {
             }
         }
 
-        return Pair(HROTGenerations(minBirth, minSurvival, numStates, neighbourhood[0], weights),
-            HROTGenerations(maxBirth, maxSurvival, numStates, neighbourhood[0], weights))
+        return Pair(
+            HROTGenerations(minBirth, minSurvival, numStates, neighbourhood[0], weights),
+            HROTGenerations(maxBirth, maxSurvival, numStates, neighbourhood[0], weights)
+        )
     }
 
     override fun enumerate(minRule: RuleFamily, maxRule: RuleFamily): Sequence<HROTGenerations> {
@@ -208,7 +219,10 @@ class HROTGenerations : BaseHROT {
                     val newRule = if (index < birthDiff.size)
                         rule.newRuleWithTransitions(rule.birth + setOf(birthDiff[index]), rule.survival)
                     else
-                        rule.newRuleWithTransitions(rule.birth, rule.survival + setOf(survivalDiff[index - birthDiff.size]))
+                        rule.newRuleWithTransitions(
+                            rule.birth,
+                            rule.survival + setOf(survivalDiff[index - birthDiff.size])
+                        )
 
                     // 2 cases -> transition added and transition not added
                     stack.add(Pair(newRule, index + 1))
@@ -225,8 +239,10 @@ class HROTGenerations : BaseHROT {
 
         val random = if (seed != null) Random(seed) else Random
         return generateSequence {
-            minRule.newRuleWithTransitions(randomTransition(minRule.birth, maxRule.birth, random.nextInt()),
-                randomTransition(minRule.survival, maxRule.survival, random.nextInt()))
+            minRule.newRuleWithTransitions(
+                randomTransition(minRule.birth, maxRule.birth, random.nextInt()),
+                randomTransition(minRule.survival, maxRule.survival, random.nextInt())
+            )
         }
     }
 

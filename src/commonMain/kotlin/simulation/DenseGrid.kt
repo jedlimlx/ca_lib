@@ -3,7 +3,6 @@ package simulation
 import Utils
 import rules.PLACEHOLDER_RULE
 import rules.Rule
-import rules.hrot.HROT
 import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
@@ -22,9 +21,11 @@ import kotlin.math.min
  * @property startingCoordinate The coordinate of the 1st cell in the 2D array
  * @property expansion_factor The array will expand by this much more than necessary to improve performance.
  */
-class DenseGrid(pattern: String = "", rule: Rule = PLACEHOLDER_RULE,
-                initialWidth: Int = 16, initialHeight: Int = 16,
-                var startingCoordinate: Coordinate = Coordinate(), val expansion_factor: Double = 1.1): Grid() {
+class DenseGrid(
+    pattern: String = "", rule: Rule = PLACEHOLDER_RULE,
+    initialWidth: Int = 16, initialHeight: Int = 16,
+    var startingCoordinate: Coordinate = Coordinate(), val expansion_factor: Double = 1.1
+) : Grid() {
 
     private var arr = Array(initialHeight) { IntArray(initialWidth) { 0 } }
 
@@ -47,7 +48,8 @@ class DenseGrid(pattern: String = "", rule: Rule = PLACEHOLDER_RULE,
         // If the cell to set is out of bounds, expand the array
         val maxCoordinate = startingCoordinate + Coordinate(arr[0].size - 1, arr.size - 1)
         if (startingCoordinate.x > coordinate.x || coordinate.x > maxCoordinate.x ||
-            startingCoordinate.y > coordinate.y || coordinate.y > maxCoordinate.y) {
+            startingCoordinate.y > coordinate.y || coordinate.y > maxCoordinate.y
+        ) {
             // Expand preemptively to reduce number of times needed to expand
             var newStart = Coordinate(min(coordinate.x, startingCoordinate.x), min(coordinate.y, startingCoordinate.y))
             var newEnd = Coordinate(max(coordinate.x, maxCoordinate.x), max(coordinate.y, maxCoordinate.y))
@@ -80,7 +82,8 @@ class DenseGrid(pattern: String = "", rule: Rule = PLACEHOLDER_RULE,
 
             // If a cell on the boundary is removed, the bounds are no longer accurate
             if (boundsUpdated && (coordinate.x == bounds.start.x || coordinate.y == bounds.start.y ||
-                        coordinate.x == bounds.end.x || coordinate.y == bounds.end.y))
+                        coordinate.x == bounds.end.x || coordinate.y == bounds.end.y)
+            )
                 boundsUpdated = false
         } else {
             if (prevState == 0) population++
@@ -93,7 +96,7 @@ class DenseGrid(pattern: String = "", rule: Rule = PLACEHOLDER_RULE,
                 val maxY = max(bounds.end.y, coordinate.y)
 
                 // Set bounds to the new value
-                bounds = Coordinate(minX, minY) .. Coordinate(maxX, maxY)
+                bounds = Coordinate(minX, minY)..Coordinate(maxX, maxY)
                 boundsUpdated = true
             }
         }
@@ -102,7 +105,8 @@ class DenseGrid(pattern: String = "", rule: Rule = PLACEHOLDER_RULE,
     override fun get(coordinate: Coordinate, withoutBg: Boolean): Int {
         val maxCoordinate = startingCoordinate + Coordinate(arr[0].size - 1, arr.size - 1)
         return if (startingCoordinate.x <= coordinate.x && coordinate.x <= maxCoordinate.x &&
-            startingCoordinate.y <= coordinate.y && coordinate.y <= maxCoordinate.y) {
+            startingCoordinate.y <= coordinate.y && coordinate.y <= maxCoordinate.y
+        ) {
             arr[coordinate.y - startingCoordinate.y][coordinate.x - startingCoordinate.x]
         } else if (withoutBg) 0 else background  // The cell has a background state if its outside the grid
     }
@@ -145,8 +149,10 @@ class DenseGrid(pattern: String = "", rule: Rule = PLACEHOLDER_RULE,
     override fun iterator(): MutableIterator<Pair<Coordinate, Int>> = DenseGridIterator(this, arr, startingCoordinate)
 }
 
-internal class DenseGridIterator(val grid: DenseGrid, arr: Array<IntArray>,
-                                 startingCoordinate: Coordinate): MutableIterator<Pair<Coordinate, Int>> {
+internal class DenseGridIterator(
+    val grid: DenseGrid, arr: Array<IntArray>,
+    startingCoordinate: Coordinate
+) : MutableIterator<Pair<Coordinate, Int>> {
     var list: ArrayList<Pair<Coordinate, Int>> = arrayListOf()
     var lastElementReturned = Coordinate()
 
@@ -155,7 +161,12 @@ internal class DenseGridIterator(val grid: DenseGrid, arr: Array<IntArray>,
     init {
         for (i in arr.indices) {
             for (j in arr[i].indices) {
-                if (arr[i][j] != 0) list.add(Pair(Coordinate(j + startingCoordinate.x, i + startingCoordinate.y), arr[i][j]))
+                if (arr[i][j] != 0) list.add(
+                    Pair(
+                        Coordinate(j + startingCoordinate.x, i + startingCoordinate.y),
+                        arr[i][j]
+                    )
+                )
             }
         }
 

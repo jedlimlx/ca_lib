@@ -12,7 +12,7 @@ import kotlin.math.min
 /**
  * Represents the grid on which the cellular automaton runs on
  */
-abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
+abstract class Grid : MutableIterable<Pair<Coordinate, Int>> {
     /**
      * The rule of the cellular automaton grid
      */
@@ -56,7 +56,7 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
      * The bounds of the pattern within the grid. Note that bounds **do not** update automatically.
      * To update them use [updateBounds].
      */
-    var bounds = Coordinate(Int.MAX_VALUE, Int.MAX_VALUE) .. Coordinate(-Int.MAX_VALUE, -Int.MAX_VALUE)
+    var bounds = Coordinate(Int.MAX_VALUE, Int.MAX_VALUE)..Coordinate(-Int.MAX_VALUE, -Int.MAX_VALUE)
         protected set
 
     /**
@@ -424,8 +424,8 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
         // First, add characters to a string
         val buffer = arrayListOf<Char>()
         val rleArray = arrayListOf<Char>()
-        for (y in startCoordinate.y .. endCoordinate.y) {
-            for (x in startCoordinate.x .. endCoordinate.x) {
+        for (y in startCoordinate.y..endCoordinate.y) {
+            for (x in startCoordinate.x..endCoordinate.x) {
                 if (this[x, y] == 0) {
                     buffer.add('.')
                 } else {
@@ -586,8 +586,10 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
     /**
      * Iterate over all non-zero cells in a rectangle
      */
-    private fun iterateOverRectangle(range: CoordinateRange,
-                                     func: (it: Pair<Coordinate, Int>) -> Unit) {
+    private fun iterateOverRectangle(
+        range: CoordinateRange,
+        func: (it: Pair<Coordinate, Int>) -> Unit
+    ) {
         // Check for the more efficient approach
         if (population < range.area) forEach { if (it.first in range) func(it) }
         else for ((x, y) in range) func(Pair(Coordinate(x, y), this[x, y]))
@@ -601,7 +603,7 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
         if (boundsUpdated) return
 
         // Reset bounds
-        bounds = Coordinate(Int.MAX_VALUE, Int.MAX_VALUE) .. Coordinate(-Int.MAX_VALUE, -Int.MAX_VALUE)
+        bounds = Coordinate(Int.MAX_VALUE, Int.MAX_VALUE)..Coordinate(-Int.MAX_VALUE, -Int.MAX_VALUE)
 
         // Use vars instead of the immutable Coordinate
         var (minX, minY) = bounds.start
@@ -616,7 +618,7 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
         }
 
         // Set bounds to the new value
-        bounds = Coordinate(minX, minY) .. Coordinate(maxX, maxY)
+        bounds = Coordinate(minX, minY)..Coordinate(maxX, maxY)
         boundsUpdated = true
     }
 
@@ -696,9 +698,9 @@ abstract class Grid: MutableIterable<Pair<Coordinate, Int>> {
         val (startCoordinate, endCoordinate) = range
 
         var hash = 31415962
-        for (y in startCoordinate.y .. endCoordinate.y) {
+        for (y in startCoordinate.y..endCoordinate.y) {
             val yShift: Int = y - startCoordinate.y
-            for (x in startCoordinate.x .. endCoordinate.x) {
+            for (x in startCoordinate.x..endCoordinate.x) {
                 if (this[x, y] > 0) {
                     hash = hash * 1000003 xor yShift
                     hash = hash * 1000003 xor x - startCoordinate.x

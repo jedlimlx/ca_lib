@@ -4,7 +4,7 @@ package rules.ruleloader.ruletable
  * Represents symmetries as disjoint cycles like lifelib.
  * See https://groupprops.subwiki.org/wiki/Cycle_decomposition_for_permutations.
  */
-class DisjointCyclesSymmetry: Symmetry {
+class DisjointCyclesSymmetry : Symmetry {
     /**
      * The disjoint cycles used to represent the symmetry
      */
@@ -36,7 +36,7 @@ class DisjointCyclesSymmetry: Symmetry {
 
         // Converting disjoint cycles to permutation generators
         val symmetries = disjointCycles.map {
-            symmetry = ArrayList((1 .. neighbours.size).toList())
+            symmetry = ArrayList((1..neighbours.size).toList())
 
             if (neighbours.isNotEmpty()) {
                 for (cycle in it) {  // Definitely not taken from lifelib

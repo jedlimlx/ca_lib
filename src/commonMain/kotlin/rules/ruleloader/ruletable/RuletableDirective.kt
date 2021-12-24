@@ -10,8 +10,10 @@ import simulation.Coordinate
  * @param numStates The number of states of the table directive
  * @param neighbourhood The neighbourhood of the table directive
  */
-class RuletableDirective(val numStates: Int = 2,
-                         var neighbourhood: Array<Coordinate> = moore(1)): RuleDirective("table") {
+class RuletableDirective(
+    val numStates: Int = 2,
+    var neighbourhood: Array<Coordinate> = moore(1)
+) : RuleDirective("table") {
     // Properties of the ruletable to be exposed
     /**
      * The variables used in the subsequent transitions
@@ -43,16 +45,18 @@ class RuletableDirective(val numStates: Int = 2,
 
         // Inserting variables, transitions and comments
         for (i in variables.indices) {
-            append(when {
-                variables[i] != null -> {
-                    if (variables[i]!!.unbounded)
-                        variables[i]!!.toString(neighbourhood.size) + "\n\n"
-                    else "${variables[i]}\n"
+            append(
+                when {
+                    variables[i] != null -> {
+                        if (variables[i]!!.unbounded)
+                            variables[i]!!.toString(neighbourhood.size) + "\n\n"
+                        else "${variables[i]}\n"
+                    }
+                    transitions[i] != null -> "${transitions[i]}\n"
+                    comments[i] != null -> "\n# ${comments[i]}\n"
+                    else -> ""
                 }
-                transitions[i] != null -> "${transitions[i]}\n"
-                comments[i] != null -> "\n# ${comments[i]}\n"
-                else -> ""
-            })
+            )
         }
 
         this

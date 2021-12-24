@@ -3,7 +3,6 @@ package rules.hrot
 import hexagonal
 import moore
 import rules.RuleFamily
-import rules.ruleloader.Ruletable
 import rules.ruleloader.builders.ruletable
 import simulation.Coordinate
 import vonNeumann
@@ -46,8 +45,10 @@ class HROT : BaseHROT {
      * @param neighbourhood The neighbourhood of the HROT rule
      * @param weights The weights of the HROT rule
      */
-    constructor(birth: Iterable<Int>, survival: Iterable<Int>,
-                neighbourhood: Array<Coordinate> = moore(1), weights: IntArray? = null) {
+    constructor(
+        birth: Iterable<Int>, survival: Iterable<Int>,
+        neighbourhood: Array<Coordinate> = moore(1), weights: IntArray? = null
+    ) {
         this.birth = birth.toHashSet()
         this.survival = survival.toHashSet()
 
@@ -149,8 +150,8 @@ class HROT : BaseHROT {
         val minSurvival = hashSetOf<Int>()
 
         // The maximum possible transitions
-        val maxBirth = (0 .. maxCount).toHashSet()
-        val maxSurvival = (0 .. maxCount).toHashSet()
+        val maxBirth = (0..maxCount).toHashSet()
+        val maxSurvival = (0..maxCount).toHashSet()
 
         transitionsToSatisfy.forEach {
             // Compute the weighted sum of its neighbours
@@ -166,8 +167,10 @@ class HROT : BaseHROT {
             }
         }
 
-        return Pair(HROT(minBirth, minSurvival, neighbourhood[0], weights),
-            HROT(maxBirth, maxSurvival, neighbourhood[0], weights))
+        return Pair(
+            HROT(minBirth, minSurvival, neighbourhood[0], weights),
+            HROT(maxBirth, maxSurvival, neighbourhood[0], weights)
+        )
     }
 
     override fun enumerate(minRule: RuleFamily, maxRule: RuleFamily): Sequence<HROT> {
@@ -192,7 +195,10 @@ class HROT : BaseHROT {
                     val newRule = if (index < birthDiff.size)
                         rule.newRuleWithTransitions(rule.birth + setOf(birthDiff[index]), rule.survival)
                     else
-                        rule.newRuleWithTransitions(rule.birth, rule.survival + setOf(survivalDiff[index - birthDiff.size]))
+                        rule.newRuleWithTransitions(
+                            rule.birth,
+                            rule.survival + setOf(survivalDiff[index - birthDiff.size])
+                        )
 
                     // 2 cases -> transition added and transition not added
                     stack.add(Pair(newRule, index + 1))
@@ -207,8 +213,10 @@ class HROT : BaseHROT {
 
         val random = if (seed != null) Random(seed) else Random
         return generateSequence {
-            minRule.newRuleWithTransitions(randomTransition(minRule.birth, maxRule.birth, random.nextInt()),
-                randomTransition(minRule.survival, maxRule.survival, random.nextInt()))
+            minRule.newRuleWithTransitions(
+                randomTransition(minRule.birth, maxRule.birth, random.nextInt()),
+                randomTransition(minRule.survival, maxRule.survival, random.nextInt())
+            )
         }
     }
 

@@ -12,8 +12,10 @@ annotation class TableDirectiveMarker
  */
 @DirectiveMarker
 @TableDirectiveMarker
-class RuletableDirectiveBuilder(val numStates: Int = 2, val neighbourhood: Array<Coordinate> = moore(1),
-                                val symmetry: Symmetry? = null) {
+class RuletableDirectiveBuilder(
+    val numStates: Int = 2, val neighbourhood: Array<Coordinate> = moore(1),
+    val symmetry: Symmetry? = null
+) {
     private val directive = RuletableDirective(numStates, neighbourhood)
     private val variableMap: HashMap<String, Variable> = hashMapOf()
 
@@ -48,7 +50,8 @@ class RuletableDirectiveBuilder(val numStates: Int = 2, val neighbourhood: Array
         val output = transition[transition.size - 1]
 
         // Generate the transitions based on the symmetry
-        val transitionsList = symmetry?.applySymmetry(transition.subList(1, transition.size - 1))?.map { listOf(input) + it + listOf(output) }
+        val transitionsList = symmetry?.applySymmetry(transition.subList(1, transition.size - 1))
+            ?.map { listOf(input) + it + listOf(output) }
             ?: listOf(transition)
         addTransitions(transitionsList)
     }

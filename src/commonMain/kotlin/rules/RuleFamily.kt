@@ -5,7 +5,7 @@ import rules.ruleloader.Ruletable
 /**
  * Represents a family of cellular automaton rules
  */
-abstract class RuleFamily: Rule() {
+abstract class RuleFamily : Rule() {
     /**
      * The rulestring of the rule
      */
