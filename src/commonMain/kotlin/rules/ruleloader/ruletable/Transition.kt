@@ -12,7 +12,6 @@ data class Transition(val values: Map<Int, Int>, val variables: Map<Int, Variabl
     val size = values.size + variables.size
 
     init {
-        require(size - 1 in values) { "The last part of transitions (the output) must be a state literal" }
         for (i in 0 until size)
             require(i in values || i in variables) {
                 "Index $i must be contained in either the values or variables passed into Transition"
@@ -26,5 +25,5 @@ data class Transition(val values: Map<Int, Int>, val variables: Map<Int, Variabl
     override fun toString(): String = List(size) {
         if (it in values) values[it].toString()
         else variables[it]!!.identifier(it)
-    }.joinToString(" ")
+    }.joinToString(", ")
 }

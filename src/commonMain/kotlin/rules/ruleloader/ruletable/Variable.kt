@@ -6,7 +6,7 @@ package rules.ruleloader.ruletable
 data class Variable(val name: String, val values: Set<Int>, val unbounded: Boolean = true) {
     fun identifier(index: Int) = if (unbounded) "$name.$index" else name
 
-    fun toString(maxUsages: Int): String = List(maxUsages) {
+    fun toString(maxUsages: Int): String = List(maxUsages + 1) {
         "var $name.$it = {${values.joinToString(", ")}}"
     }.joinToString("\n")
 

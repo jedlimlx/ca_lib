@@ -4,6 +4,7 @@ import readResource
 import rules.RuleFamily
 import rules.enumerateRules
 import rules.randomRules
+import rules.ruleloader.builders.ruletable
 import simulation.SparseGrid
 import kotlin.test.Test
 import kotlin.test.assertEquals

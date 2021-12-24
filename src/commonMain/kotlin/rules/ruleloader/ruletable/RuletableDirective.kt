@@ -50,7 +50,7 @@ class RuletableDirective(val numStates: Int = 2,
                     else "${variables[i]}\n"
                 }
                 transitions[i] != null -> "${transitions[i]}\n"
-                comments[i] != null -> "# ${comments[i]}\n"
+                comments[i] != null -> "\n# ${comments[i]}\n"
                 else -> ""
             })
         }

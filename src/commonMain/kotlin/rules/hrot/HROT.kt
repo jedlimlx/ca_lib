@@ -3,6 +3,8 @@ package rules.hrot
 import hexagonal
 import moore
 import rules.RuleFamily
+import rules.ruleloader.Ruletable
+import rules.ruleloader.builders.ruletable
 import simulation.Coordinate
 import vonNeumann
 import kotlin.math.abs
@@ -207,6 +209,30 @@ class HROT : BaseHROT {
         return generateSequence {
             minRule.newRuleWithTransitions(randomTransition(minRule.birth, maxRule.birth, random.nextInt()),
                 randomTransition(minRule.survival, maxRule.survival, random.nextInt()))
+        }
+    }
+
+    override fun generateRuletable() = ruletable {
+        name = rulestring.replace(Regex("[,@/]"), "_")
+        table(neighbourhood = neighbourhood[0]) {
+            variable("any") { 0..1 }
+
+            comment("Birth")
+            outerTotalistic {
+                input = "0"
+                output = "1"
+                transitions { birth }
+            }
+
+            comment("Survival")
+            outerTotalistic {
+                input = "1"
+                output = "1"
+                transitions { survival }
+            }
+
+            comment("Everything else dies")
+            transition { "1 ${"any ".repeat(neighbourhood.size)}0" }
         }
     }
 

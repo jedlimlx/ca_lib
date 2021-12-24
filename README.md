@@ -71,7 +71,7 @@ println(glider.populationList)  // A list of the population of the glider in eac
 ### Ruletable Generation
 ```kotlin
 println(ruletable {
-    name { "StarWars" }
+    name = "StarWars"
     table(4, symmetry = PermuteSymmetry()) {
         variable("any") { 0..3 }
         variable("dead") { listOf(0, 2, 3) }

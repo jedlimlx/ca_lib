@@ -7,6 +7,9 @@ import rules.ruleloader.Ruletable
 import rules.ruleloader.ruletable.Symmetry
 import simulation.Coordinate
 
+@DslMarker
+annotation class DirectiveMarker
+
 /**
  * Constructs a ruletable with the specified parameters.
  * @param init The function defining the key parameters of the ruletable
@@ -22,16 +25,15 @@ fun ruletable(init: RuletableBuilder.() -> Unit): Ruletable {
 /**
  * A helper class for building a ruletable
  */
+@DirectiveMarker
 class RuletableBuilder {
-    private var name = ""
+    /**
+     * The name of the ruletable
+     */
+    var name = ""
+
     private var directives: ArrayList<Directive> = arrayListOf()
     private var ruleDirectives: ArrayList<RuleDirective> = arrayListOf()
-
-    /**
-     * Sets the name of the ruletable
-     * @param name A function that returns the name of the ruletable
-     */
-    fun name(name: () -> String) { this.name = name() }
 
     /**
      * Constructs the @TABLE directive of the ruletable

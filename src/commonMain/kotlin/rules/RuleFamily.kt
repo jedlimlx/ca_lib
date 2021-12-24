@@ -1,5 +1,7 @@
 package rules
 
+import rules.ruleloader.Ruletable
+
 /**
  * Represents a family of cellular automaton rules
  */
@@ -56,6 +58,12 @@ abstract class RuleFamily: Rule() {
      * @return Returns a sequence containing all rules within the specified rule range
      */
     operator fun rangeTo(maxRule: RuleFamily) = enumerate(this, maxRule)
+
+    /**
+     * Generates a ruletable for the rule which can be used in Golly / Apgsearch
+     * @return Returns the ruletable
+     */
+    abstract fun generateRuletable(): Ruletable
 
     /**
      * Converts the rule into a string (in this case it returns a rulestring)
