@@ -242,6 +242,8 @@ class HROT : BaseHROT {
             comment("Everything else dies")
             transition { "1 ${"any ".repeat(neighbourhood.size)}0" }
         }
+
+        colours(numStates, background) { colours[it] }
     }
 
     override fun transitionFunc(cells: IntArray, cellState: Int, generation: Int, coordinate: Coordinate): Int {

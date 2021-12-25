@@ -144,4 +144,9 @@ class HROTTest {
             randomRules(HROT("B3/S23"), HROT("B35678/S23678"), 10).take(100).map { it.toString() }.toList()
         )
     }
+
+    @Test
+    fun test() {
+        println(HROTGenerations("/034/3").generateRuletable())
+    }
 }

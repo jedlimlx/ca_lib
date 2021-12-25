@@ -270,6 +270,8 @@ class HROTGenerations : BaseHROT {
             for (i in 1 until numStates)
                 transition { "$i ${"any ".repeat(neighbourhood.size)}${(i + 1) % numStates}" }
         }
+
+        colours(numStates, background) { colours[it] }
     }
 
     override fun transitionFunc(cells: IntArray, cellState: Int, generation: Int, coordinate: Coordinate): Int {

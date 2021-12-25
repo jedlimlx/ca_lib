@@ -1,5 +1,6 @@
 package rules
 
+import Colour
 import simulation.Coordinate
 
 
@@ -40,6 +41,19 @@ abstract class Rule {
         }
 
         bgList.slice(0 until bgList.size - 1).toIntArray()
+    }
+
+    /**
+     * The colours representing the rule
+     */
+    open val colours: Array<Colour> by lazy {
+        Array(numStates) {
+            when(it) {
+                0 -> Colour(0, 0, 0)
+                1 -> if (numStates > 2) Colour(255, 0, 0) else Colour(255, 255, 255)
+                else -> Colour(255, (it - 2) * 255 / (numStates - 1), 0)
+            }
+        }
     }
 
     /**

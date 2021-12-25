@@ -1,6 +1,8 @@
 package rules.ruleloader.builders
 
+import Colour
 import moore
+import rules.ruleloader.ColourDirective
 import rules.ruleloader.Directive
 import rules.ruleloader.RuleDirective
 import rules.ruleloader.Ruletable
@@ -34,6 +36,16 @@ class RuletableBuilder {
 
     private var directives: ArrayList<Directive> = arrayListOf()
     private var ruleDirectives: ArrayList<RuleDirective> = arrayListOf()
+
+    /**
+     * Sets the colours of the ruletable
+     * @param numStates The number of states of the rule
+     * @param background The background of the rule
+     * @param colours A function returning the colour of the specified state
+     */
+    fun colours(numStates: Int, background: IntArray = intArrayOf(0), colours: (state: Int) -> Colour) {
+        directives.add(ColourDirective(Array(numStates) { colours(it) }, background))
+    }
 
     /**
      * Constructs the @TABLE directive of the ruletable
