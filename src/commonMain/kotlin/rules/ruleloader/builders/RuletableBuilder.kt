@@ -43,10 +43,10 @@ class RuletableBuilder {
      * @param init A function defining the key parameters of the ruletable
      */
     fun table(
-        numStates: Int = 2, neighbourhood: Array<Coordinate> = moore(1), symmetry: Symmetry? = null,
-        init: RuletableDirectiveBuilder.() -> Unit
+        numStates: Int = 2, neighbourhood: Array<Coordinate> = moore(1), background: IntArray = intArrayOf(0),
+        symmetry: Symmetry? = null, init: RuletableDirectiveBuilder.() -> Unit
     ) {
-        val table = RuletableDirectiveBuilder(numStates, neighbourhood, symmetry)
+        val table = RuletableDirectiveBuilder(numStates, neighbourhood, background, symmetry)
         table.init()
 
         ruleDirectives.add(table.build())

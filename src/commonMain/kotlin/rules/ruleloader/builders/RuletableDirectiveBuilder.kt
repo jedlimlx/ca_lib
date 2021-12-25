@@ -14,9 +14,9 @@ annotation class TableDirectiveMarker
 @TableDirectiveMarker
 class RuletableDirectiveBuilder(
     val numStates: Int = 2, val neighbourhood: Array<Coordinate> = moore(1),
-    val symmetry: Symmetry? = null
+    val background: IntArray = intArrayOf(0), val symmetry: Symmetry? = null
 ) {
-    private val directive = RuletableDirective(numStates, neighbourhood)
+    private val directive = RuletableDirective(numStates, neighbourhood, background)
     private val variableMap: HashMap<String, Variable> = hashMapOf()
 
     // TODO (Support weights)
@@ -34,6 +34,8 @@ class RuletableDirectiveBuilder(
      */
     fun variable(name: String, states: () -> Iterable<Int>) {
         val variable = Variable(name, states().toSet())
+        variable.numStates = numStates
+
         variableMap[name] = variable
         directive.addVariable(variable)
     }
@@ -78,7 +80,13 @@ class RuletableDirectiveBuilder(
      * Constructs the @TABLE directive
      * @return Returns the @TABLE directive
      */
-    fun build(): RuletableDirective = directive
+    fun build(): RuletableDirective {
+        // If not the transition is not specified, the cell remains in the same state
+        variable("_any") { 0 until numStates }
+        for (i in 0 until numStates) transition { "$i, ${"_any, ".repeat(neighbourhood.size)}$i" }
+
+        return directive
+    }
 
     private fun addTransitions(transitions: Iterable<List<String>>) {
         transitions.forEach {
@@ -94,7 +102,9 @@ class RuletableDirectiveBuilder(
             }
 
             // Add completed transition to the directive
-            directive.addTransition(Transition(valuesMap, variablesMap))
+            val transition = Transition(valuesMap, variablesMap)
+            transition.numStates = numStates
+            directive.addTransition(transition)
         }
     }
 }

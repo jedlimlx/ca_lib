@@ -222,7 +222,7 @@ class HROT : BaseHROT {
 
     override fun generateRuletable() = ruletable {
         name = rulestring.replace(Regex("[,@/]"), "_")
-        table(neighbourhood = neighbourhood[0]) {
+        table(neighbourhood = neighbourhood[0], background = background) {
             variable("any") { 0..1 }
 
             comment("Birth")

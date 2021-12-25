@@ -11,6 +11,10 @@ data class Transition(val values: Map<Int, Int>, val variables: Map<Int, Variabl
      */
     val size = values.size + variables.size
 
+    internal var numStates = 2
+    internal var background = intArrayOf(0)
+    internal var backgroundIndex = 0
+
     init {
         for (i in 0 until size)
             require(i in values || i in variables) {
@@ -23,7 +27,13 @@ data class Transition(val values: Map<Int, Int>, val variables: Map<Int, Variabl
      * @return Returns the string to be placed in the ruletable
      */
     override fun toString(): String = List(size) {
-        if (it in values) values[it].toString()
+        if (it in values) {
+            if (it < size - 1) {
+                (convertWithIndex(values[it]!!, background[backgroundIndex],
+                    backgroundIndex, numStates)).toString()
+            } else (convertWithIndex(values[it]!!, background[(backgroundIndex + 1) % background.size],
+                (backgroundIndex + 1) % background.size, numStates)).toString()
+        }
         else variables[it]!!.identifier(it)
     }.joinToString(", ")
 }

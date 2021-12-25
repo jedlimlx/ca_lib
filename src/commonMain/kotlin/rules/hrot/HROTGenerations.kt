@@ -248,7 +248,7 @@ class HROTGenerations : BaseHROT {
 
     override fun generateRuletable() = ruletable {
         name = rulestring.replace(Regex("[,@/]"), "_")
-        table(numStates, neighbourhood[0]) {
+        table(numStates, neighbourhood[0], background) {
             variable("any") { 0 until numStates }
             variable("dying") { (2 until numStates) + 0 }
 

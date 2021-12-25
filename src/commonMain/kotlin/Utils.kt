@@ -1,4 +1,4 @@
-expect fun readResource(resource: String): String
+internal expect fun readResource(resource: String): String
 
 class Utils {
     companion object {
