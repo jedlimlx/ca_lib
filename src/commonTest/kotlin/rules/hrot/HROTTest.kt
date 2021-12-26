@@ -5,6 +5,7 @@ import rules.RuleFamily
 import rules.enumerateRules
 import rules.randomRules
 import simulation.SparseGrid
+import soup.generateC1
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -147,6 +148,7 @@ class HROTTest {
 
     @Test
     fun test() {
-        println(HROTGenerations("/034/3").generateRuletable())
+        val grid = SparseGrid(generateC1().toRLE(), rule = HROT("B3/S23"))
+        println(grid.animatedSvg(50))
     }
 }

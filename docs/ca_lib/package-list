@@ -262,6 +262,8 @@ $dokka.location:simulation/Grid///PointingToDeclaration/ca_lib/simulation/-grid
 $dokka.location:simulation/Grid/Grid/#/PointingToDeclaration/ca_lib/simulation/-grid/-grid.html
 $dokka.location:simulation/Grid/addApgcode/#simulation.Coordinate#kotlin.String/PointingToDeclaration/ca_lib/simulation/-grid/add-apgcode.html
 $dokka.location:simulation/Grid/addRLE/#simulation.Coordinate#kotlin.String/PointingToDeclaration/ca_lib/simulation/-grid/add-r-l-e.html
+$dokka.location:simulation/Grid/animatedSvg/#kotlin.Int#kotlin.Int#kotlin.Boolean#kotlin.Array[Colour]#kotlin.Int#kotlin.Int#kotlin.Boolean/PointingToDeclaration/ca_lib/simulation/-grid/animated-svg.html
+$dokka.location:simulation/Grid/animatedSvg/#simulation.CoordinateRange#kotlin.Int#kotlin.Int#kotlin.Boolean#kotlin.Array[Colour]#kotlin.Int#kotlin.Int#kotlin.Boolean/PointingToDeclaration/ca_lib/simulation/-grid/animated-svg.html
 $dokka.location:simulation/Grid/background/#/PointingToDeclaration/ca_lib/simulation/-grid/background.html
 $dokka.location:simulation/Grid/bounds/#/PointingToDeclaration/ca_lib/simulation/-grid/bounds.html
 $dokka.location:simulation/Grid/clear/#/PointingToDeclaration/ca_lib/simulation/-grid/clear.html
@@ -294,6 +296,8 @@ $dokka.location:simulation/Grid/set/#simulation.Coordinate#kotlin.Int/PointingTo
 $dokka.location:simulation/Grid/set/#simulation.Coordinate#kotlin.String/PointingToDeclaration/ca_lib/simulation/-grid/set.html
 $dokka.location:simulation/Grid/shift/#kotlin.Int#kotlin.Int/PointingToDeclaration/ca_lib/simulation/-grid/shift.html
 $dokka.location:simulation/Grid/shift/#simulation.CoordinateRange#kotlin.Int#kotlin.Int/PointingToDeclaration/ca_lib/simulation/-grid/shift.html
+$dokka.location:simulation/Grid/staticSvg/#kotlin.Boolean#kotlin.Array[Colour]#kotlin.Int#kotlin.Boolean/PointingToDeclaration/ca_lib/simulation/-grid/static-svg.html
+$dokka.location:simulation/Grid/staticSvg/#simulation.CoordinateRange#kotlin.Boolean#kotlin.Array[Colour]#kotlin.Int#kotlin.Boolean/PointingToDeclaration/ca_lib/simulation/-grid/static-svg.html
 $dokka.location:simulation/Grid/step/#kotlin.Int/PointingToDeclaration/ca_lib/simulation/-grid/step.html
 $dokka.location:simulation/Grid/toApgcode/#simulation.CoordinateRange/PointingToDeclaration/ca_lib/simulation/-grid/to-apgcode.html
 $dokka.location:simulation/Grid/toRLE/#/PointingToDeclaration/ca_lib/simulation/-grid/to-r-l-e.html

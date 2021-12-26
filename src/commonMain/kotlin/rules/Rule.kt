@@ -51,7 +51,7 @@ abstract class Rule {
             when(it) {
                 0 -> Colour(0, 0, 0)
                 1 -> if (numStates > 2) Colour(255, 0, 0) else Colour(255, 255, 255)
-                else -> Colour(255, (it - 2) * 255 / (numStates - 1), 0)
+                else -> Colour(255, (it - 1) * 255 / (numStates - 2), 0)
             }
         }
     }

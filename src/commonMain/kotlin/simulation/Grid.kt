@@ -1,5 +1,6 @@
 package simulation
 
+import Colour
 import Utils
 import patterns.Oscillator
 import patterns.Pattern
@@ -8,6 +9,7 @@ import rules.PLACEHOLDER_RULE
 import rules.Rule
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.time.Duration
 
 /**
  * Represents the grid on which the cellular automaton runs on
@@ -579,6 +581,116 @@ abstract class Grid : MutableIterable<Pair<Coordinate, Int>> {
      */
     open operator fun invoke(flip: Flip) {
         flip(flip)
+    }
+
+    /* Animation */
+
+    /**
+     * Creates a static svg displaying the cells in the grid
+     * @param transparent Is the background of the svg transparent?
+     * @param colours The colours of the cells in the svg
+     * @param cellSize The size of the cells in the svg
+     * @param emulated Should the svg should an emulation for B0 rules?
+     */
+    fun staticSvg(transparent: Boolean = true, colours: Array<Colour> = rule.colours, cellSize: Int = 5,
+                  emulated: Boolean = true): String {
+        updateBounds()
+        return staticSvg(bounds, transparent, colours, cellSize, emulated)
+    }
+
+    /**
+     * Creates a static svg displaying the cells in the specified range of coordinates
+     * @param range The range of coordinates
+     * @param transparent Is the background of the svg transparent?
+     * @param colours The colours of the cells in the svg
+     * @param cellSize The size of the cells in the svg
+     * @param emulated Should the svg should an emulation for B0 rules?
+     */
+    fun staticSvg(range: CoordinateRange, transparent: Boolean = true,
+                  colours: Array<Colour> = rule.colours, cellSize: Int = 5,
+                  emulated: Boolean = true): String = with(StringBuilder()) {
+        // SVG Header
+        append("<svg height=\"${cellSize * (range.end.y - range.start.y + 1)}\" " +
+                "width=\"${cellSize * (range.end.x - range.start.x + 1)}\" " +
+                "xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink= \"http://www.w3.org/1999/xlink\">\n")
+
+        // Loop through all the cells
+        for (coordinate in range) {
+            if (transparent && this@Grid[coordinate, emulated] == 0) continue  // Ignore 0 if background is transparent
+
+            // Adding the cell as a rectangle
+            val (red, green, blue) = colours[this@Grid[coordinate, emulated]]
+            append("<rect x=\"${cellSize * (coordinate.x - range.start.x)}\" y=\"${cellSize * (coordinate.y - range.start.y)}\" " +
+                    "width=\"$cellSize\" height=\"$cellSize\" style=\"fill:rgb($red,$green,$blue);stroke-width:0\"/>\n")
+        }
+
+        append("</svg>")
+
+        this
+    }.toString()
+
+    /**
+     * Creates an animated svg displaying the cells in the grid
+     * @param generations The number of generations to generate the svg for
+     * @param step The step size that should be taken in generating the svg
+     * @param transparent Is the background of the svg transparent?
+     * @param colours The colours of the cells in the svg
+     * @param cellSize The size of the cells in the svg
+     * @param duration The duration of the animation in milliseconds
+     * @param emulated Should the svg should an emulation for B0 rules?
+     */
+    fun animatedSvg(generations: Int, step: Int = 1, transparent: Boolean = true,
+                    colours: Array<Colour> = rule.colours, cellSize: Int = 5, duration: Int = 10000,
+                    emulated: Boolean = true): String {
+        val newGrid = this.deepCopy().step(generations)
+        newGrid.updateBounds()
+        return animatedSvg(newGrid.bounds, generations, step, transparent, colours, cellSize, duration, emulated)
+    }
+
+    /**
+     * Creates an animated svg displaying the cells in the specified range of coordinates
+     * @param range The range of coordinates
+     * @param generations The number of generations to generate the svg for
+     * @param step The step size that should be taken in generating the svg
+     * @param transparent Is the background of the svg transparent?
+     * @param colours The colours of the cells in the svg
+     * @param cellSize The size of the cells in the svg
+     * @param duration The duration of the animation in milliseconds
+     * @param emulated Should the svg should an emulation for B0 rules?
+     */
+    fun animatedSvg(range: CoordinateRange, generations: Int, step: Int = 1, transparent: Boolean = true,
+                    colours: Array<Colour> = rule.colours, cellSize: Int = 5, duration: Int = 10000,
+                    emulated: Boolean = true): String {
+        val phases = generateSequence(this.deepCopy()) { it.deepCopy().step(step) }.take(generations / step).toList()
+        return with(StringBuilder()) {
+            // SVG Header
+            append("<svg height=\"${cellSize * (range.end.y - range.start.y + 1)}\" " +
+                    "width=\"${cellSize * (range.end.x - range.start.x + 1)}\" " +
+                    "xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink= \"http://www.w3.org/1999/xlink\">\n")
+
+            // Loop through all the cells
+            for (coordinate in range) {
+                // Adding the cell as a rectangle
+                append("<rect x=\"${cellSize * (coordinate.x - range.start.x)}\" " +
+                        "y=\"${cellSize * (coordinate.y - range.start.y)}\" " +
+                        "width=\"$cellSize\" height=\"$cellSize\" style=\"stroke-width:0\">\n")
+
+                // Generate list of cell colours
+                val animation = phases.joinToString(";") {
+                    val (red, green, blue) = colours[it[coordinate, emulated]]
+
+                    if (transparent && it[coordinate, emulated] == 0) "rgba($red,$green,$blue,0)"
+                    else "rgb($red,$green,$blue)"
+                }
+
+                append("<animate attributeName=\"fill\" values=\"$animation\" dur=\"${duration}ms\" repeatCount=\"indefinite\" />\n")
+                append("</rect>\n")
+            }
+
+            append("</svg>")
+
+            this
+        }.toString()
     }
 
     /* Misc Functions */

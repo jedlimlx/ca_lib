@@ -93,8 +93,8 @@ class HROTGenerations : BaseHROT {
                 survival = readTransition(survivalString)
             }
             rulestring.matches(regex[1]) -> {
-                val tokens = rulestring.split("/")
-                val tokensStripped = rulestring.replace(Regex("[BbSsCcGg]"), "").split("/")
+                val tokens = rulestring.replace(Regex("[VH]"), "").split("/")
+                val tokensStripped = rulestring.replace(Regex("[BbSsCcGgVH]"), "").split("/")
 
                 // Reading birth and survival conditions
                 birth =
