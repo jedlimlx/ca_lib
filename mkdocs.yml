@@ -1,0 +1,11 @@
+site_name: ca_lib
+
+nav:
+  - Getting Started: index.md
+  - Structure: structure.md
+  - Patterns:
+    - Pattern Editing: pattern-editing.md
+    - Pattern Analysis: pattern-analysis.md
+  - Custom Rules: custom-rules.md
+  - API Reference: api-reference/index.html
+theme: readthedocs

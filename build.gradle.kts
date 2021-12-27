@@ -62,5 +62,5 @@ kotlin {
 }
 
 tasks.withType<DokkaTask>().configureEach {
-    outputDirectory.set(File("${System.getProperty("user.dir")}/docs"))
+    outputDirectory.set(File("${System.getProperty("user.dir")}/docs/api-reference"))
 }

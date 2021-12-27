@@ -4,6 +4,7 @@ import rules.Rule
 import rules.ruleRange
 import simulation.Coordinate
 import simulation.Grid
+import kotlin.math.abs
 
 /**
  * Represents a spaceship in a cellular automaton
@@ -40,15 +41,15 @@ open class Spaceship(val dx: Int, val dy: Int, val period: Int, val phases: Arra
             period == 0 -> "still life"
             dx == 0 && dy == 0 -> "oscillator"
             dx == 0 || dy == 0 -> "orthogonal"
-            dx == dy -> "diagonal"
-            dx == 2 * dy || dy == 2 * dx -> "knight"
-            dx == 3 * dy || dy == 3 * dx -> "camel"
-            dx == 4 * dy || dy == 4 * dx -> "giraffe"
-            dx == 5 * dy || dy == 5 * dx -> "ibis"
-            dx == 6 * dy || dy == 6 * dx -> "flamingo"
-            2 * dx == 3 * dy || 2 * dy == 3 * dx -> "zebra"
-            3 * dx == 4 * dy || 3 * dy == 4 * dx -> "antelope"
-            5 * dx == 23 * dy || 5 * dy == 23 * dx -> "waterbear"
+            abs(dx) == abs(dy) -> "diagonal"
+            abs(dx) == 2 * abs(dy) || abs(dy) == 2 * abs(dx) -> "knight"
+            abs(dx) == 3 * abs(dy) || abs(dy) == 3 * abs(dx) -> "camel"
+            abs(dx) == 4 * abs(dy) || abs(dy) == 4 * abs(dx) -> "giraffe"
+            abs(dx) == 5 * abs(dy) || abs(dy) == 5 * abs(dx) -> "ibis"
+            abs(dx) == 6 * abs(dy) || abs(dy) == 6 * abs(dx) -> "flamingo"
+            2 * abs(dx) == 3 * abs(dy) || 2 * abs(dy) == 3 * abs(dx) -> "zebra"
+            3 * abs(dx) == 4 * abs(dy) || 3 * abs(dy) == 4 * abs(dx) -> "antelope"
+            5 * abs(dx) == 23 * abs(dy) || 5 * abs(dy) == 23 * abs(dx) -> "waterbear"
             else -> "oblique"
         }
     }
