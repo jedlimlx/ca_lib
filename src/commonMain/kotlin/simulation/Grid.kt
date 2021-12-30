@@ -320,6 +320,120 @@ abstract class Grid : MutableIterable<Pair<Coordinate, Int>> {
         }
     }
 
+    /**
+     * Adds the 2 grids together.
+     * If both grids have live cells in the same place, the cells of the first grid take precedence.
+     * @param other The other grid to add to the current grid
+     * @return Returns the new grid
+     */
+    operator fun plus(other: Grid): Grid {
+        val newGrid = this.deepCopy()
+        other.forEach { (coordinate, state) -> newGrid[coordinate] = state }
+
+        return newGrid
+    }
+
+    /**
+     * Adds the 2 grids together.
+     * If both grids have live cells in the same place, the cells of the first grid take precedence.
+     * @param other The other grid to add to the current grid
+     * @return Returns the new grid
+     */
+    infix fun union(other: Grid): Grid = this + other
+
+    /**
+     * Performs the bitwise operation AND on the grids cell by cell.
+     * @param other The other grid to perform the operation with
+     * @return Returns the new grid
+     */
+    infix fun and(other: Grid): Grid {
+        val newGrid = this.deepCopy()
+        newGrid.clear()
+
+        forEach { (coordinate, state) -> if (other[coordinate] == state) newGrid[coordinate] = state }
+        return newGrid
+    }
+
+    /**
+     * Performs the bitwise operation AND on the grids cell by cell.
+     * @param other The other grid to perform the operation with
+     * @return Returns the new grid
+     */
+    infix fun intersect(other: Grid): Grid = this and other
+
+
+    /**
+     * Inverts the selected portion of the grid
+     * @param range The rectangular region in which the grid should be inverted
+     */
+    fun invert(range: CoordinateRange) {
+        for (coordinate in range) {
+            this[coordinate] = when (this[coordinate]) {
+                0 -> 1
+                else -> 0
+            }
+        }
+    }
+
+    /* Pattern Matching */
+
+    /**
+     * Finds the coordinate of the top-left corner of a portion of the grid that matches the given pattern.
+     * If unsuccessful, returns null.
+     * @param grid The pattern to search for
+     * @return Returns the coordinate of the portion of the grid that matches the given pattern if successful, else null
+     */
+    fun find(grid: Grid): Coordinate? {
+        updateBounds()
+        grid.updateBounds()
+
+        for (coordinate in bounds) {
+            var broken = false
+            for (coordinate2 in grid.bounds) {
+                if (grid[coordinate2] != grid[coordinate + coordinate2 - grid.bounds.start]) {
+                    broken = true
+                    break
+                }
+            }
+
+            if (!broken) return coordinate
+        }
+
+        return null
+    }
+
+    /**
+     * Finds all possible portions of the grid that match the given pattern
+     * @param grid The pattern to search for
+     * @return Returns a list of all possible coordinates of portions of the grid that match the given pattern
+     */
+    fun findAll(grid: Grid): List<Coordinate> {
+        updateBounds()
+        grid.updateBounds()
+
+        val list = arrayListOf<Coordinate>()
+        for (coordinate in bounds) {
+            var broken = false
+            for (coordinate2 in grid.bounds) {
+                if (grid[coordinate2] != grid[coordinate + coordinate2 - grid.bounds.start]) {
+                    broken = true
+                    break
+                }
+            }
+
+            if (!broken) list.add(coordinate)
+        }
+
+        return list
+    }
+
+    /**
+     * Finds all instances of the specified pattern in the grid and replaces it with a new pattern
+     * @param old The pattern to be replaced
+     * @param replacement The pattern to replace the old pattern with
+     */
+    fun replace(old: Grid, replacement: Grid) = findAll(old).forEach { this[it] = replacement }
+
     /* RLE and Apgcode Loading */
 
     /**
@@ -509,6 +623,36 @@ abstract class Grid : MutableIterable<Pair<Coordinate, Int>> {
     open operator fun set(coordinate: Coordinate, pattern: String) {
         if (pattern.matches(Regex("(x[pqs]_)?[0-9a-z_]*"))) addApgcode(coordinate, pattern)
         else addRLE(coordinate, pattern)
+    }
+
+    /**
+     * Adds the pattern at the specified starting coordinate
+     * @param x The x coordinate of the pattern
+     * @param y The y coordinate of the pattern
+     * @param pattern The pattern to add (automatically detects if its an apgcode or an RLE)
+     */
+    open operator fun set(x: Int, y: Int, pattern: String) {
+        this[Coordinate(x, y)] = pattern
+    }
+
+    /**
+     * Adds the pattern at the specified starting coordinate
+     * @param coordinate The coordinate where the top-left corner of the pattern is placed
+     * @param pattern The pattern to add
+     */
+    open operator fun set(coordinate: Coordinate, pattern: Grid) {
+        pattern.updateBounds()
+        pattern.forEach { this[it.first + coordinate - pattern.bounds.start] = it.second }
+    }
+
+    /**
+     * Adds the pattern at the specified starting coordinate
+     * @param x The x coordinate of the pattern
+     * @param y The y coordinate of the pattern
+     * @param pattern The pattern to add
+     */
+    open operator fun set(x: Int, y: Int, pattern: Grid) {
+        this[x, y] = pattern
     }
 
     /**

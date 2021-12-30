@@ -1,6 +1,7 @@
 package simulation
 
 import readResource
+import soup.generateC1
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.todo
@@ -111,5 +112,45 @@ class DenseGridTest {
             // Not yet implemented
             todo { assertEquals(correctApgcode, grid.toApgcode()) }
         }
+    }
+
+    @Test
+    fun invert_pattern_correctly() {
+        var tokens: List<String>
+        val testCases = readResource("simulation/invertTest.csv").split("\n")
+
+        for (i in 1 until testCases.size) {
+            tokens = testCases[i].trim().split(",")
+
+            // Load the RLE
+            val grid = DenseGrid(tokens[0])
+            grid.updateBounds()
+
+            grid.invert(grid.bounds)
+            assertEquals(tokens[1], grid.toRLE())
+        }
+    }
+
+    @Test
+    fun perform_bitwise_operations_correctly() {
+        var tokens: List<String>
+        val testCases = readResource("simulation/bitwiseTest.csv").split("\n")
+
+        for (i in 1 until testCases.size) {
+            tokens = testCases[i].trim().split(",")
+
+            // Load the RLE
+            val grid = DenseGrid(tokens[0])
+            val grid2 = DenseGrid(tokens[1])
+
+            assertEquals(tokens[2], (grid intersect grid2).toRLE())
+            assertEquals(tokens[3], (grid + grid2).toRLE())
+        }
+    }
+
+    @Test
+    fun no_concurrent_modification_exception() {
+        val grid = SparseGrid(generateC1().toRLE())
+        grid.forEach { (coordinate, _) -> grid[coordinate] = 1 }
     }
 }

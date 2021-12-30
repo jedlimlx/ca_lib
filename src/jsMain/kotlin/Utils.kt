@@ -10,6 +10,8 @@ actual fun readResource(resource: String): String {
         "shiftTest.csv" -> require("shiftTest.csv") as String
         "flipTest.csv" -> require("flipTest.csv") as String
         "rotateTest.csv" -> require("rotateTest.csv") as String
+        "invertTest.csv" -> require("invertTest.csv") as String
+        "bitwiseTest.csv" -> require("bitwiseTest.csv") as String
 
         "oscillatorStats.csv" -> require("oscillatorStats.csv") as String
         "spaceshipStats.csv" -> require("spaceshipStats.csv") as String

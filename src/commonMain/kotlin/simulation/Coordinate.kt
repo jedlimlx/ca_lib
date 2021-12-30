@@ -89,7 +89,7 @@ internal class CoordinateIterator(val start: Coordinate, val endInclusive: Coord
     var initValue = start + Coordinate(-1, 0)
 
     override fun hasNext(): Boolean {
-        return initValue.x <= endInclusive.x && initValue.y <= endInclusive.y
+        return (initValue.x <= endInclusive.x && initValue.y <= endInclusive.y) && initValue != endInclusive
     }
 
     override fun next(): Coordinate {

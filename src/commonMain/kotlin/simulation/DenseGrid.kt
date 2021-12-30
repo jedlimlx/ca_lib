@@ -150,7 +150,7 @@ class DenseGrid(
 }
 
 internal class DenseGridIterator(
-    val grid: DenseGrid, arr: Array<IntArray>,
+    val grid: Grid, arr: Array<IntArray>,
     startingCoordinate: Coordinate
 ) : MutableIterator<Pair<Coordinate, Int>> {
     var list: ArrayList<Pair<Coordinate, Int>> = arrayListOf()

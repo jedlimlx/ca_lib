@@ -80,18 +80,30 @@ class SparseGrid(pattern: String = "", rule: Rule = PLACEHOLDER_RULE) : Grid() {
         return grid
     }
 
-    override fun iterator(): MutableIterator<Pair<Coordinate, Int>> = SparseGridIterator(dictionary, background)
+    override fun iterator(): MutableIterator<Pair<Coordinate, Int>> = SparseGridIterator(this, dictionary)
 }
 
-internal class SparseGridIterator(dictionary: HashMap<Coordinate, Int>, val background: Int) :
-    MutableIterator<Pair<Coordinate, Int>> {
-    val iterator = dictionary.iterator()
+internal class SparseGridIterator(val grid: Grid, dictionary: Map<Coordinate, Int>) : MutableIterator<Pair<Coordinate, Int>> {
+    var list: ArrayList<Pair<Coordinate, Int>> = arrayListOf()
+    var lastElementReturned = Coordinate()
+
+    val iterator: MutableIterator<Pair<Coordinate, Int>>
+
+    init {
+        for ((coordinate, _) in dictionary)
+            list.add(Pair(coordinate, grid[coordinate]))
+
+        iterator = list.iterator()
+    }
 
     override fun hasNext(): Boolean = iterator.hasNext()
     override fun next(): Pair<Coordinate, Int> {
-        val entry = iterator.next()
-        return Pair(entry.key, Utils.convert(entry.value, background))
+        lastElementReturned = iterator.next().first
+        return Pair(lastElementReturned, grid[lastElementReturned])
     }
 
-    override fun remove() = iterator.remove()
+    override fun remove() {
+        grid[lastElementReturned] = grid.background
+        iterator.remove()
+    }
 }
