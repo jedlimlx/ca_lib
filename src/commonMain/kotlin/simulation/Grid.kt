@@ -377,6 +377,8 @@ abstract class Grid : MutableIterable<Pair<Coordinate, Int>> {
 
     /* Pattern Matching */
 
+    // TODO (More efficient pattern matching)
+
     /**
      * Finds the coordinate of the top-left corner of a portion of the grid that matches the given pattern.
      * If unsuccessful, returns null.
@@ -390,7 +392,7 @@ abstract class Grid : MutableIterable<Pair<Coordinate, Int>> {
         for (coordinate in bounds) {
             var broken = false
             for (coordinate2 in grid.bounds) {
-                if (grid[coordinate2] != grid[coordinate + coordinate2 - grid.bounds.start]) {
+                if (grid[coordinate2] != this[coordinate + coordinate2 - grid.bounds.start]) {
                     broken = true
                     break
                 }
@@ -415,7 +417,7 @@ abstract class Grid : MutableIterable<Pair<Coordinate, Int>> {
         for (coordinate in bounds) {
             var broken = false
             for (coordinate2 in grid.bounds) {
-                if (grid[coordinate2] != grid[coordinate + coordinate2 - grid.bounds.start]) {
+                if (grid[coordinate2] != this[coordinate + coordinate2 - grid.bounds.start]) {
                     broken = true
                     break
                 }
@@ -652,7 +654,7 @@ abstract class Grid : MutableIterable<Pair<Coordinate, Int>> {
      * @param pattern The pattern to add
      */
     open operator fun set(x: Int, y: Int, pattern: Grid) {
-        this[x, y] = pattern
+        this[Coordinate(x, y)] = pattern
     }
 
     /**

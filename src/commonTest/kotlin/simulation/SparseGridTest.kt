@@ -2,6 +2,7 @@ package simulation
 
 import readResource
 import soup.generateC1
+import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.todo
@@ -110,6 +111,23 @@ class SparseGridTest {
             assertEquals(tokens[2], (grid intersect grid2).toRLE())
             assertEquals(tokens[3], (grid + grid2).toRLE())
         }
+    }
+
+    @Test
+    fun correctly_match_patterns() {
+        val patternToMatch = generateC1(5, 5)
+
+        val grid = SparseGrid()
+        val coordinates = arrayListOf<Coordinate>()
+        for (coordinate in Coordinate() .. Coordinate(6, 6)) {
+            if (Random.nextInt(0, 5) == 0) {
+                grid[coordinate.x * 5, coordinate.y * 5] = patternToMatch
+                coordinates.add(Coordinate(coordinate.x * 5, coordinate.y * 5))
+            } else grid[coordinate.x * 5, coordinate.y * 5] = generateC1(5, 5)
+        }
+
+        println(grid.toRLE())
+        assertEquals(coordinates.toSet(), grid.findAll(patternToMatch).toSet())
     }
 
     @Test
