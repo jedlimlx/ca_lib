@@ -3,6 +3,7 @@ package rules.hrot
 import readResource
 import rules.RuleFamily
 import rules.enumerateRules
+import rules.int.transitions.R1MooreINT
 import rules.randomRules
 import simulation.SparseGrid
 import soup.generateC1
@@ -144,11 +145,5 @@ class HROTTest {
             randomRules(HROT("B3/S23"), HROT("B35678/S23678"), 10).take(100).map { it.toString() }.toList(),
             randomRules(HROT("B3/S23"), HROT("B35678/S23678"), 10).take(100).map { it.toString() }.toList()
         )
-    }
-
-    @Test
-    fun test() {
-        val grid = SparseGrid(generateC1().toRLE(), rule = HROT("B3/S23"))
-        println(grid.animatedSvg(50))
     }
 }
