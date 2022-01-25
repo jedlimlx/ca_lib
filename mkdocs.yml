@@ -1,5 +1,36 @@
 site_name: ca_lib
 
+theme:
+  name: 'material'
+
+  # 404 page
+  static_templates:
+    - 404.html
+
+  # Necessary for search to work properly
+  include_search_page: false
+  search_index_only: true
+
+  # Default values, taken from mkdocs_theme.yml
+  language: en
+  font:
+    text: Roboto
+    code: Roboto Mono
+  favicon: assets/favicon.png
+  icon:
+    logo: logo
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - tables
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+
 nav:
   - Getting Started: index.md
   - Structure: structure.md
@@ -8,4 +39,3 @@ nav:
     - Pattern Analysis: pattern-analysis.md
   - Custom Rules: custom-rules.md
   - API Reference: api-reference/index.html
-theme: readthedocs

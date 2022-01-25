@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+
+pip3 install mkdocs
+pip3 install mkdocs-material
+
+./gradlew dokkaHtml
+mkdocs build

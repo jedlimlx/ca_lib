@@ -361,7 +361,6 @@ abstract class Grid : MutableIterable<Pair<Coordinate, Int>> {
      */
     infix fun intersect(other: Grid): Grid = this and other
 
-
     /**
      * Inverts the selected portion of the grid
      * @param range The rectangular region in which the grid should be inverted
