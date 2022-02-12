@@ -31,6 +31,14 @@ abstract class RuleFamily : Rule() {
     internal abstract fun fromRulestring(rulestring: String): RuleFamily
 
     /**
+     * Checks if a rule is between 2 other rules
+     * @param minRule The minimum rule
+     * @param maxRule The maximum rule
+     * @return Returns true if the rule is between the two rules, false otherwise
+     */
+    internal abstract fun between(minRule: RuleFamily, maxRule: RuleFamily): Boolean
+
+    /**
      * The range of rules in which the provided transitions will occur
      * @return Returns a pair of rules, the first is the minimum rule and the second is the maximum rule
      */
@@ -57,7 +65,7 @@ abstract class RuleFamily : Rule() {
      * @param maxRule The maximum rule of the rule range
      * @return Returns a sequence containing all rules within the specified rule range
      */
-    operator fun rangeTo(maxRule: RuleFamily) = enumerate(this, maxRule)
+    operator fun rangeTo(maxRule: RuleFamily): RuleRange = RuleRange(this, maxRule)
 
     /**
      * Generates a ruletable for the rule which can be used in Golly / Apgsearch

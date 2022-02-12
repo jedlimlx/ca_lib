@@ -53,6 +53,10 @@ class INT : BaseINT {
 
     override fun fromRulestring(rulestring: String): INT = INT(rulestring)
 
+    override fun between(minRule: RuleFamily, maxRule: RuleFamily): Boolean {
+        TODO("Not yet implemented")
+    }
+
     override fun ruleRange(transitionsToSatisfy: Iterable<List<Int>>): Pair<RuleFamily, RuleFamily> {
         TODO("Not yet implemented")
     }

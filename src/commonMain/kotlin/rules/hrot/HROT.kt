@@ -142,6 +142,12 @@ class HROT : BaseHROT {
 
     override fun fromRulestring(rulestring: String): HROT = HROT(rulestring)
 
+    override fun between(minRule: RuleFamily, maxRule: RuleFamily): Boolean {
+        if (minRule !is HROT || maxRule !is HROT) return false
+        return birth.containsAll(minRule.birth) && survival.containsAll(minRule.survival) &&
+                maxRule.birth.containsAll(birth) && maxRule.survival.containsAll(survival)
+    }
+
     override fun ruleRange(transitionsToSatisfy: Iterable<List<Int>>): Pair<HROT, HROT> {
         val maxCount = weights?.sum() ?: neighbourhood[0].size
 
