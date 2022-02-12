@@ -1,4 +1,4 @@
-package rules.int.transitions
+package rules.nontotalistic.transitions
 
 import rules.ruleloader.ruletable.DisjointCyclesSymmetry
 import rules.ruleloader.ruletable.Symmetry

@@ -17,7 +17,7 @@ class DisjointCyclesSymmetry : Symmetry {
      */
     constructor(symmetry: String) {
         disjointCycles = Regex("\\[(\\((\\d+,?\\s*)+\\),?\\s*)+]").findAll(symmetry).map {
-            Regex("(\\d+,?\\s*)+").findAll(it.groupValues[1]).map {
+            Regex("(\\d+,?\\s*)+").findAll(it.groupValues[0]).map {
                 it.groupValues[0].split(Regex(",\\s*")).map { it.toInt() }.toIntArray()
             }.toList().toTypedArray()
         }.toList().toTypedArray()
@@ -60,7 +60,7 @@ class DisjointCyclesSymmetry : Symmetry {
         while (i < permutations.size) {
             currentPermutation = permutations[i++]
 
-            // Compose the current permutation with the and include any previously-unseen elements to the permutation group
+            // Compose the current permutation with the and include any previously unseen elements to the permutation group
             for (symmetry1 in symmetries) {
                 // Composing permutations
                 composedPermutation = symmetry1.map { currentPermutation[it - 1] }.toList()

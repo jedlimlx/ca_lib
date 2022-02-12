@@ -14,10 +14,11 @@ val ruletable = ruletable {
     name = "Frogs"
     table(numStates = 3, neighbourhood = moore(1)) {
         variable("any") { 0 .. 2 }
+        variable("dead") { listOf(0, 2) }
         
         comment("Birth")
         outerTotalistic {
-            input = "0"
+            input = "dead"
             output = "1"
             transitions { 3 .. 4 }
         }
@@ -30,7 +31,8 @@ val ruletable = ruletable {
         }
 
         comment("Everything else dies")
-        transition { "1 ${"any ".repeat(8)}0" }
+        transition { "1 ${"any ".repeat(8)}2" }
+        transition { "2 ${"any ".repeat(8)}0" }
     }
     
     colours(numStates = 3) { 

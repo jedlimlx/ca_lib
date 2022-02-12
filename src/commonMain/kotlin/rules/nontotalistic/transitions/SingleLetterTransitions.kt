@@ -1,4 +1,4 @@
-package rules.int.transitions
+package rules.nontotalistic.transitions
 
 import readResource
 
@@ -64,7 +64,7 @@ abstract class SingleLetterTransitions: INTTransitions() {
                 // Clear the previous transition block
                 if (currNum != -1 && block.length - 1 > transitionLookup[currNum].size / 2) {
                     append(currNum)  // Append the number to the builder
-                    append("-")
+                    if (block.length < transitionLookup[currNum].size + 1) append("-")
                     transitionLookup[currNum].keys.forEach {
                         if (it !in block) append(it)
                     }

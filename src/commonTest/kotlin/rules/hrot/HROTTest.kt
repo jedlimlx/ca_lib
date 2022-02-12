@@ -3,10 +3,8 @@ package rules.hrot
 import readResource
 import rules.RuleFamily
 import rules.enumerateRules
-import rules.int.transitions.R1MooreINT
 import rules.randomRules
 import simulation.SparseGrid
-import soup.generateC1
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

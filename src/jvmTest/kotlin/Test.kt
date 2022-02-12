@@ -1,11 +1,17 @@
-import rules.int.transitions.R1MooreINT
+import rules.nontotalistic.rules.INT
+import rules.nontotalistic.rules.INT_NEIGHBOURHOODS
+import rules.nontotalistic.transitions.R1MooreINT
+import simulation.SparseGrid
 import kotlin.test.Test
 
 class Test {
     @Test
     fun test() {
-        val transition = R1MooreINT("2-ace")
-        println(transition.transitions)
-        println(transition.transitionString)
+        val rule = INT("B3/S23")
+
+        val grid = SparseGrid("oob\$boo\$bob!", rule)
+        grid.step(10)
+
+        println(grid)
     }
 }

@@ -1,4 +1,4 @@
-package rules.int.transitions
+package rules.nontotalistic.transitions
 
 import rules.ruleloader.ruletable.Symmetry
 import simulation.Coordinate
@@ -36,6 +36,20 @@ abstract class INTTransitions {
      * Each individual transition expressed as a string
      */
     abstract val transitionStrings: Set<String>
+
+    /**
+     * Checks if the given transition is contained in this transition
+     * @param array The transition to check
+     * @return Returns true if the given transition is contained in this transition and false otherwise
+     */
+    operator fun contains(array: IntArray): Boolean = array.toList() in transitions
+
+    /**
+     * Checks if the given transition is contained in this transition
+     * @param list The transition to check
+     * @return Returns true if the given transition is contained in this transition and false otherwise
+     */
+    operator fun contains(list: List<Int>): Boolean = list in transitions
 
     /**
      * Parses the given transition string
