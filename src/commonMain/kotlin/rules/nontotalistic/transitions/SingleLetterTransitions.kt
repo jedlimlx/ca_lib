@@ -10,7 +10,11 @@ abstract class SingleLetterTransitions: INTTransitions() {
      * A lookup table for the transitions
      */
     abstract val transitionLookup: Array<Map<Char, List<Int>>>
-    // abstract val reverseTransitionLookup: HashMap<List<Int>, String>
+
+    /**
+     * A lookup table for the transition string given the transition
+     */
+    abstract val reverseTransitionLookup: Map<List<Int>, String>
 
     override val regex: Regex by lazy {
         Regex("(" + transitionLookup.mapIndexed { index, charMap ->
@@ -82,22 +86,40 @@ abstract class SingleLetterTransitions: INTTransitions() {
     }.toString()
 
     /**
+     * Loads the given transitions into the INT transition
+     * @param transitions The transitions to load
+     */
+    protected fun loadTransitions(transitions: Iterable<List<Int>>) {
+        transitions.forEach {
+            _transitions.addAll(symmetry(it))
+            _transitionStrings.add(reverseTransitionLookup[it] ?: throw IllegalArgumentException("Invalid transition: $it"))
+        }
+    }
+
+    /**
      * Reads the transition lookup table from a txt resource file
      * @param resource The contents of the txt resource file
-     * @return Returns the lookup table
+     * @return Returns the lookup table and the reversed lookup table
      */
-    protected fun readTransitionsFromResources(resource: String): Array<Map<Char, List<Int>>> {
+    protected fun readTransitionsFromResources(resource: String): Pair<Array<Map<Char, List<Int>>>, Map<List<Int>, String>> {
         val transitionLookup: ArrayList<MutableMap<Char, List<Int>>> = arrayListOf()
+        val reverseTransitionLookup: MutableMap<List<Int>, String> = mutableMapOf()
 
+        var currDigit = '0'
         val string = readResource(resource)
         for (line in string.split("\n")) {
             if (line.trim().isNotEmpty()) {
-                if (line.trim()[0].isDigit()) transitionLookup.add(HashMap())
-                else transitionLookup.last()[line[0]] = line.trim().split(" ")
-                    .subList(1, neighbourhood.size + 1).map { it.toInt() }
+                if (line.trim()[0].isDigit()) {
+                    currDigit = line.trim()[0]
+                    transitionLookup.add(HashMap())
+                } else {
+                    val lst = line.trim().split(" ").subList(1, neighbourhood.size + 1).map { it.toInt() }
+                    transitionLookup.last()[line[0]] = lst
+                    reverseTransitionLookup[lst] = "$currDigit${line[0]}"
+                }
             }
         }
 
-        return transitionLookup.toTypedArray()
+        return Pair(transitionLookup.toTypedArray(), reverseTransitionLookup)
     }
 }

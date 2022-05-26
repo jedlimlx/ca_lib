@@ -1,6 +1,9 @@
 package rules.ruleloader.builders
 
 import moore
+import rules.nontotalistic.rules.INT_NEIGHBOURHOODS
+import rules.nontotalistic.rules.parseTransition
+import rules.nontotalistic.transitions.INTTransitions
 import rules.ruleloader.ruletable.*
 import simulation.Coordinate
 
@@ -71,6 +74,17 @@ class RuletableDirectiveBuilder(
      */
     fun outerTotalistic(init: OuterTotalisticBuilder.() -> Unit) {
         val builder = OuterTotalisticBuilder(neighbourhood)
+        builder.init()
+
+        addTransitions(builder.build())
+    }
+
+    /**
+     * Adds the specified isotropic non-totalistic transitions to the @TABLE directive
+     * @param init A function specifying the isotropic non-totalistic transitions to be added
+     */
+    fun intTransition(init: INTBuilder.() -> Unit) {
+        val builder = INTBuilder()
         builder.init()
 
         addTransitions(builder.build())
@@ -157,7 +171,7 @@ class OuterTotalisticBuilder(val neighbourhood: Array<Coordinate>, var weights: 
      * @param var1 The variable / state representing 1
      * @param transition The number of [var1] in the transition
      */
-    fun transition(var0: String = "0", var1: String = "1", transition: Int) {
+    fun transition(transition: Int, var0: String = "0", var1: String = "1") {
         transition { mapOf(var0 to neighbourhood.size - transition, var1 to transition) }
     }
 
@@ -168,7 +182,62 @@ class OuterTotalisticBuilder(val neighbourhood: Array<Coordinate>, var weights: 
      * @param transitions A function returning a list of the numbers of [var1] in each transition
      */
     fun transitions(var0: String = "0", var1: String = "1", transitions: () -> Iterable<Int>) =
-        transitions().forEach { transition(var0, var1, it) }
+        transitions().forEach { transition(it, var0, var1) }
+
+    /**
+     * Constructs the transitions to be added to the @TABLE directive
+     * @return Returns the transitions to be added to the @TABLE directive
+     */
+    fun build() = transitions
+}
+
+/**
+ * A helper class for constructing isotropic non-totalistic transitions for the @TABLE directive
+ */
+@TableDirectiveMarker
+class INTBuilder {
+    /**
+     * The input cell of the transition
+     */
+    var input: String = "0"
+
+    /**
+     * The output cell of the transition
+     */
+    var output: String = "1"
+
+    /**
+     * The transitions to be added to the @TABLE directive
+     */
+    private var transitions: ArrayList<List<String>> = arrayListOf()
+
+    /**
+     * Adds the specified transition to the @TABLE directive
+     * @param var0 The variable / state representing 0
+     * @param var1 The variable / state representing 1
+     * @param neighbourhoodString The neighborhood string of the INT transition
+     * @param transition The string representing the INT transitions in this transition
+     */
+    fun transition(transition: String, var0: String = "0", var1: String = "1", neighbourhoodString: String = "M") {
+        transitions.addAll(
+            parseTransition(neighbourhoodString, transition).transitions.map {
+                // Change the 0s to var0 and the 1s to var1
+                listOf(input) + it.map { if (it == 0) var0 else var1 } + listOf(output)
+            }
+        )
+    }
+
+    /**
+     * Adds the specified transition to the @TABLE directive
+     * @param var0 The variable / state representing 0
+     * @param var1 The variable / state representing 1
+     * @param neighbourhoodString The neighborhood string of the INT transition
+     * @param transitions The string representing the INT transitions in this transition
+     */
+    fun transitions(var0: String = "0", var1: String = "1",
+                    neighbourhoodString: String = "M", transitions: () -> Iterable<String>) {
+        transitions().forEach { transition(var0, var1, neighbourhoodString, it) }
+    }
 
     /**
      * Constructs the transitions to be added to the @TABLE directive

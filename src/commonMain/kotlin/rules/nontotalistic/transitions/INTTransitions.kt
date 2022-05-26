@@ -6,11 +6,11 @@ import simulation.Coordinate
 /**
  * Represents a set of isotropic non-totalistic transitions
  */
-abstract class INTTransitions {
+abstract class INTTransitions : Collection<List<Int>> {
     /**
      * The string representing the transition
      */
-    val transitionString: String by lazy { canoniseTransition()  }
+    val transitionString: String by lazy { canoniseTransition() }
 
     /**
      * The symmetry of the transition
@@ -38,21 +38,50 @@ abstract class INTTransitions {
     abstract val transitionStrings: Set<String>
 
     /**
+     * The number of transitions in the INT transition set
+     */
+    abstract override val size: Int
+
+    /**
      * Checks if the given transition is contained in this transition
      * @param array The transition to check
      * @return Returns true if the given transition is contained in this transition and false otherwise
      */
-    operator fun contains(array: IntArray): Boolean = array.toList() in transitions
+    operator fun contains(array: IntArray): Boolean = array.toList() in this
 
     /**
      * Checks if the given transition is contained in this transition
-     * @param list The transition to check
+     * @param element The transition to check
      * @return Returns true if the given transition is contained in this transition and false otherwise
      */
-    operator fun contains(list: List<Int>): Boolean = list in transitions
+    override operator fun contains(element: List<Int>): Boolean = element in transitions
 
     /**
-     * Parses the given transition string
+     * Checks if all given transitions are contained in this transition
+     * @param elements The transitions to check
+     * @return Returns true if the given transitions are contained in this transition and false otherwise
+     */
+    override fun containsAll(elements: Collection<List<Int>>): Boolean = elements.all { it in this.transitions }
+
+    /**
+     * Checks if all given transitions are contained in this transition
+     * @param transitions The transitions to check
+     * @return Returns true if the given transitions are contained in this transition and false otherwise
+     */
+    fun containsAll(transitions: INTTransitions): Boolean = transitions.transitions.all { it in this.transitions }
+
+    /**
+     * Adds the given transitions to the transition set
+     */
+    operator fun plus(stringList: Iterable<String>): INTTransitions {
+        val new = this.clone()
+        new.parseTransition(stringList.joinToString(""))
+
+        return new
+    }
+
+    /**
+     * Parses the given transition string and adds the transition to the transition set
      * @param string The transition string to parse
      */
     protected abstract fun parseTransition(string: String)
@@ -62,4 +91,16 @@ abstract class INTTransitions {
      * @return Returns the canonised string representing the transition
      */
     protected abstract fun canoniseTransition(): String
+
+    /**
+     * Creates a deep copy of the transition
+     * @return Returns a deep copy of the transition
+     */
+    abstract fun clone(): INTTransitions
+
+    override fun iterator(): Iterator<List<Int>> = transitions.iterator()
+
+    override fun isEmpty(): Boolean = transitions.isEmpty()
+
+    override fun toString(): String = transitionString
 }

@@ -3,7 +3,9 @@ package rules.nontotalistic.rules
 import rules.RuleFamily
 import rules.nontotalistic.transitions.INTTransitions
 import rules.ruleloader.Ruletable
+import rules.ruleloader.builders.ruletable
 import simulation.Coordinate
+import kotlin.random.Random
 
 class INT : BaseINT {
     val birth: INTTransitions
@@ -34,7 +36,8 @@ class INT : BaseINT {
         // Get the neighbourhood string
         neighbourhoodString = Regex("/?[Nn]?(${INT_NEIGHBOURHOODS.keys.map {
             listOf(it.lowercase(), it.uppercase())
-        }.flatten().joinToString("|")})").find(rulestring)?.groupValues?.get(1) ?: "M"
+        }.flatten().joinToString("|")})$").find(rulestring)?.groupValues?.get(1) ?: "M"
+        println(neighbourhoodString)
 
         // Load in the neighbourhood
         require(neighbourhoodString in INT_NEIGHBOURHOODS) { "INT Neighbourhood identifier " +
@@ -54,7 +57,9 @@ class INT : BaseINT {
     override fun fromRulestring(rulestring: String): INT = INT(rulestring)
 
     override fun between(minRule: RuleFamily, maxRule: RuleFamily): Boolean {
-        TODO("Not yet implemented")
+        if (minRule !is INT || maxRule !is INT) return false
+        return birth.containsAll(minRule.birth) && survival.containsAll(minRule.survival) &&
+                maxRule.birth.containsAll(birth) && maxRule.survival.containsAll(survival)
     }
 
     override fun ruleRange(transitionsToSatisfy: Iterable<List<Int>>): Pair<RuleFamily, RuleFamily> {
@@ -62,15 +67,73 @@ class INT : BaseINT {
     }
 
     override fun enumerate(minRule: RuleFamily, maxRule: RuleFamily): Sequence<RuleFamily> {
-        TODO("Not yet implemented")
+        require(minRule is INT && maxRule is INT) { "minRule and maxRule must be an instance of INT" }
+
+        // Get the difference between the birth and survival transitions of the min and max rules
+        val birthDiff = (maxRule.birth.transitionStrings - minRule.birth.transitionStrings).toList()
+        val survivalDiff = (maxRule.survival.transitionStrings - minRule.survival.transitionStrings).toList()
+
+        val stack = arrayListOf(Pair(minRule, 0))  // Emulate a recursion stack
+        return sequence {
+            while (stack.isNotEmpty()) {
+                val (rule, index) = stack.removeAt(stack.lastIndex)
+
+                if (index == birthDiff.size + survivalDiff.size) yield(rule)  // Base case
+                else {
+                    // Add the transition to the rule
+                    val newRule = if (index < birthDiff.size)
+                        INT(rule.birth + setOf(birthDiff[index]), rule.survival, neighbourhoodString)
+                    else
+                        INT(
+                            rule.birth, rule.survival + setOf(survivalDiff[index - birthDiff.size]),
+                            neighbourhoodString
+                        )
+
+                    // 2 cases -> transition added and transition not added
+                    stack.add(Pair(newRule, index + 1))
+                    stack.add(Pair(rule, index + 1))
+                }
+            }
+        }
     }
 
     override fun random(minRule: RuleFamily, maxRule: RuleFamily, seed: Int?): Sequence<RuleFamily> {
-        TODO("Not yet implemented")
+        require(minRule is INT && maxRule is INT) { "minRule and maxRule must be an instance of INT" }
+
+        return generateSequence {
+            val randomBirth = randomTransition(minRule.birth, maxRule.birth, seed)
+            val randomSurvival = randomTransition(minRule.survival, maxRule.survival, seed)
+
+            INT(randomBirth, randomSurvival, neighbourhoodString)
+        }
     }
 
-    override fun generateRuletable(): Ruletable {
-        TODO("Not yet implemented")
+    override fun generateRuletable() = ruletable {
+        name = rulestring.replace("/", "_")
+        table(neighbourhood = neighbourhood[0], background = background) {
+            variable("any") { 0 .. 1 }
+
+            comment("Birth")
+            intTransition {
+                input = "0"
+                output = "1"
+
+                transition(birth.transitionString)
+            }
+
+            comment("Survival")
+            intTransition {
+                input = "1"
+                output = "1"
+
+                transition(survival.transitionString)
+            }
+
+            comment("Everything else dies")
+            transition { "1 ${"any ".repeat(neighbourhood.size)}0" }
+        }
+
+        colours(numStates, background) { colours[it] }
     }
 
     override fun transitionFunc(cells: IntArray, cellState: Int, generation: Int, coordinate: Coordinate): Int {

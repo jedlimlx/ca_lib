@@ -7,11 +7,6 @@ import kotlin.test.Test
 class Test {
     @Test
     fun test() {
-        val rule = INT("B3/S23")
-
-        val grid = SparseGrid("oob\$boo\$bob!", rule)
-        grid.step(10)
-
-        println(grid)
+        val rule = INT("B2n3/S23-q")
     }
 }
