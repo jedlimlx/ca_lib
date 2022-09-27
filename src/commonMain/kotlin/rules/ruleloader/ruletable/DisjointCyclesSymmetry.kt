@@ -16,7 +16,7 @@ class DisjointCyclesSymmetry : Symmetry {
      * @param symmetry The symmetry string that represents the symmetry in the form of disjoint cycles.
      */
     constructor(symmetry: String) {
-        disjointCycles = Regex("\\[(\\((\\d+,?\\s*)+\\),?\\s*)+]").findAll(symmetry).map {
+        disjointCycles = Regex("\\[(\\((\\d+,?\\s*)+\\),?\\s*)+\\]").findAll(symmetry).map {
             Regex("(\\d+,?\\s*)+").findAll(it.groupValues[0]).map {
                 it.groupValues[0].split(Regex(",\\s*")).map { it.toInt() }.toIntArray()
             }.toList().toTypedArray()
