@@ -29,7 +29,7 @@ class DenseGrid(
 
     private var arr = Array(initialHeight) { IntArray(initialWidth) { 0 } }
 
-    override var population = 0
+    override var population: Int = 0
     override val populationByState: IntArray
         get() {
             val result = IntArray(rule.numStates) { 0 }
