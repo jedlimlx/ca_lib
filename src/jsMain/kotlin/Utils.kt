@@ -1,5 +1,8 @@
 private external fun require(module: String): dynamic
 
+
+actual val PLATFORM = "JS"
+
 actual fun readResource(resource: String): String {
     val tokens = resource.split("/")
 

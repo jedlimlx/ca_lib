@@ -1,6 +1,9 @@
 import kotlinx.cinterop.*
 import platform.posix.*
 
+
+actual val PLATFORM = "NATIVE"
+
 actual fun readResource(resource: String): String {
     var file: CPointer<FILE>? = fopen("./src/commonMain/resources/$resource", "r")
     if (file == null)

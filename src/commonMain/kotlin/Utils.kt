@@ -1,4 +1,5 @@
 internal expect fun readResource(resource: String): String
+internal expect val PLATFORM: String
 
 class Utils {
     companion object {

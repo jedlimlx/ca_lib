@@ -1,5 +1,6 @@
 package rules.nontotalistic.transitions
 
+import PLATFORM
 import readResource
 
 /**
@@ -30,7 +31,15 @@ abstract class SingleLetterTransitions: INTTransitions() {
     private val _transitionStrings: MutableSet<String> = HashSet()
 
     override fun parseTransition(string: String) {
+        val regex = if (PLATFORM == "NATIVE") {
+            Regex("(" + transitionLookup.mapIndexed { index, charMap ->
+                val letters = charMap.keys.joinToString("")
+                index.toString() + if (charMap.size > 1) "(-[$letters]+|[$letters]*)" else ""
+            }.joinToString("|") + ")")
+        } else regex
+
         regex.findAll(string).forEach {
+            println("hello2322")
             val block = it.groupValues[1]
 
             // Check for individual transitions
