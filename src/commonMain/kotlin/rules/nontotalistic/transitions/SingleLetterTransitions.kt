@@ -39,7 +39,6 @@ abstract class SingleLetterTransitions: INTTransitions() {
         } else regex
 
         regex.findAll(string).forEach {
-            println("hello2322")
             val block = it.groupValues[1]
 
             // Check for individual transitions

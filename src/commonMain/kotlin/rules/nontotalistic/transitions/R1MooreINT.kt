@@ -26,15 +26,7 @@ class R1MooreINT: SingleLetterTransitions {
     override val size: Int
 
     constructor(string: String) {
-        println("hello")
-        if (string == "") {
-            println("hello2")
-            parseTransition("B3/S23")
-        } else {
-            println("hello3")
-            parseTransition(string)
-        }
-
+        parseTransition(string)
         size = transitions.size
     }
 

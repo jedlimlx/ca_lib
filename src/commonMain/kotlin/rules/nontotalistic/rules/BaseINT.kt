@@ -72,7 +72,7 @@ abstract class BaseINT: RuleFamily() {
         val diff = maxTransition.transitionStrings - minTransition.transitionStrings
 
         val newTransition = StringBuilder(minTransition.transitionString)
-        diff.forEach { if (Random.nextBoolean()) newTransition.append(it) }
+        diff.forEach { if (random.nextBoolean()) newTransition.append(it) }
 
         return parseTransition(newTransition.toString())
     }

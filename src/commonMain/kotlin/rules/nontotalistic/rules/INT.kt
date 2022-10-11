@@ -2,10 +2,8 @@ package rules.nontotalistic.rules
 
 import rules.RuleFamily
 import rules.nontotalistic.transitions.INTTransitions
-import rules.ruleloader.Ruletable
 import rules.ruleloader.builders.ruletable
 import simulation.Coordinate
-import kotlin.random.Random
 
 class INT : BaseINT {
     val birth: INTTransitions
@@ -18,7 +16,7 @@ class INT : BaseINT {
 
     override val regex: List<Regex> by lazy {
         INT_NEIGHBOURHOODS.map { (key, entry) ->
-            Regex("[Bb]${entry.regex}/?[Ss]${entry.regex}/?[Nn]($key|${key.lowercase()})")
+            Regex("[Bb]${entry.regex}/?[Ss]${entry.regex}(/?[Nn]($key|${key.lowercase()}))?")
         }
     }
 
@@ -37,7 +35,6 @@ class INT : BaseINT {
         neighbourhoodString = Regex("/?[Nn]?(${INT_NEIGHBOURHOODS.keys.map {
             listOf(it.lowercase(), it.uppercase())
         }.flatten().joinToString("|")})$").find(rulestring)?.groupValues?.get(1) ?: "M"
-        println(neighbourhoodString)
 
         // Load in the neighbourhood
         require(neighbourhoodString in INT_NEIGHBOURHOODS) { "INT Neighbourhood identifier " +
@@ -45,10 +42,9 @@ class INT : BaseINT {
         neighbourhood = arrayOf(INT_NEIGHBOURHOODS[neighbourhoodString]!!.neighbourhood)
 
         // Load in the birth / survival conditions
-        birth = parseTransition(Regex("[Bb]((${INT_NEIGHBOURHOODS[neighbourhoodString]!!.regex})*)")
-            .find(rulestring)!!.groupValues[1])
-        survival = parseTransition(Regex("[Ss]((${INT_NEIGHBOURHOODS[neighbourhoodString]!!.regex})*)")
-            .find(rulestring)!!.groupValues[1])
+        val string = INT_NEIGHBOURHOODS[neighbourhoodString]!!.regex.pattern
+        birth = parseTransition(Regex("[Bb](($string)*)").find(rulestring)!!.groupValues[1])
+        survival = parseTransition(Regex("[Ss](($string)*)").find(rulestring)!!.groupValues[1])
     }
 
     override fun canoniseRulestring(): String = "B${birth.transitionString}/S${survival.transitionString}" +
