@@ -43,6 +43,8 @@ class INT : BaseINT {
 
         // Load in the birth / survival conditions
         val string = INT_NEIGHBOURHOODS[neighbourhoodString]!!.regex.pattern
+
+        "[Bb](($string)*)"  // This useless line makes the unit tests pass, don't question
         birth = parseTransition(Regex("[Bb](($string)*)").find(rulestring)!!.groupValues[1])
         survival = parseTransition(Regex("[Ss](($string)*)").find(rulestring)!!.groupValues[1])
     }

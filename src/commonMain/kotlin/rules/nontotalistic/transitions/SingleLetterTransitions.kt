@@ -41,27 +41,29 @@ abstract class SingleLetterTransitions: INTTransitions() {
         regex.findAll(string).forEach {
             val block = it.groupValues[1]
 
-            // Check for individual transitions
-            val number = block[0].digitToInt()
-            if (block.length > 1) {
-                if (block[1] == '-') {
-                    val forbidden = block.substring(2)
-                    transitionLookup[number].forEach { (key, value) ->
-                        if (key !in forbidden) {
-                            _transitions.addAll(symmetry(value))
-                            _transitionStrings.add("$number$key")
+            if (block.isNotEmpty()) {
+                // Check for individual transitions
+                val number = block[0].digitToInt()
+                if (block.length > 1) {
+                    if (block[1] == '-') {
+                        val forbidden = block.substring(2)
+                        transitionLookup[number].forEach { (key, value) ->
+                            if (key !in forbidden) {
+                                _transitions.addAll(symmetry(value))
+                                _transitionStrings.add("$number$key")
+                            }
+                        }
+                    } else block.substring(1).forEach {
+                        transitionLookup[number][it]?.let { it1 ->
+                            _transitions.addAll(symmetry(it1))
+                            _transitionStrings.add("$number$it")
                         }
                     }
-                } else block.substring(1).forEach {
-                    transitionLookup[number][it]?.let { it1 ->
-                        _transitions.addAll(symmetry(it1))
-                        _transitionStrings.add("$number$it")
+                } else {  // Handle singular outer-totalistic transition
+                    transitionLookup[number].forEach { (key, value) ->
+                        _transitions.addAll(symmetry(value))
+                        _transitionStrings.add("$number$key")
                     }
-                }
-            } else {  // Handle singular outer-totalistic transition
-                transitionLookup[number].forEach { (key, value) ->
-                    _transitions.addAll(symmetry(value))
-                    _transitionStrings.add("$number$key")
                 }
             }
         }
@@ -146,9 +148,12 @@ abstract class SingleLetterTransitions: INTTransitions() {
                     currDigit = line.trim()[0]
                     transitionLookup.add(HashMap())
                 } else {
-                    val lst = line.trim().split(" ").subList(1, neighbourhood.size + 1).map { it.toInt() }
-                    transitionLookup.last()[line[0]] = lst
-                    reverseTransitionLookup[lst] = "$currDigit${line[0]}"
+                    val tokens = line.trim().split(" ")
+                    if (tokens.size > 1) {
+                        val lst = tokens.subList(1, neighbourhood.size + 1).map { it.toInt() }
+                        transitionLookup.last()[line[0]] = lst
+                        reverseTransitionLookup[lst] = "$currDigit${line[0]}"
+                    } else break
                 }
             }
         }
