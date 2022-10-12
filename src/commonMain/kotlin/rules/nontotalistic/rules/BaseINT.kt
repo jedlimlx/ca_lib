@@ -37,6 +37,19 @@ fun fromTransitions(neighbourhoodString: String = "M", transitions: Iterable<Lis
 }
 
 /**
+ * Loads the given transitions into a isotropic non-totalistic transition object
+ * @param transitions The transitions to load
+ * @return Returns the isotropic non-totalistic transition object corresponding to the given transitions
+ */
+fun fromStringTransitions(neighbourhoodString: String = "M", transitions: Iterable<String>): INTTransitions {
+    return when (neighbourhoodString) {
+        "M" -> R1MooreINT(transitions, "")
+        else -> throw IllegalArgumentException("INT Neighbourhood identifier " +
+                "$neighbourhoodString is not supported.")
+    }
+}
+
+/**
  * The base class for all non-totalistic rules
  */
 abstract class BaseINT: RuleFamily() {

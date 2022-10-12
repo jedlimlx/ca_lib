@@ -77,7 +77,7 @@ abstract class SingleLetterTransitions: INTTransitions() {
                 if (currNum != -1 && block.length - 1 > transitionLookup[currNum].size / 2) {
                     append(currNum)  // Append the number to the builder
                     if (block.length < transitionLookup[currNum].size + 1) append("-")
-                    transitionLookup[currNum].keys.forEach {
+                    transitionLookup[currNum].keys.sorted().forEach {
                         if (it !in block) append(it)
                     }
                 } else append(block)
@@ -92,6 +92,31 @@ abstract class SingleLetterTransitions: INTTransitions() {
             }
         }
     }.toString()
+
+    override fun stringFromTransition(transition: List<Int>): String {
+        var value: String? = null
+        symmetry(transition).forEach {
+            if (it in reverseTransitionLookup) {
+                value = reverseTransitionLookup[it]!!
+                return@forEach
+            }
+        }
+
+        return value ?: throw IllegalArgumentException("Invalid transition: $transition")
+    }
+
+    override fun transitionFromString(string: String): List<Int> = transitionLookup[string[0].toString().toInt()][string[1]]!!
+
+    /**
+     * Loads the given transitions into the INT transition
+     * @param transitions The transitions to load
+     */
+    protected fun loadStringTransitions(transitions: Iterable<String>) {
+        transitions.forEach {
+            _transitions.addAll(symmetry(transitionFromString(it)))
+            _transitionStrings.add(it)
+        }
+    }
 
     /**
      * Loads the given transitions into the INT transition

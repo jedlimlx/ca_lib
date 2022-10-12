@@ -81,6 +81,18 @@ abstract class INTTransitions : Collection<List<Int>> {
     }
 
     /**
+     * Converts the given [transition] into a string
+     * @return Returns the string corresponding to the given transition
+     */
+    abstract fun stringFromTransition(transition: List<Int>): String
+
+    /**
+     * Converts the given [string] into the transition
+     * @return Returns the transition corresponding to the given string
+     */
+    abstract fun transitionFromString(string: String): List<Int>
+
+    /**
      * Parses the given transition string and adds the transition to the transition set
      * @param string The transition string to parse
      */

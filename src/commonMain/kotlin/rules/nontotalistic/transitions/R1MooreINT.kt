@@ -30,6 +30,12 @@ class R1MooreINT: SingleLetterTransitions {
         size = transitions.size
     }
 
+    // string is a useless variable to ensure that the overloading works
+    constructor(transitions: Iterable<String>, string: String) {
+        loadStringTransitions(transitions)
+        size = this.transitions.size
+    }
+
     constructor(transitions: Iterable<List<Int>>) {
         loadTransitions(transitions)
         size = this.transitions.size

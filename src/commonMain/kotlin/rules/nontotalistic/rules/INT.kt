@@ -59,7 +59,39 @@ class INT : BaseINT {
     }
 
     override fun ruleRange(transitionsToSatisfy: Iterable<List<Int>>): Pair<RuleFamily, RuleFamily> {
-        TODO("Not yet implemented")
+        // The minimum transitions
+        val minBirth = hashSetOf<String>()
+        val minSurvival = hashSetOf<String>()
+
+        // The maximum transitions
+        val maxTransition = parseTransition((0 .. neighbourhood[0].size).joinToString(""))
+        val maxBirth = maxTransition.transitionStrings.toHashSet()
+        val maxSurvival = maxTransition.transitionStrings.toHashSet()
+
+        transitionsToSatisfy.forEach {
+            val transition = it.subList(2, it.size)
+            val string = birth.stringFromTransition(transition)
+
+            when {
+                it[0] == 0 && it[1] == 0 -> maxBirth.remove(string)  // No birth
+                it[0] == 0 && it[1] == 1 -> minBirth.add(string)  // Birth
+                it[0] == 1 && it[1] == 0 -> maxSurvival.remove(string)  // No survival
+                it[0] == 1 && it[1] == 1 -> minSurvival.add(string) // Survival
+            }
+        }
+
+        val minRule = INT(
+            fromStringTransitions(neighbourhoodString, minBirth),
+            fromStringTransitions(neighbourhoodString, minSurvival),
+            neighbourhoodString
+        )
+        val maxRule = INT(
+            fromStringTransitions(neighbourhoodString, maxBirth),
+            fromStringTransitions(neighbourhoodString, maxSurvival),
+            neighbourhoodString
+        )
+
+        return Pair(minRule, maxRule)
     }
 
     override fun enumerate(minRule: RuleFamily, maxRule: RuleFamily): Sequence<RuleFamily> {
