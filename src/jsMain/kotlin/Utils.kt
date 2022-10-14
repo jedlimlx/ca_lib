@@ -10,6 +10,9 @@ actual fun readResource(resource: String): String {
     // Why is JavaScript like this...
     return when (tokens[tokens.size - 1]) {
         "r1_moore.txt" -> require("r1_moore.txt") as String
+        "r1_hex.txt" -> require("r1_hex.txt") as String
+        "r2_cross.txt" -> require("r2_cross.txt") as String
+        "r2_knight.txt" -> require("r2_knight.txt") as String
 
         "shiftTest.csv" -> require("shiftTest.csv") as String
         "flipTest.csv" -> require("flipTest.csv") as String
