@@ -1,14 +1,20 @@
 package rules.nontotalistic.rules
 
 import rules.RuleFamily
-import rules.nontotalistic.transitions.INTTransitions
-import rules.nontotalistic.transitions.R1MooreINT
+import rules.nontotalistic.transitions.*
 import kotlin.random.Random
 
 /**
  * A list of all types of non-totalistic transitions
  */
-val INT_NEIGHBOURHOODS  = mapOf("M" to R1MooreINT(""))
+val INT_NEIGHBOURHOODS  = mapOf(
+    "M" to R1MooreINT(""),
+    "H" to R1HexINT(""),
+    "C2" to R2CrossINT(""),
+    "K" to R2KnightINT(""),
+    "FC" to R2FarCornersINT(""),
+    "FE" to R3FarEdgesINT("")
+)
 
 /**
  * Parses the given isotropic non-totalistic transition string
@@ -18,6 +24,11 @@ val INT_NEIGHBOURHOODS  = mapOf("M" to R1MooreINT(""))
 fun parseTransition(neighbourhoodString: String = "M", transition: String): INTTransitions {
     return when (neighbourhoodString) {
         "M" -> R1MooreINT(transition)
+        "H" -> R1HexINT(transition)
+        "C2" -> R2CrossINT(transition)
+        "K" -> R2KnightINT(transition)
+        "FC" -> R2FarCornersINT(transition)
+        "FE" -> R3FarEdgesINT(transition)
         else -> throw IllegalArgumentException("INT Neighbourhood identifier " +
                 "$neighbourhoodString is not supported.")
     }
@@ -31,6 +42,11 @@ fun parseTransition(neighbourhoodString: String = "M", transition: String): INTT
 fun fromTransitions(neighbourhoodString: String = "M", transitions: Iterable<List<Int>>): INTTransitions {
     return when (neighbourhoodString) {
         "M" -> R1MooreINT(transitions)
+        "H" -> R1HexINT(transitions)
+        "C2" -> R2CrossINT(transitions)
+        "K" -> R2KnightINT(transitions)
+        "FC" -> R2FarCornersINT(transitions)
+        "FE" -> R3FarEdgesINT(transitions)
         else -> throw IllegalArgumentException("INT Neighbourhood identifier " +
                 "$neighbourhoodString is not supported.")
     }
@@ -44,6 +60,11 @@ fun fromTransitions(neighbourhoodString: String = "M", transitions: Iterable<Lis
 fun fromStringTransitions(neighbourhoodString: String = "M", transitions: Iterable<String>): INTTransitions {
     return when (neighbourhoodString) {
         "M" -> R1MooreINT(transitions, "")
+        "H" -> R1HexINT(transitions, "")
+        "C2" -> R2CrossINT(transitions, "")
+        "K" -> R2KnightINT(transitions, "")
+        "FC" -> R2FarCornersINT(transitions, "")
+        "FE" -> R3FarEdgesINT(transitions, "")
         else -> throw IllegalArgumentException("INT Neighbourhood identifier " +
                 "$neighbourhoodString is not supported.")
     }

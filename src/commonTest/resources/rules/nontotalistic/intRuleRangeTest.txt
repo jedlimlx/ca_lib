@@ -15,3 +15,9 @@
 #MIN B3aceiq/S1c2-e3iq
 #MAX B2ci34-ajrw5-k6-n78/S01c234-jkn5-ac678
 #T P8 Oscillator
+
+#R B2-m3-o/S2m3-p4/NH
+#I 3bo$3b2o$2b4o14bo$2bobo12b3o$bo3bo$2o3bo10b4o10bo$bo4b2o6b2o2bobobo8bo$5b3o8b5o2b3ob2o2bo$6bobo6bob2o7b2obobo$18bo8bo3bo!
+#MIN B2-m3-o/S2m3-p4/NH
+#MAX B2-m3-o/S2m3-p4/NH
+#T (12, 0)c/24 Spaceship

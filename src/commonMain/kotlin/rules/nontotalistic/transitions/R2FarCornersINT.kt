@@ -5,19 +5,19 @@ import rules.ruleloader.ruletable.Symmetry
 import simulation.Coordinate
 
 /**
- * Represents isotropic non-totalistic transitions for range 1 Moore rules using Hensel notation
+ * Represents isotropic non-totalistic transitions for range 2 far corners rules using Hensel notation
  */
-class R1MooreINT: SingleLetterTransitions {
-    override val symmetry: Symmetry = DisjointCyclesSymmetry("[[(1, 3, 5, 7), (2, 4, 6, 8)], [(2, 8), (3, 7), (4, 6)]]")
+class R2FarCornersINT: SingleLetterTransitions {
+    override val symmetry: Symmetry = DisjointCyclesSymmetry("[[(1, 3, 5, 7), (2, 4, 6, 8)], [(4, 8), (1, 3), (5, 7)]]")
     override val neighbourhood: Array<Coordinate> = arrayOf(
         Coordinate(0, 1),
-        Coordinate(-1, 1),
-        Coordinate(-1, 0),
-        Coordinate(-1, -1),
-        Coordinate(0, -1),
-        Coordinate(1, -1),
+        Coordinate(2, 2),
         Coordinate(1, 0),
-        Coordinate(1, 1)
+        Coordinate(2, -2),
+        Coordinate(0, -1),
+        Coordinate(-2, -2),
+        Coordinate(-1, 0),
+        Coordinate(-2, 2)
     )
 
     override val transitionLookup: Array<Map<Char, List<Int>>> = readTransitionsFromResources("int/r1_moore.txt").first
@@ -41,5 +41,5 @@ class R1MooreINT: SingleLetterTransitions {
         size = this.transitions.size
     }
 
-    override fun clone(): R1MooreINT = R1MooreINT(transitionString)
+    override fun clone(): R2FarCornersINT = R2FarCornersINT(transitionString)
 }
