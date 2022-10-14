@@ -26,7 +26,6 @@ class DenseGrid(
     initialWidth: Int = 16, initialHeight: Int = 16,
     var startingCoordinate: Coordinate = Coordinate(), val expansion_factor: Double = 1.1
 ) : Grid() {
-
     private var arr = Array(initialHeight) { IntArray(initialWidth) { 0 } }
 
     override var population: Int = 0
@@ -137,6 +136,7 @@ class DenseGrid(
 
     override fun deepCopy(): DenseGrid {
         val grid = DenseGrid("", rule)
+        grid.population = population
         grid.generation = generation
         grid.background = background
         grid.arr = arr.map { it.copyOf() }.toTypedArray()

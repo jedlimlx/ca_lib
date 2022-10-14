@@ -11,8 +11,15 @@ import kotlin.random.Random
 /**
  * Searches for spaceships using Genetic Algorithms
  */
-class GeneticShipSearch(val rule: Rule, val period: Int, val dx: Int, val dy: Int,
-                        val width: Int, val height: Int): SearchProgram() {
+class GeneticShipSearch(
+    val rule: Rule,
+    val period: Int,
+    val dx: Int,
+    val dy: Int,
+    val width: Int,
+    val height: Int,
+    val startingPopulation: Collection<Grid> = listOf()
+): SearchProgram() {
     val POPULATION_SIZE: Int = 40000
 
     val population = ArrayList<Grid>(POPULATION_SIZE)
@@ -24,7 +31,7 @@ class GeneticShipSearch(val rule: Rule, val period: Int, val dx: Int, val dy: In
     var improvement = true
         private set
 
-    var currentBest = 10000.0
+    var currentBest = 10000000.0
         private set
 
     override val searchResults: MutableList<Pattern> = mutableListOf()
@@ -36,7 +43,7 @@ class GeneticShipSearch(val rule: Rule, val period: Int, val dx: Int, val dy: In
         var fitness = 0.0
         val afterPeriod = pattern.deepCopy()
         val target = pattern.deepCopy()
-        for (i in 1 .. 10) {
+        for (i in 1 .. 4) {
             afterPeriod.step(period)
             target.shift(dx, dy)
 
@@ -48,23 +55,17 @@ class GeneticShipSearch(val rule: Rule, val period: Int, val dx: Int, val dy: In
             val iou = (1 - (intersection.population.toDouble() / (afterPeriod.population +
                     target.population - intersection.population)))
 
-            fitness += i * (100 - 5 * i) * iou
+            fitness += (4 - i) * 30 * log(iou + 1, 5.0)
 
             // Encourages partials to have a larger population and not go down the local optimum of an empty grid
             if (i < 2)
-                fitness += (5 - 2 * i) / (0.0001 + 0.05 * afterPeriod.population.toDouble())
+                fitness += (5 - 2 * i) / (0.0001 + afterPeriod.population.toDouble())
 
-            fitness += abs(afterPeriod.population - pattern.population)
+            fitness += 10 * abs(afterPeriod.population - pattern.population) / pattern.population
 
             // Encourages partials to move
             if (afterPeriod.population == 0) fitness += 5 * i
-            else fitness += (i * ((afterPeriod.bounds.end - pattern.bounds.end) - Coordinate(i * dx, i * dy)).manhattan).toDouble()
-
-            /*
-            fitness += i * abs(afterPeriod.population + target.population - 2 * (afterPeriod intersect target).population).toDouble() +
-                    5 / (0.0001 + 0.05 * afterPeriod.population.toDouble()) + abs(afterPeriod.population - pattern.population) +
-                    i * ((afterPeriod.bounds.end - pattern.bounds.end) - Coordinate(i * dx, i * dy)).manhattan
-             */
+            else fitness += (5 * i * ((afterPeriod.bounds.start - pattern.bounds.start) - Coordinate(i * dx, i * dy)).manhattan).toDouble()
         }
 
         return fitness
@@ -75,7 +76,7 @@ class GeneticShipSearch(val rule: Rule, val period: Int, val dx: Int, val dy: In
         val newPattern = pattern.deepCopy()
 
         when {
-            prob < 0.3 -> {
+            prob < 0.7 -> {
                 val coordinates = newPattern.toList().map { (coordinate, _) -> coordinate }
                 if (coordinates.isNotEmpty()) {
                     for (i in 0..Random.nextInt(1, 3 * mutationRate)) {
@@ -85,7 +86,7 @@ class GeneticShipSearch(val rule: Rule, val period: Int, val dx: Int, val dy: In
                     }
                 }
             }
-            prob < 0.6 -> newPattern.step(Random.nextInt(1, 5))
+            prob < 0.95 -> newPattern.step(Random.nextInt(1, 5))
         }
 
         return newPattern
@@ -146,13 +147,55 @@ class GeneticShipSearch(val rule: Rule, val period: Int, val dx: Int, val dy: In
         return pattern.step(Random.nextInt(0, 5))
     }
 
-    fun rank(partials: List<Grid>) = partials.sortedBy { fitness(it) }
+    fun rank(partials: List<Grid>) = partials.sortedBy { fitness(it) }.map { Pair(fitness(it), it) }
+
+    fun fitnessReport(pattern: Grid) {
+        // Compute the difference after 3 periods
+        var fitness = 0.0
+        val afterPeriod = pattern.deepCopy()
+        val target = pattern.deepCopy()
+        for (i in 1 .. 4) {
+            println("Period $i")
+            println("---------------------------")
+            afterPeriod.step(period)
+            target.shift(dx, dy)
+
+            afterPeriod.updateBounds()
+            pattern.updateBounds()
+
+            // Compute 1 - IoU (Intersection over Union) -> Reward partials that maintain their shape
+            val intersection = afterPeriod intersect target
+            val iou = (1 - (intersection.population.toDouble() / (afterPeriod.population +
+                    target.population - intersection.population)))
+
+            println("IoU: ${(4 - i) * 10 * log(iou + 1, 5.0)}")
+            fitness += (4 - i) * 10 * log(iou + 1, 5.0)
+
+            // Encourages partials to have a larger population and not go down the local optimum of an empty grid
+            if (i < 2) {
+                fitness += (5 - 2 * i) / (0.0001 + afterPeriod.population.toDouble())
+                println("Population Size: ${(5 - 2 * i) / (0.0001 + afterPeriod.population.toDouble())}")
+            }
+
+            fitness += 10 * abs(afterPeriod.population - pattern.population) / pattern.population
+            println("Population Size 2: ${10 * abs(afterPeriod.population - pattern.population) / pattern.population}")
+
+            // Encourages partials to move
+            if (afterPeriod.population == 0) fitness += 5 * i
+            else fitness += (i * ((afterPeriod.bounds.start - pattern.bounds.start) - Coordinate(i * dx, i * dy)).manhattan).toDouble()
+            println("Movement: ${(i * ((afterPeriod.bounds.start - pattern.bounds.start) - Coordinate(i * dx, i * dy)).manhattan).toDouble()}")
+
+            println()
+        }
+
+        println()
+        println("Total Fitness: $fitness")
+        println()
+    }
 
     override fun search() {
-        println("Global Minimum: ${fitness(SparseGrid(pattern="b4o\$o3bo\$4bo\$o2bo\$o!", rule=rule))}\n")
-
         // First, initialise the population
-        for (i in 0 until POPULATION_SIZE) population.add(generateRandomChromosome())
+        for (i in 0 until POPULATION_SIZE) population.add(mutate(startingPopulation.random()))
 
         // Running the generations
         for (j in 0 .. 1000) {
