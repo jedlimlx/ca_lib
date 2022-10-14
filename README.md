@@ -1,4 +1,4 @@
-# ca_lib
+# ca_lib [![test](https://github.com/jedlimlx/ca_lib/actions/workflows/gradle.yml/badge.svg)](https://github.com/jedlimlx/ca_lib/actions/workflows/gradle.yml)
 
 ca_lib is a simple and feature-rich cellular automaton simulation library written in pure Kotlin.
 
