@@ -1,5 +1,6 @@
 package rules.nontotalistic
 
+import PLATFORM
 import readResource
 import rules.RuleFamily
 import rules.enumerateRules
@@ -112,7 +113,8 @@ class INTTest {
 
     @Test
     fun enumerate_all_rules() {
-        assertEquals(16384, enumerateRules(INT("B3/S23"), INT("B2n3/S234")).count())
+        if (PLATFORM != "JS")
+            assertEquals(16384, enumerateRules(INT("B3/S23"), INT("B2n3/S234")).count())
     }
 
     @Test
