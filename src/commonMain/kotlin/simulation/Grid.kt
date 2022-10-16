@@ -9,7 +9,6 @@ import rules.PLACEHOLDER_RULE
 import rules.Rule
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.time.Duration
 
 /**
  * Represents the grid on which the cellular automaton runs on
@@ -46,13 +45,13 @@ abstract class Grid : MutableIterable<Pair<Coordinate, Int>> {
      * The cells that changed in the previous generation and the previous previous generation...
      * Something like {{(0, 1)...}, ...} with the length of the loaded rule's alternating period.
      */
-    protected lateinit var cellsChanged: Array<MutableSet<Coordinate>>
+    internal lateinit var cellsChanged: Array<MutableSet<Coordinate>>
 
     /**
      * The background of the grid (usually state 0 but for B0 rules it can be state 1 or higher)
      */
     var background = 0
-        protected set
+        internal set
 
     /**
      * The bounds of the pattern within the grid. Note that bounds **do not** update automatically.
@@ -86,59 +85,7 @@ abstract class Grid : MutableIterable<Pair<Coordinate, Int>> {
      * @return Returns the modified grid ()
      */
     open fun step(generations: Int = 1): Grid {
-        for (i in 0 until generations) {
-            val totalSize = cellsChanged.fold(0) { acc, set -> acc + set.size }
-
-            val cellsToCheck = HashSet<Coordinate>(totalSize)
-            val neighbourhood: Array<Coordinate> = rule.neighbourhood[generation % rule.alternatingPeriod]
-
-            // Generate set of cells to run update function on
-            // Use a set to avoid duplicate
-            var neighbour: Coordinate
-            for (cellSet in cellsChanged) {
-                for (cell in cellSet) {
-                    for (neighbour2 in neighbourhood) {
-                        neighbour = cell - neighbour2
-                        cellsToCheck.add(neighbour)
-                    }
-
-                    cellsToCheck.add(cell)
-                }
-            }
-
-            // Apply the transition function across all the cells
-            var neighbours: IntArray
-            val gridCopy = this.deepCopy()
-
-            // Update the background of the current grid
-            this.background = rule.background[(generation + 1) % rule.background.size]
-
-            // Run through all the cells that could change
-            for (cell in cellsToCheck) {
-                // Getting neighbours
-                neighbours = neighbourhood.map { gridCopy[it + cell] }.toIntArray()
-
-                // Update the value of the cell
-                if (rule.possibleSuccessors[generation % rule.alternatingPeriod][gridCopy[cell]].size == 1) {
-                    this[cell] = rule.possibleSuccessors[generation % rule.alternatingPeriod][gridCopy[cell]][0]
-                } else this[cell] = rule.transitionFunc(neighbours, gridCopy[cell], generation, cell)
-
-                // Check if the cell value changed
-                if (Utils.convert(this[cell], background) == Utils.convert(gridCopy[cell], gridCopy.background)) {
-                    for (i in 0 until rule.background.size) {
-                        if (cell in cellsChanged[i]) {
-                            cellsChanged[i].remove(cell)
-
-                            // Move the cell forward into the next entry until it can't be moved forward anymore
-                            if (i < rule.background.size - 1) cellsChanged[i + 1].add(cell)
-                            break
-                        }
-                    }
-                }
-            }
-
-            generation++
-        }
+        rule.step(this, generations)
 
         // Return itself to allow command chaining
         return this
