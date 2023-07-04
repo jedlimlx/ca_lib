@@ -33,8 +33,10 @@ class HROTGenerations : BaseHROT {
     override val neighbourhood: Array<Array<Coordinate>>
     override val possibleSuccessors: Array<Array<IntArray>>
 
+    val stateWeights: IntArray?
+
     override val regex: List<Regex> = listOf(
-        Regex("R[0-9]+,C[0-9]+,S$transitionRegex,B$transitionRegex$neighbourhoodRegex"),
+        Regex("R[0-9]+,C[0-9]+,S$transitionRegex,B$transitionRegex$neighbourhoodRegex(,([A-Fa-f0-9]+))?"),
         Regex("[BbSs]?[0-8]*/[BbSs]?[0-8]*/[Cc]?[0-9]+[VH]?"),
         Regex("[CcGg][0-9]+[BbSs][0-8]*[BbSs][0-8]*[VH]?")
     )
@@ -48,7 +50,8 @@ class HROTGenerations : BaseHROT {
      */
     constructor(
         birth: Iterable<Int>, survival: Iterable<Int>, numStates: Int,
-        neighbourhood: Array<Coordinate> = moore(1), weights: IntArray? = null
+        neighbourhood: Array<Coordinate> = moore(1), weights: IntArray? = null,
+        stateWeights: IntArray? = null
     ) {
         this.numStates = numStates
 
@@ -56,6 +59,8 @@ class HROTGenerations : BaseHROT {
         this.survival = survival.toHashSet()
 
         this.weights = weights
+        this.stateWeights = stateWeights
+
         this.neighbourhood = arrayOf(neighbourhood)
 
         // Setting the possible successors of each state
@@ -80,10 +85,24 @@ class HROTGenerations : BaseHROT {
                 numStates = rulestring.split(",")[1].substring(1).toInt()
 
                 // Reading neighbourhood string
-                val temp = Regex("N(.*?)$").find(rulestring)
+                val temp = Regex("N(.*?)(,|$)").find(rulestring)
                 val output = readNeighbourhood(range, if (temp == null) "M" else temp.groupValues[1])
                 neighbourhood = arrayOf(output.first)
                 weights = output.second
+
+                // Reading state weights
+                val temp2 = Regex(",([A-Fa-f0-9]+)$").find(rulestring)
+                stateWeights = if (temp2 == null) null else temp2.groupValues[1].map {
+                    when (it.lowercase()) {
+                        "a" -> 10
+                        "b" -> 11
+                        "c" -> 12
+                        "d" -> 13
+                        "e" -> 14
+                        "f" -> 15
+                        else -> it.digitToInt()
+                    }
+                }.toIntArray()
 
                 // Loading birth and survival conditions
                 val birthString = Regex("B${transitionRegex}").find(rulestring)!!.groupValues[1]
@@ -115,6 +134,7 @@ class HROTGenerations : BaseHROT {
                 )
 
                 weights = null
+                stateWeights = null
             }
             else -> {
                 val birthToken = Regex("[Bb]([0-8]*)").findAll(rulestring).map { it.groupValues[1] }.toList()[0]
@@ -137,6 +157,7 @@ class HROTGenerations : BaseHROT {
                 )
 
                 weights = null
+                stateWeights = null
             }
         }
 
@@ -157,6 +178,19 @@ class HROTGenerations : BaseHROT {
                 neighbourhood[0].contentEquals(vonNeumann(1)) -> "V"
                 else -> "H"
             }
+        } else if (stateWeights != null) {
+            "R$range,C${numStates},S${canoniseTransition(survival)}" +
+                    "B${canoniseTransition(birth)}N${neighbourhoodString}" + stateWeights.map {
+                when (it) {
+                    10 -> "a"
+                    11 -> "b"
+                    12 -> "c"
+                    13 -> "d"
+                    14 -> "e"
+                    15 -> "f"
+                    else -> it.toString()
+                }
+            }.joinToString("")
         } else {
             "R$range,C${numStates},S${canoniseTransition(survival)}B${canoniseTransition(birth)}N${neighbourhoodString}"
         }
@@ -282,7 +316,7 @@ class HROTGenerations : BaseHROT {
 
     override fun transitionFunc(cells: IntArray, cellState: Int, generation: Int, coordinate: Coordinate): Int {
         val sum = cells.foldIndexed(0) { index, acc, value ->
-            acc + (weights?.get(index) ?: 1) * if (value == 1) 1 else 0
+            acc + (weights?.get(index) ?: 1) * (stateWeights?.get(value) ?: (if (value == 1) 1 else 0))
         }
 
         return when {
