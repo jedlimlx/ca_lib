@@ -83,8 +83,8 @@ class HROT : BaseHROT {
                 weights = output.second
 
                 // Loading birth and survival conditions
-                val birthString = Regex("B${BaseHROT.transitionRegex}").find(rulestring)!!.groupValues[1]
-                val survivalString = Regex("S${BaseHROT.transitionRegex}").find(rulestring)!!.groupValues[1]
+                val birthString = Regex("B$transitionRegex").find(rulestring)!!.groupValues[1]
+                val survivalString = Regex("S$transitionRegex").find(rulestring)!!.groupValues[1]
 
                 birth = readTransition(birthString)
                 survival = readTransition(survivalString)
