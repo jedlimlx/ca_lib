@@ -1,0 +1,11 @@
+#R R1,B3,S2,G2-1,NM
+#I .C2.$3AB$CB2.$.A2B!
+#MIN R1,B3,S2,G2-1,NM
+#MAX R1,B3,6,8,S2,6-8,G2-1,NM
+#T P20 Oscillator
+
+#R R1,B3,S2,G2-1,NM
+#I B.A2.$BC.B.$2.2CA$BC.B.$B.A!
+#MIN R1,B3,S2,G2-1,NM
+#MAX R1,B3,6,8,S0,2,6-8,G2-1,NM
+#T (2, 0)c/8 Spaceship

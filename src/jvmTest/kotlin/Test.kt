@@ -1,5 +1,7 @@
 import org.junit.Test
+import rules.canoniseExtendedGenerations
 import rules.fromRulestring
+import rules.readExtendedGenerations
 import simulation.DenseGrid
 import simulation.SparseGrid
 import simulation.TileGrid
@@ -8,10 +10,8 @@ import kotlin.system.measureTimeMillis
 class Test {
     @Test
     fun test() {
-        val pattern = TileGrid("b2o\$2o\$bo!")
-        println(pattern.toRLE())
-
-        pattern.forEach { println(it) }
+        println(readExtendedGenerations("0-2-3-5"))
+        println(canoniseExtendedGenerations(3, mutableSetOf(2)))
     }
 
     @Test
