@@ -44,12 +44,13 @@ ca_lib is a simple and feature-rich cellular automaton simulation library writte
   - Higher Range Outer-Totalistic
     - 2-state
     - Generations
+    - Extended Generations
   - Isotropic Non-Totalistic
     - 2-state
     - Generations
 
 # What's planned for the future
-- **Support for more rulespaces** such as BSFKL, extended generations and naive rules
+- **Support for more rulespaces** such as BSFKL, naive rules, etc.
 - **Constellation Enumeration** to generate all combinations of dots / blinkers / block etc.
 - **Synthesis Enumeration** to generate all possible n-glider collisions
 - **Object Separation** like what apgsearch does

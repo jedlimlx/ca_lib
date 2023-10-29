@@ -1,12 +1,11 @@
 import org.jetbrains.dokka.gradle.DokkaTask
 
 plugins {
-    id("org.jetbrains.dokka") version "1.6.0"
-    kotlin("multiplatform") version "1.6.0"
+    id("org.jetbrains.dokka") version "1.9.10"
+    kotlin("multiplatform") version "1.9.10"
 }
-
 group = "org.jedlimlx"
-version = "1.0-SNAPSHOT"
+version = "1.0"
 
 repositories {
     mavenCentral()
@@ -14,35 +13,38 @@ repositories {
 
 kotlin {
     jvm {
-        compilations.all {
-            kotlinOptions.jvmTarget = "1.8"
-        }
-        testRuns["test"].executionTask.configure {
-            useJUnit()
+        jvmToolchain(8)
+        withJava()
+        testRuns.named("test") {
+            executionTask.configure {
+                useJUnitPlatform()
+            }
         }
     }
 
     js {
         browser {
             commonWebpackConfig {
-                cssSupport.enabled = true
-            }
-
-            webpackTask {
-
+                cssSupport {
+                    enabled.set(true)
+                }
             }
         }
     }
 
     val hostOs = System.getProperty("os.name")
+    val isArm64 = System.getProperty("os.arch") == "aarch64"
     val isMingwX64 = hostOs.startsWith("Windows")
     val nativeTarget = when {
-        hostOs == "Mac OS X" -> macosX64("native")
-        hostOs == "Linux" -> linuxX64("native")
+        hostOs == "Mac OS X" && isArm64 -> macosArm64("native")
+        hostOs == "Mac OS X" && !isArm64 -> macosX64("native")
+        hostOs == "Linux" && isArm64 -> linuxArm64("native")
+        hostOs == "Linux" && !isArm64 -> linuxX64("native")
         isMingwX64 -> mingwX64("native")
         else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
     }
-    
+
+
     sourceSets {
         val commonMain by getting
         val commonTest by getting {
@@ -50,7 +52,6 @@ kotlin {
                 implementation(kotlin("test"))
             }
         }
-
         val jvmMain by getting
         val jvmTest by getting
         val jsMain by getting
@@ -59,6 +60,7 @@ kotlin {
         val nativeTest by getting
     }
 }
+
 
 tasks.withType<DokkaTask>().configureEach {
     outputDirectory.set(File("${System.getProperty("user.dir")}/docs/api-reference"))

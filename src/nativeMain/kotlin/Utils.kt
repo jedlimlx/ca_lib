@@ -4,7 +4,11 @@ import platform.posix.*
 
 actual val PLATFORM = "NATIVE"
 
+// @OptIn(ExperimentalForeignApi::class)
 actual fun readResource(resource: String): String {
+    throw NotImplementedError("Cannot read resources in Kotlin Native.")
+
+    /*
     var file: CPointer<FILE>? = fopen("./src/commonMain/resources/$resource", "r")
     if (file == null)
         file = fopen("./src/commonTest/resources/$resource", "r")
@@ -18,4 +22,5 @@ actual fun readResource(resource: String): String {
         fread(tmp, sizeOf<ByteVar>().convert(), size.convert(), file)
         tmp.toKString()
     }
+     */
 }

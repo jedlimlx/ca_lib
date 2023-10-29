@@ -32,6 +32,10 @@ actual fun readResource(resource: String): String {
         "hrotGenerationsSimulationTest.txt" -> require("hrotGenerationsSimulationTest.txt") as String
         "hrotGenerationsRuleRangeTest.txt" -> require("hrotGenerationsRuleRangeTest.txt") as String
 
+        "hrotExtendedGenerationsParsingTest.txt" -> require("hrotExtendedGenerationsParsingTest.txt") as String
+        "hrotExtendedGenerationsSimulationTest.txt" -> require("hrotExtendedGenerationsSimulationTest.txt") as String
+        "hrotExtendedGenerationsRuleRangeTest.txt" -> require("hrotExtendedGenerationsRuleRangeTest.txt") as String
+
         "intParsingTest.txt" -> require("intParsingTest.txt") as String
         "intSimulationTest.txt" -> require("intSimulationTest.txt") as String
         "intRuleRangeTest.txt" -> require("intRuleRangeTest.txt") as String
