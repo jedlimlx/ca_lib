@@ -1,5 +1,6 @@
 package rules.nontotalistic.transitions
 
+import readResource
 import rules.ruleloader.ruletable.Symmetry
 import simulation.Coordinate
 
@@ -41,6 +42,78 @@ abstract class INTTransitions : Collection<List<Int>> {
      * The number of transitions in the INT transition set
      */
     abstract override val size: Int
+
+    /**
+     * Reads the isotropic transition lookup table from a txt resource file
+     * @param resource The contents of the txt resource file
+     * @return Returns the lookup table and the reversed lookup table
+     */
+    protected fun readIsotropicTransitionsFromResources(resource: String):
+            Pair<Array<Map<Char, List<Int>>>, Map<List<Int>, String>> {
+        val transitionLookup: ArrayList<MutableMap<Char, List<Int>>> = arrayListOf()
+        val reverseTransitionLookup: MutableMap<List<Int>, String> = mutableMapOf()
+
+        var currDigit = '0'
+        val string = readResource(resource)
+        for (line in string.split("\n")) {
+            if (line.trim().isNotEmpty()) {
+                if (line.trim()[0].isDigit()) {
+                    currDigit = line.trim()[0]
+                    transitionLookup.add(HashMap())
+                } else {
+                    val tokens = line.trim().split(" ")
+                    if (tokens.size > 1) {
+                        val lst = tokens.subList(1, neighbourhood.size + 1).map { it.toInt() }
+                        transitionLookup.last()[line[0]] = lst
+                        reverseTransitionLookup[lst] = "$currDigit${line[0]}"
+                    } else break
+                }
+            }
+        }
+
+        return Pair(transitionLookup.toTypedArray(), reverseTransitionLookup)
+    }
+
+    /**
+     * Reads the anisotropic transition lookup table from a txt resource file
+     * @param resource The contents of the txt resource file
+     * @return Returns the lookup table and the reversed lookup table
+     */
+    protected fun readDoubleTransitionsFromResources(resource: String, resource2: String):
+            Pair<Array<Map<Char, List<Int>>>, Map<Char, List<Int>>> {
+        val transitionLookup: ArrayList<MutableMap<Char, List<Int>>> = arrayListOf()
+
+        var string = readResource(resource)
+        for (line in string.split("\n")) {
+            if (line.trim().isNotEmpty()) {
+                if (line.trim()[0].isDigit()) {
+                    transitionLookup.add(HashMap())
+                } else {
+                    val tokens = line.trim().split(" ")
+                    if (tokens.size > 1) {
+                        val lst = tokens.subList(1, neighbourhood.size - 4 + 1).map { it.toInt() }
+                        transitionLookup.last()[if (line[0] != '!') line[0] else 'x'] = lst
+                    } else break
+                }
+            }
+        }
+
+
+        val anisotropicTransitionLookup: MutableMap<Char, List<Int>> = mutableMapOf()
+
+        string = readResource(resource2)
+        for (line in string.split("\n")) {
+            if (!line.matches("\\s*".toRegex())) {
+                val tokens = line.split("\\s+".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+                val transition = List(tokens.size - 1) { tokens[it + 1].toInt() }
+
+                anisotropicTransitionLookup[tokens[0][0]] = transition
+            }
+        }
+
+
+        return Pair(transitionLookup.toTypedArray(), anisotropicTransitionLookup)
+    }
 
     /**
      * Checks if the given transition is contained in this transition

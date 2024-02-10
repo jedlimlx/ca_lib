@@ -20,8 +20,8 @@ class R2CrossINT: SingleLetterTransitions {
         Coordinate(-1, 0)
     )
 
-    override val transitionLookup: Array<Map<Char, List<Int>>> = readTransitionsFromResources("int/r2_cross.txt").first
-    override val reverseTransitionLookup: Map<List<Int>, String> = readTransitionsFromResources("int/r2_cross.txt").second
+    override val transitionLookup: Array<Map<Char, List<Int>>> = readIsotropicTransitionsFromResources("int/r2_cross.txt").first
+    override val reverseTransitionLookup: Map<List<Int>, String> = readIsotropicTransitionsFromResources("int/r2_cross.txt").second
 
     override val size: Int
 

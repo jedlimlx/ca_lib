@@ -9,6 +9,7 @@ actual fun readResource(resource: String): String {
     // For some reason I have to pre-specify the string... :(
     // Why is JavaScript like this...
     return when (tokens[tokens.size - 1]) {
+        "anisotropic.txt" -> require("anisotropic.txt") as String
         "r1_moore.txt" -> require("r1_moore.txt") as String
         "r1_hex.txt" -> require("r1_hex.txt") as String
         "r2_cross.txt" -> require("r2_cross.txt") as String

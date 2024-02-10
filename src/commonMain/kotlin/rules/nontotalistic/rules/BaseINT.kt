@@ -13,7 +13,10 @@ val INT_NEIGHBOURHOODS  = mapOf(
     "C2" to R2CrossINT(""),
     "K" to R2KnightINT(""),
     "FC" to R2FarCornersINT(""),
-    "FE" to R3FarEdgesINT("")
+    "FE" to R3FarEdgesINT(""),
+    "V2" to R2VonNeumannINT(""),
+    "C3" to R3CrossINT(""),
+    "B" to R2CheckerboardINT("")
 )
 
 /**
@@ -29,6 +32,9 @@ fun parseTransition(neighbourhoodString: String = "M", transition: String): INTT
         "K" -> R2KnightINT(transition)
         "FC" -> R2FarCornersINT(transition)
         "FE" -> R3FarEdgesINT(transition)
+        "V2" -> R2VonNeumannINT(transition)
+        "C3" -> R3CrossINT(transition)
+        "B" -> R2CheckerboardINT(transition)
         else -> throw IllegalArgumentException("INT Neighbourhood identifier " +
                 "$neighbourhoodString is not supported.")
     }
@@ -47,6 +53,9 @@ fun fromTransitions(neighbourhoodString: String = "M", transitions: Iterable<Lis
         "K" -> R2KnightINT(transitions)
         "FC" -> R2FarCornersINT(transitions)
         "FE" -> R3FarEdgesINT(transitions)
+        "V2" -> R2VonNeumannINT(transitions)
+        "C3" -> R3CrossINT(transitions)
+        "B" -> R2CheckerboardINT(transitions)
         else -> throw IllegalArgumentException("INT Neighbourhood identifier " +
                 "$neighbourhoodString is not supported.")
     }
@@ -65,6 +74,9 @@ fun fromStringTransitions(neighbourhoodString: String = "M", transitions: Iterab
         "K" -> R2KnightINT(transitions, "")
         "FC" -> R2FarCornersINT(transitions, "")
         "FE" -> R3FarEdgesINT(transitions, "")
+        "V2" -> R2VonNeumannINT(transitions, "")
+        "C3" -> R3CrossINT(transitions, "")
+        "B" -> R2CheckerboardINT(transitions, "")
         else -> throw IllegalArgumentException("INT Neighbourhood identifier " +
                 "$neighbourhoodString is not supported.")
     }

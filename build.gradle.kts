@@ -2,7 +2,7 @@ import org.jetbrains.dokka.gradle.DokkaTask
 
 plugins {
     id("org.jetbrains.dokka") version "1.9.10"
-    kotlin("multiplatform") version "1.9.10"
+    kotlin("multiplatform") version "1.9.20"
 }
 group = "org.jedlimlx"
 version = "1.0"
@@ -44,12 +44,12 @@ kotlin {
         else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
     }
 
-
     sourceSets {
         val commonMain by getting
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
+                implementation("com.github.ajalt.mordant:mordant:2.2.0")
             }
         }
         val jvmMain by getting
@@ -60,7 +60,6 @@ kotlin {
         val nativeTest by getting
     }
 }
-
 
 tasks.withType<DokkaTask>().configureEach {
     outputDirectory.set(File("${System.getProperty("user.dir")}/docs/api-reference"))

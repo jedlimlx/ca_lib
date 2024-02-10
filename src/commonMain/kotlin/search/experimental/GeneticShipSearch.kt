@@ -1,7 +1,8 @@
-package search
+package search.experimental
 
 import patterns.Pattern
 import rules.Rule
+import search.SearchProgram
 import simulation.*
 import soup.generateC1
 import kotlin.math.abs
@@ -9,7 +10,7 @@ import kotlin.math.log
 import kotlin.random.Random
 
 /**
- * Searches for spaceships using Genetic Algorithms
+ * Searches for spaceships using an experimental method based on genetic algorithms
  */
 class GeneticShipSearch(
     val rule: Rule,

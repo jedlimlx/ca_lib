@@ -21,3 +21,15 @@
 #MIN B2-m3-o/S2m3-p4/NH
 #MAX B2-m3-o/S2m3-p4/NH
 #T (12, 0)c/24 Spaceship
+
+#R B1cdeced2aa3aa7x/S2x3x-3aa12x/NV2
+#I 6bo$2bo4b$3bo3b$o3bo2b$bo2bo2b$5bo!
+#MIN B1cdeced2aa3aa4rq5ni/S1ccee2aaacadafcceaedkana3iana/NV2
+#MAX B2x-0xg1ccee2eana3x-1cgckegei2acadafcceckdnc3cajakaqa4x-0xr2agajalegigklng3acccjdkdncnfqfrcrerf4raya5x-2nn3klqjrk4qcye5ca6x-4qg5qe7x8x9x10x11x12x/S0xc2x3x-3aa4x-0xr3ifjcnc4kawa5x-3ni4afjckewe5ca6x7x8x9x10x11x12x/NV2
+#T (0, 2)c/16 Spaceship
+
+#R B0xr2coea3x-1cl2acnc3ea7x/S2x3x/NV2
+#I 6bo2b$bo7b$o7bo$bo7b$2bo!
+#MIN B2ea3x-1cl2acednc3ea4aoapnptown5agakjmkkngrkyi6ad/S2x3x-0xn1ci2ceid3ya/NV2
+#MAX B0xr1cncreoer2alancicncocpeaeieoiminklknkokqngni3agaialcccecicjecegidimjfjjjmkckgngqiqjqmrdrgrjycyeygyiylym3x-1cl2acnc3ea4cacceciciejcjdjekckdkeqarerftatctdteydyf5caeaqaya6x-2er3epjpnoqprnro4agakalcligiikkngrirmtiwgwlykylymzm5acceedicjfkdndqcqdrfye6aaia7x8x-4nrtr5np6aiameikjkk9x-6aqkq7eg10x11x12x/S0xr1enep2aialamciclcmeielilimkjkkngninl2x3ceeceeicidncqcqdrfycyd3x4caeatawa5x-2anaoapiokn3agakegeieljijlninknmqkqmrirk4acaeafidjdjfncqcrerfte5iajakaraya6x-3cnqprq4ajaljgjijkritgwjzg5idnfqeqfrf7x-4aqrp5cgcjigjgjkrg6ecednc8x-5noqq6agaicg7ee8xa9x-6an10x11x12x/NV2
+#T (-2, 3)c/28 Spaceship

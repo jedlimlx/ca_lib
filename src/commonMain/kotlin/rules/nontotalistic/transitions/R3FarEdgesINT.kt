@@ -20,8 +20,8 @@ class R3FarEdgesINT: SingleLetterTransitions {
         Coordinate(-1, 1)
     )
 
-    override val transitionLookup: Array<Map<Char, List<Int>>> = readTransitionsFromResources("int/r1_moore.txt").first
-    override val reverseTransitionLookup: Map<List<Int>, String> = readTransitionsFromResources("int/r1_moore.txt").second
+    override val transitionLookup: Array<Map<Char, List<Int>>> = readIsotropicTransitionsFromResources("int/r1_moore.txt").first
+    override val reverseTransitionLookup: Map<List<Int>, String> = readIsotropicTransitionsFromResources("int/r1_moore.txt").second
 
     override val size: Int
 

@@ -1,6 +1,8 @@
 import kotlin.test.Test
 import rules.canoniseExtendedGenerations
 import rules.fromRulestring
+import rules.nontotalistic.transitions.R1MooreINT
+import rules.nontotalistic.transitions.R2VonNeumannINT
 import rules.readExtendedGenerations
 import simulation.DenseGrid
 import simulation.SparseGrid
@@ -9,8 +11,10 @@ import kotlin.system.measureTimeMillis
 class Test {
     @Test
     fun test() {
-        println(readExtendedGenerations("0-2-3-5"))
-        println(canoniseExtendedGenerations(3, mutableSetOf(2)))
+        println(R1MooreINT("2x").transitionStrings)
+
+        println(R2VonNeumannINT("2x").regex)
+        println(R2VonNeumannINT("2x-1ed8x9x").transitionStrings.size)
     }
 
     @Test

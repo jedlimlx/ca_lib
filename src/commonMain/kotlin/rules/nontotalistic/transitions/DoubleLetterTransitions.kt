@@ -1,8 +1,9 @@
 package rules.nontotalistic.transitions
-/*
 
-import PLATFORM
 
+/**
+ * Represents isotropic non-totalistic transitions that use 2 letters to represent each transition.
+ */
 abstract class DoubleLetterTransitions: INTTransitions() {
     /**
      * A lookup table for the isotropic transitions for the inner 8 cells
@@ -10,26 +11,22 @@ abstract class DoubleLetterTransitions: INTTransitions() {
     abstract val isotropicTransitionLookup: Array<Map<Char, List<Int>>>
 
     /**
-     * A lookup table for the isotropic transition string for the inner 8 cells given the transition
-     */
-    abstract val isotropicReverseTransitionLookup: Map<List<Int>, String>
-
-    /**
      * A lookup table for the anisotropic transitions for the outer 4 cells
      */
     abstract val anisotropicTransitionLookup: Map<Char, List<Int>>
-
-    /**
-     * A lookup table for the anisotropic transition string given the transition for the outer 4 cells
-     */
-    abstract val anisotropicReverseTransitionLookup: Map<List<Int>, String>
 
     /**
      * A lookup table for the complete isotropic transition string given the transition
      */
     abstract val reverseTransitionLookup: Map<List<Int>, String>
 
+    /**
+     * A lookup table for the string transitions mapped to the corresponding number of outer totalistic states.
+     */
+    abstract val transitionsByOuterTotalistic: Array<Set<String>>
+
     override val regex: Regex by lazy {
+        // building the normal transitions
         val ordinaryTransitions = StringBuilder("[0-8]([x")
         for (isotropicChar in isotropicTransitionLookup[isotropicTransitionLookup.size / 2].keys) {
             ordinaryTransitions.append(isotropicChar)
@@ -42,7 +39,53 @@ abstract class DoubleLetterTransitions: INTTransitions() {
 
         ordinaryTransitions.append("])+")
 
-        Regex("[0-9]+x-($ordinaryTransitions)+|$ordinaryTransitions|[0-9]+x")
+        // building the negated transitions
+        val negatedTransitions = Array(neighbourhood.size + 1) { StringBuilder("(") }
+        val transitionsByOuterTotalistic = Array<MutableSet<String>>(neighbourhood.size + 1) { mutableSetOf() }
+        isotropicTransitionLookup.forEachIndexed { num, item ->
+            item.keys.sorted().forEach { isotropicTransition ->
+                anisotropicTransitionLookup.keys.sorted().forEach { anisotropicTransition ->
+                    val string = "${num}${if (isotropicTransition != '!') isotropicTransition else "x"}${anisotropicTransition}"
+                    val transition = item[isotropicTransition]!! + anisotropicTransitionLookup[anisotropicTransition]!!
+                    transitionsByOuterTotalistic[transition.sum()].add(string)
+                }
+            }
+        }
+
+        negatedTransitions.forEachIndexed { index, it ->
+            it.apply {
+                val sortedTransitions = transitionsByOuterTotalistic[index].sorted()
+
+                // combining them into the transition string
+                var currentNum = sortedTransitions[0][0].digitToInt()
+                append(currentNum)
+                append("(")
+
+                var beginning = true
+                sortedTransitions.forEach {
+                    val num = it[0].digitToInt()
+                    if (num == currentNum) {
+                        if (!beginning) append("|") else beginning = false
+                        append(it.substring(1))
+                    } else {
+                        currentNum = num
+
+                        append(")+")
+                        append("|")
+                        append(num)
+                        append("(")
+                        append(it.substring(1))
+                    }
+                }
+
+                append(")+)+")
+            }
+        }
+
+        Regex(
+            negatedTransitions.mapIndexed { index, it -> "${index}x-$it" }.joinToString("|") +
+                    "|$ordinaryTransitions|[0-9]+x"
+        )
     }
 
     override val transitions: Set<List<Int>> get() = _transitions
@@ -55,22 +98,21 @@ abstract class DoubleLetterTransitions: INTTransitions() {
         val regex = regex
 
         regex.findAll(string).forEach {
-            val block = it.groupValues[1]
-
+            val block = it.groupValues[0]
             if (block.isNotEmpty()) {
-                if ('x' in block) {
+                if (block.last() == 'x' || "x-" in block) {
                     val tokens = block.split("x")
 
                     // get outer-totalistic transition number
                     val outerTotalisticNumber = tokens[0].toInt()
-
+                    loadStringTransitions(transitionsByOuterTotalistic[outerTotalisticNumber])
 
                     // remove transitions
                     if ("-" in tokens[1]) {
                         regex.findAll(tokens[1]).forEach {
                             // Check for individual transitions
-                            val number = block[0]
-                            val transitions = block.substring(1).chunked(2).map { number + it }
+                            val number = it.groupValues[0][0]
+                            val transitions = it.groupValues[0].substring(1).chunked(2).map { number + it }
                             removeStringTransitions(transitions)
                         }
                     }
@@ -86,21 +128,78 @@ abstract class DoubleLetterTransitions: INTTransitions() {
 
     override fun canoniseTransition(): String = StringBuilder().apply {
         // computing numbers of each outer-totalistic transition
-        val count = IntArray(neighbourhood.size)
+        val transitionsByOuterTotalistic = Array<MutableSet<String>>(neighbourhood.size + 1) { mutableSetOf() }
         for (transition in transitionStrings) {
-            count[transition[0].digitToInt() + anisotropicTransitionLookup[transition[2]]!!.sum()]++
+            transitionsByOuterTotalistic[
+                transition[0].digitToInt() + anisotropicTransitionLookup[transition[2]]!!.sum()
+            ].add(transition)
         }
 
         // now deal with the ones that need to be negated
-        val sortedTransitionStrings = transitionStrings.toSortedSet()
-        count.forEachIndexed { index, num ->
-            val maxCount = ...
-            if (num == maxCount)
-                append("${index}x")
-            else if (num > maxCount) {
+        val transitionStrings = transitionStrings.toMutableSet()
+        val transitionBlocks = HashSet<String>()
+        transitionsByOuterTotalistic.forEachIndexed { index, transitions ->
+            val maxTransitions = this@DoubleLetterTransitions.transitionsByOuterTotalistic[index]
 
-            }
+            val transitionBlock = StringBuilder().apply {
+                if (transitions.size == maxTransitions.size) {
+                    append("${index}x")
+                    transitionStrings.removeAll(maxTransitions)
+                } else if (transitions.size > maxTransitions.size / 2) {
+                    append("${index}x-")
+
+                    // sort transition that are to be added
+                    val sortedTransitions = (maxTransitions - transitions).sorted()
+                    transitionStrings.removeAll(transitions)
+
+                    // combining them into the transition string
+                    var currentNum = sortedTransitions[0][0].digitToInt()
+                    append(currentNum)
+
+                    sortedTransitions.forEach {
+                        val num = it[0].digitToInt()
+                        if (num == currentNum) append(it.substring(1))
+                        else {
+                            currentNum = num
+                            append(it)
+                        }
+                    }
+                }
+            }.toString()
+
+            transitionBlocks.add(transitionBlock)
         }
+
+        // adding in the miscellaneous transitions
+        val transitionBlock = StringBuilder()
+        val sortedTransitionStrings = transitionStrings.sorted()
+        if (sortedTransitionStrings.isNotEmpty()) {
+            var currentNum = sortedTransitionStrings[0][0].digitToInt()
+            transitionBlock.append(currentNum)
+
+            sortedTransitionStrings.forEach {
+                val num = it[0].digitToInt()
+                if (num == currentNum) transitionBlock.append(it.substring(1))
+                else {
+                    currentNum = num
+                    transitionBlocks.add(transitionBlock.toString())
+
+                    // reset transition block
+                    transitionBlock.clear()
+                    transitionBlock.append(it)
+                }
+            }
+
+            transitionBlocks.add(transitionBlock.toString())
+        }
+
+        // finally complete transition string
+        transitionBlocks.sortedBy {
+            if ("x" in it) {
+                it.split("x")[0].toInt() * 2 + 1
+            } else if (it.isNotEmpty()) it[0].digitToInt() * 2
+            else 0
+        }.forEach{ append(it) }
     }.toString()
 
     override fun stringFromTransition(transition: List<Int>): String =
@@ -121,7 +220,7 @@ abstract class DoubleLetterTransitions: INTTransitions() {
     protected fun loadStringTransitions(transitions: Iterable<String>) {
         transitions.forEach {
             _transitions.addAll(symmetry(transitionFromString(it)))
-            _transitionStrings.add(it)
+            _transitionStrings.add(stringFromTransition(transitionFromString(it)))
         }
     }
 
@@ -132,7 +231,7 @@ abstract class DoubleLetterTransitions: INTTransitions() {
     protected fun removeStringTransitions(transitions: Iterable<String>) {
         transitions.forEach {
             _transitions.removeAll(symmetry(transitionFromString(it)))
-            _transitionStrings.remove(it)
+            _transitionStrings.remove(stringFromTransition(transitionFromString(it)))
         }
     }
 
@@ -146,18 +245,34 @@ abstract class DoubleLetterTransitions: INTTransitions() {
             _transitionStrings.add(
                 (
                     reverseTransitionLookup[it]
-                    ) ?: throw IllegalArgumentException("Invalid transition: $it")
+                ) ?: throw IllegalArgumentException("Invalid transition: $it")
             )
         }
     }
 
     /**
-     * Reads the transition lookup table from a txt resource file
-     * @param resource The contents of the txt resource file
-     * @return Returns the lookup table and the reversed lookup table
+     * Generates the reverse lookup tables and the lookup tables that map outer-totalistic transitions to their corresponding
+     * isotropic transitions.
+     * @return Returns the reverse lookup table and the lookup tables that map outer-totalistic transitions to their corresponding
+     * isotropic transitions.
      */
-    protected fun readTransitionsFromResources(resource: String): Pair<Array<Map<Char, List<Int>>>, Map<List<Int>, String>> {
+    protected fun generateReverseLookup(): Pair<Map<List<Int>, String>, Array<Set<String>>> {
+        val reverseTransitionLookup: MutableMap<List<Int>, String> = mutableMapOf()
+        val transitionsByOuterTotalistic = Array<MutableSet<String>>(neighbourhood.size + 1) { mutableSetOf() }
 
+        isotropicTransitionLookup.forEachIndexed { num, item ->
+            item.keys.sorted().forEach { isotropicTransition ->
+                anisotropicTransitionLookup.keys.sorted().forEach { anisotropicTransition ->
+                    val string = "${num}${if (isotropicTransition != '!') isotropicTransition else "x"}${anisotropicTransition}"
+                    val transition = item[isotropicTransition]!! + anisotropicTransitionLookup[anisotropicTransition]!!
+                    if (transition !in reverseTransitionLookup) {
+                        symmetry(transition).forEach { reverseTransitionLookup[it] = string }
+                        transitionsByOuterTotalistic[transition.sum()].add(string)
+                    }
+                }
+            }
+        }
+
+        return Pair(reverseTransitionLookup.toMap(), transitionsByOuterTotalistic.map { it.toSet() }.toTypedArray())
     }
 }
- */

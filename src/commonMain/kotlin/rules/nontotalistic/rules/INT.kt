@@ -1,7 +1,9 @@
 package rules.nontotalistic.rules
 
 import rules.RuleFamily
+import rules.nontotalistic.transitions.DoubleLetterTransitions
 import rules.nontotalistic.transitions.INTTransitions
+import rules.nontotalistic.transitions.SingleLetterTransitions
 import rules.ruleloader.builders.ruletable
 import simulation.Coordinate
 
@@ -66,9 +68,12 @@ class INT : BaseINT {
         val minSurvival = hashSetOf<String>()
 
         // The maximum transitions
-        val maxTransition = parseTransition((0 .. neighbourhood[0].size).joinToString(""))
+        val maxTransition = parseTransition((0 .. neighbourhood[0].size).map {
+            if (birth is DoubleLetterTransitions) it.toString() + "x" else it
+        }.joinToString())
         val maxBirth = maxTransition.transitionStrings.toHashSet()
         val maxSurvival = maxTransition.transitionStrings.toHashSet()
+        println(maxTransition.transitionStrings)
 
         transitionsToSatisfy.forEach {
             val transition = it.subList(2, it.size)
