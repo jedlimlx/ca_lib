@@ -25,7 +25,7 @@ class CFind(
     val width: Int,
     val symmetry: ShipSymmetry,
     val direction: Direction = Direction.NORTH,
-    val maxQueueSize: Int = 1 shl 26,  // 2 ^ 20
+    val maxQueueSize: Int = 1 shl 20,  // 2 ^ 20
     val minDeepeningIncrement: Int = 2,
     lookaheadDepth: Int = Int.MAX_VALUE,
     val numShips: Int = Int.MAX_VALUE,
@@ -80,7 +80,7 @@ class CFind(
 
         temp[it]!!
     }
-    val leftBC: List<Coordinate> = combinedBC.filter { it.x < baseCoordinates.last().x }
+    val leftBC: List<Coordinate> = combinedBC.filter { it.x < baseCoordinates.last().x }.reversed()
     val rightBC: List<Coordinate> = combinedBC.filter { it.x > baseCoordinates.last().x }.reversed()
 
     val bcDepth: Int = if (rightBC.isNotEmpty()) rightBC.groupBy { it.y }.map { (_, lst) -> lst.size }.max() else -1
@@ -110,11 +110,40 @@ class CFind(
     }
 
     // double or even triple lookahead is possible for higher-range rules
-    val maxLookaheadDepth = centralHeight - k.floorDiv(period)
-    val lookaheadDepth = minOf(lookaheadDepth, maxLookaheadDepth)
-    val lookaheadIndices = (0..<this.lookaheadDepth).map { depth ->
+    private val tempIndices = (0..<indices.size).map { depth ->
         indices.map { it - indices.sorted()[depth] }
     }
+    val maxLookaheadDepth = tempIndices.run {
+        val known = hashSetOf<Int>()
+        var output = 0
+        var breakLoop = false
+        this.forEachIndexed { index, lst ->
+            if (breakLoop) return@forEachIndexed
+
+            var unknown = 0
+            if (lst[0] - period !in known) {
+                known.add(lst[0] - period)
+                unknown++
+            }
+
+            lst.forEach {
+                if (it < 0 && it !in known) {
+                    known.add(it)
+                    unknown++
+                }
+            }
+
+            if (unknown > 1) {
+                output = index
+                breakLoop = true
+                return@forEachIndexed
+            }
+        }
+
+        output
+    }
+    val lookaheadDepth = minOf(lookaheadDepth, maxLookaheadDepth)
+    val lookaheadIndices = tempIndices.subList(0, this.lookaheadDepth)
 
     val additionalDepth: Int = when (indices.indexOf(indices.min())) {
         0 -> neighbourhood[0].filter { it.y == baseCoordinates[0].y + 1 }.maxOf{ it.x } + 1 - baseCoordinates.last().x
@@ -166,7 +195,8 @@ class CFind(
     }
 
     override fun search() {
-        println(bold("Beginning search for width ${green("$width")} spaceship moving towards ${green("$direction")} at " +
+        println(bold("Beginning search for width ${green("$width")} " +
+                "spaceship with ${green("$symmetry")} symmetry moving towards ${green("$direction")} at " +
                 "${green("${k}c/$period")}${if (rule is RuleFamily) " in ${green(rule.rulestring)}" else ""}..."))
 
         // Printing out some debugging information
@@ -377,33 +407,17 @@ class CFind(
 
         // Encodes the neighbourhood with the central cell located at coordinate
         fun encodeNeighbourhood(coordinate: Coordinate, row: IntArray? = null): Int {
-//            var key = 0
-//            var power = 1
-//            neighbourhood[0].forEach {
-//                if (it !in baseCoordinates) {
-//                    key += rows[it + coordinate, 0, row] * power
-//                    power *= rule.numStates
-//                }
-//            }
-//
-//            // Adding current cell state & next cell state
-//            key += rows[coordinate, 0, row] * power
-//            power *= rule.numStates
-//
-//            key += rows[coordinate, 1, row] * power
-//            power *= rule.numStates
-
             var key = 0
             var power = pow(rule.numStates, mainNeighbourhood.size)
 
             if (coordinate !in neighbourhoodWithoutBg) {
                 neighbourhoodWithoutBg[coordinate] = mainNeighbourhood.filter { (it, _) ->
-                    if (symmetry == ShipSymmetry.ASYMMETRIC) (it + coordinate).x in 0..<width
+                    if (symmetry == ShipSymmetry.ASYMMETRIC || symmetry == ShipSymmetry.GLIDE) (it + coordinate).x in 0..<width
                     else (it + coordinate).x >= 0
-                }.toList()
+                }.map { (it, p) -> Pair(it + coordinate, p) }.toList()
             }
 
-            neighbourhoodWithoutBg[coordinate]!!.forEach { (it, p) -> key += rows[it + coordinate, 0, row] * p }
+            neighbourhoodWithoutBg[coordinate]!!.forEach { (it, p) -> key += rows[it, 0, row] * p }
 
             // Adding current cell state & next cell state
             key += rows[coordinate, 0, row] * power
@@ -511,8 +525,10 @@ class CFind(
 
                 if (bcDepth != 1 && rightBC.isNotEmpty() && !checkBoundaryCondition(node, rightBC)) continue
 
-                val bcList = leftBC.reversed().subList(
-                    0, if (symmetry != ShipSymmetry.ASYMMETRIC) baseCoordinates.last().x else leftBC.size
+                val bcList = leftBC.subList(
+                    0,
+                    if (symmetry != ShipSymmetry.ASYMMETRIC && symmetry != ShipSymmetry.GLIDE) baseCoordinates.last().x
+                    else leftBC.size
                 )
                 if (checkBoundaryCondition(node, bcList, offset=Coordinate(width - 1, 0))) {
                     val row = Row(currentRow, node.completeRow.toIntArray(), rule.numStates)
@@ -561,7 +577,7 @@ class CFind(
             // startTime = timeSource.markNow()
 
             var deadend = true
-            val row = (node.completeRow + List(width - node.depth) { -1 }).toIntArray()
+            val row = node.completeRow.toIntArray()
             val shifted = (node.cells * rule.numStates).mod(pow(rule.numStates, baseCoordinates.size - 1))
             for (i in 0 ..< rule.numStates) {
                 if (((lookup(node.depth, row)[if (baseCoordinates.size > 1) node.cells else 0] shr i) and 0b1) == 1) {
@@ -573,7 +589,7 @@ class CFind(
                                     if (baseCoordinates.size > 1) shifted + i else 0
                             ) else encodeKey(
                                 Coordinate(node.depth, 0) - baseCoordinates.last(),
-                                node.completeRow.toIntArray()
+                                row
                             ), i,
                             node.depth + 1,
                             rule.numStates,
@@ -603,16 +619,19 @@ class CFind(
         if (coordinate.x >= width) {
             return when (symmetry) {
                 ShipSymmetry.ASYMMETRIC -> 0
+                ShipSymmetry.GLIDE -> 0
                 ShipSymmetry.EVEN -> this[Coordinate(2 * width - coordinate.x - 1, coordinate.y), generation, currentRow]
                 ShipSymmetry.ODD -> this[Coordinate(2 * width - coordinate.x - 2, coordinate.y), generation, currentRow]
-                ShipSymmetry.GLIDE -> 0
             }
         }
 
         if (coordinate.y == 0 && currentRow != null) return currentRow[coordinate.x]
         return if (coordinate.y > 0 && coordinate.y < this.size) {
             if (generation == 0) this[coordinate.y - 1].cells[coordinate.x]
-            else if (coordinate.y == centralHeight && generation == 1) this.last().cells[coordinate.x]
+            else if (coordinate.y == centralHeight && generation == 1) {
+                if (symmetry != ShipSymmetry.GLIDE) this.last().cells[coordinate.x]
+                else this.last().cells[width - coordinate.x - 1]
+            }
             else -1  // means that the cell state is not known
         } else -1
     }
