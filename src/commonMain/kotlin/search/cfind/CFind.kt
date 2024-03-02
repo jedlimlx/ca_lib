@@ -27,6 +27,7 @@ class CFind(
     val direction: Direction = Direction.NORTH,
     val maxQueueSize: Int = 1 shl 26,  // 2 ^ 20
     val minDeepeningIncrement: Int = 2,
+    lookaheadDepth: Int = Int.MAX_VALUE,
     val numShips: Int = Int.MAX_VALUE,
     val partialFrequency: Int = 1000,
     verbosity: Int = 0
@@ -108,8 +109,12 @@ class CFind(
         else centralHeight * period - k
     }
 
-    val lookaheadIndices = indices.map { it - indices.min() }
-    val combinedIndices = indices.toSet() union lookaheadIndices.toSet()
+    // double or even triple lookahead is possible for higher-range rules
+    val maxLookaheadDepth = centralHeight - k.floorDiv(period)
+    val lookaheadDepth = minOf(lookaheadDepth, maxLookaheadDepth)
+    val lookaheadIndices = (0..<this.lookaheadDepth).map { depth ->
+        indices.map { it - indices.sorted()[depth] }
+    }
 
     val additionalDepth: Int = when (indices.indexOf(indices.min())) {
         0 -> neighbourhood[0].filter { it.y == baseCoordinates[0].y + 1 }.maxOf{ it.x } + 1 - baseCoordinates.last().x
@@ -175,9 +180,15 @@ class CFind(
         println((bold("Additional Depth (for lookahead): ") + "$additionalDepth"), verbosity = 1)
 
         println(brightRed(bold("\nMisc\n----------------")), verbosity = 1)
-        println((bold("Successor Indices: ") + "${indices.toList()}"), verbosity = 1)
-        println((bold("Lookahead Indices: ") + "${lookaheadIndices.toList()}"), verbosity = 1)
         println((bold("Successor Table Size: ") + "${successorTable.size}"), verbosity = 1)
+        println((bold("Maximum Lookahead Depth: ") + "$maxLookaheadDepth"), verbosity = 1)
+        println((bold("Lookahead Depth: ") + "$lookaheadDepth"), verbosity = 1)
+        println(
+            (
+                bold("Row Indices: ") +
+                        "\n${indices.toList()}\n${lookaheadIndices.map { it.toList() }.joinToString("\n")}"
+            ), verbosity = 1
+        )
 
         // Initialising BFS queue with (height - 1) * period empty rows
         var currentRow = Row(null, IntArray(width) { 0 }, rule.numStates)
@@ -350,16 +361,16 @@ class CFind(
      * Extract the relevant rows that will be used in finding the next state given the current latest [row].
      * It will return a pair of rows - one for the regular successor search and the other for lookahead
      */
-    fun extractRows(row: Row): Pair<List<Row>, List<Row?>?> = Pair(
+    fun extractRows(row: Row): Pair<List<Row>, List<List<Row?>>> = Pair(
         indices.map { row.getPredecessor(it - 1)!! }.toList(),
-        lookaheadIndices.map { row.getPredecessor(it - 1) }.toList()
+        lookaheadIndices.map { it.map { row.getPredecessor(it - 1) }.toList() }
     )
 
     /**
      * Searches for a possible next row given the previous rows provided. Returns null if row cannot be found.
      */
     fun nextRow(
-        currentRow: Row, rows: List<Row>, lookaheadRows: List<Row?>?, lookahead: Boolean = false
+        currentRow: Row, rows: List<Row>, lookaheadRows: List<List<Row?>>, lookaheadDepth: Int = 0
     ): Pair<List<Row>, Int> {
         // Keeping track of time taken for each segment for profiling
         // val timeSource = TimeSource.Monotonic
@@ -505,9 +516,18 @@ class CFind(
                 )
                 if (checkBoundaryCondition(node, bcList, offset=Coordinate(width - 1, 0))) {
                     val row = Row(currentRow, node.completeRow.toIntArray(), rule.numStates)
-                    if (!lookahead && lookaheadRows != null) {  // TODO implement double lookahead for higher-range rules
+                    if (lookaheadDepth < this.lookaheadDepth) {
+                        val newRows = lookaheadRows.mapIndexed { index, rows ->
+                            val temp = lookaheadIndices[lookaheadDepth].min()
+                            val tempIndices = lookaheadIndices[index + lookaheadDepth]
+                            rows.mapIndexed { index, value -> if (tempIndices[index] == temp) row else value }
+                        }
+
                         val (lookaheadOutput, temp) = nextRow(
-                            row, lookaheadRows.map { it ?: row }, null, true
+                            row,
+                            newRows.first() as List<Row>,
+                            newRows.subList(1, newRows.size),
+                            lookaheadDepth + 1
                         )
 
                         if (lookaheadOutput.isEmpty()) {

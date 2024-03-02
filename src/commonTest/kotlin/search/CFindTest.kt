@@ -51,5 +51,12 @@ class Test {
         lifeSearchP3K1.search()
 
         assertEquals(lifeSearchP3K1.searchResults.size, 1)
+
+        val lifeSearchP4K1 = CFind(
+            HROT("B3/S23"), 4, 1, 7, ShipSymmetry.ODD, verbosity = 1, numShips = 1
+        )
+        lifeSearchP4K1.search()
+
+        assertEquals(lifeSearchP4K1.searchResults.size, 1)
     }
 }

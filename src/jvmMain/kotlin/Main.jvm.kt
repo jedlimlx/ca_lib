@@ -1,10 +1,3 @@
-import com.github.ajalt.mordant.animation.animation
-import com.github.ajalt.mordant.animation.progressAnimation
-import com.github.ajalt.mordant.rendering.AnsiLevel
-import com.github.ajalt.mordant.rendering.TextColors
-import com.github.ajalt.mordant.terminal.Terminal
-import com.github.ajalt.mordant.widgets.Spinner
-import com.github.ajalt.mordant.widgets.progressLayout
 import rules.hrot.HROT
 import search.cfind.CFind
 import search.cfind.ShipSymmetry
@@ -47,7 +40,7 @@ actual fun main() {
     )
     minibugsSearch.search()
 
-    assert(minibugsSearch.searchResults.size == 1)
+    assert(minibugsSearch.searchResults.size == 2)
 
     println("Minibugs, c/2o, width 8, asymmetric: ${(timeSource.markNow() - startTime).inWholeMilliseconds / 1000.0}s")
 }
