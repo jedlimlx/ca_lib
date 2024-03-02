@@ -85,7 +85,7 @@ fun parseSymbol(range: Int, symbol: Char): Pair<Array<Coordinate>, IntArray?> {
 fun toWeights(neighbourhood: Array<Coordinate>, weights: IntArray): String {
     val range = neighbourhood.maxOf { max(abs(it.x), abs(it.y)) }
 
-    val result = IntArray(range) { 0 }
+    val result = IntArray((2 * range + 1) * (2 * range + 1)) { 0 }
     neighbourhood.forEachIndexed { index, coordinate ->
         result[(coordinate.x + range) + (2 * range + 1) * (coordinate.y + range)] = weights[index]
     }

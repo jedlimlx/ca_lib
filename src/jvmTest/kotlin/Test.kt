@@ -1,48 +1,41 @@
+import rules.hrot.HROT
+import search.cfind.CFind
+import search.cfind.ShipSymmetry
+import kotlin.test.Ignore
 import kotlin.test.Test
-import rules.canoniseExtendedGenerations
-import rules.fromRulestring
-import rules.nontotalistic.transitions.R1MooreINT
-import rules.nontotalistic.transitions.R2VonNeumannINT
-import rules.readExtendedGenerations
-import simulation.DenseGrid
-import simulation.SparseGrid
-import kotlin.system.measureTimeMillis
+import kotlin.time.TimeSource
 
 class Test {
     @Test
-    fun test() {
-        println(R1MooreINT("2x").transitionStrings)
-
-        println(R2VonNeumannINT("2x").regex)
-        println(R2VonNeumannINT("2x-1ed8x9x").transitionStrings.size)
-    }
-
-    @Test
+    @Ignore
     fun benchmark() {
-        val rule = fromRulestring("B3/S23")
-        val pattern = "bo\$obo\$bo8\$8bo\$6bobo\$5b2obo2\$4b3o!"
+        val timeSource = TimeSource.Monotonic
 
-        val sparsePattern = SparseGrid(pattern, rule=rule)
-        val sparsePattern2 = SparseGrid(pattern, rule=rule)
-        val sparsePattern3 = SparseGrid(pattern, rule=rule)
+        var startTime = timeSource.markNow()
+        val almostLifeP4K1 = CFind(
+            HROT("R2,C2,S6-11,B9-11,NW0010003330130310333000100"), 4, 1, 5, ShipSymmetry.EVEN, verbosity = -1
+        )
+        almostLifeP4K1.search()
+        println("AlmostLife, c/4o, width 5, even: ${(timeSource.markNow() - startTime).inWholeMilliseconds / 1000}s")
 
-        val densePattern = DenseGrid(pattern, rule=rule)
-        val densePattern2 = DenseGrid(pattern, rule=rule)
-        val densePattern3 = DenseGrid(pattern, rule=rule)
+        assert(almostLifeP4K1.searchResults.size == 0)
 
-        println("Testing sparse grids...")
-        println(measureTimeMillis { sparsePattern.step(100) })
-        println(measureTimeMillis { sparsePattern2.step(100) })
-        println(measureTimeMillis { sparsePattern3.step(100) })
-        println()
+        startTime = timeSource.markNow()
+        val lifeSearchP4K1 = CFind(
+            HROT("B3/S23"), 4, 1, 7, ShipSymmetry.ODD, verbosity = -1, numShips = 1
+        )
+        lifeSearchP4K1.search()
+        println("B3/S23, c/4o, width 7, odd: ${(timeSource.markNow() - startTime).inWholeMilliseconds / 1000}s")
 
-        println("Testing dense grids...")
-        println(measureTimeMillis { densePattern.step(100) })
-        println(measureTimeMillis { densePattern2.step(100) })
-        println(measureTimeMillis { densePattern3.step(100) })
-        println()
+        assert(lifeSearchP4K1.searchResults.size == 1)
 
-        println(sparsePattern)
-        println(densePattern)
+        startTime = timeSource.markNow()
+        val circularSearchP2K1 = CFind(
+            HROT("R2,C2,S5-8,B6-7,NC"), 2, 1, 7, ShipSymmetry.EVEN, verbosity = -1
+        )
+        circularSearchP2K1.search()
+        println("R2,C2,S5-8,B6-7,NC, c/2o, width 7, even: ${(timeSource.markNow() - startTime).inWholeMilliseconds / 1000}s")
+
+        assert(circularSearchP2K1.searchResults.size == 2)
     }
 }

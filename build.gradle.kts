@@ -1,11 +1,17 @@
 import org.jetbrains.dokka.gradle.DokkaTask
 
 plugins {
+    application
     id("org.jetbrains.dokka") version "1.9.10"
     kotlin("multiplatform") version "1.9.20"
 }
 group = "org.jedlimlx"
 version = "1.0"
+
+application {
+    mainClass.set("MainKt")
+}
+
 
 repositories {
     mavenCentral()
@@ -45,11 +51,15 @@ kotlin {
     }
 
     sourceSets {
-        val commonMain by getting
+        val commonMain by getting {
+            dependencies {
+                implementation("com.github.ajalt.mordant:mordant:2.3.0")
+            }
+        }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
-                implementation("com.github.ajalt.mordant:mordant:2.2.0")
+                implementation("com.github.ajalt.mordant:mordant:2.3.0")
             }
         }
         val jvmMain by getting
