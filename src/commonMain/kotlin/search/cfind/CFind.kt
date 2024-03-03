@@ -1,10 +1,9 @@
 package search.cfind
 
+import com.github.ajalt.mordant.animation.Animation
 import com.github.ajalt.mordant.animation.animation
-import com.github.ajalt.mordant.rendering.AnsiLevel
 import com.github.ajalt.mordant.rendering.TextColors.*
-import com.github.ajalt.mordant.rendering.TextStyles.*
-import com.github.ajalt.mordant.terminal.Terminal
+import com.github.ajalt.mordant.rendering.TextStyles.bold
 import com.github.ajalt.mordant.widgets.progressLayout
 import patterns.Pattern
 import patterns.Spaceship
@@ -110,8 +109,7 @@ class CFind(
         else centralHeight * period - k
     }
 
-    // double or even triple lookahead is possible for higher-range rules
-    private val tempIndices = (0..<indices.size).map { depth ->
+    private val tempIndices = indices.indices.map { depth ->
         indices.map { it - indices.sorted()[depth] }
     }
     val maxLookaheadDepth = tempIndices.run {
@@ -142,7 +140,7 @@ class CFind(
         }
 
         output
-    }
+    }  // double or even triple lookahead is possible for higher-range rules
     val lookaheadDepth = minOf(lookaheadDepth, maxLookaheadDepth)
     val lookaheadIndices = tempIndices.subList(0, this.lookaheadDepth)
 
@@ -151,6 +149,22 @@ class CFind(
         indices.size - 1 -> baseCoordinates.last().x - 1
         else -> -1
     }
+
+    // Computing neighbourhoods to be memorised for lookahead
+    val memorisedlookaheadNeighbourhood: List<List<Pair<Coordinate, Int>>> = lookaheadIndices.indices.map {
+        if (lookaheadIndices[it].indexOf(lookaheadIndices[it].min()) == 0) {
+            mainNeighbourhood.filter { (it, _) -> it.y > -centralHeight + 1 }
+        } else {
+            mainNeighbourhood
+        }
+    }.toList()
+    val lookaheadNeighbourhood: List<List<Pair<Coordinate, Int>>> = lookaheadIndices.indices.map {
+        if (lookaheadIndices[it].indexOf(lookaheadIndices[it].min()) == 0) {
+            mainNeighbourhood.filter { (it, _) -> it.y == -centralHeight + 1 }
+        } else {
+            listOf()
+        }
+    }.toList()
 
     // Building lookup tables
     val successorTable: Array<IntArray> = Array(
@@ -297,14 +311,16 @@ class CFind(
             println(bold("\nBeginning depth-first search round, queue size ${queue.size} "))
 
             // DFS round runs for a certain deepening increment
-            val t = Terminal(AnsiLevel.TRUECOLOR, interactive=true)
-            val progress = progressLayout {
-                text("DFS Progress:")
-                progressBar()
-                percentage()
-                completed()
+            var animation: Animation<Int>? = null
+            if (verbosity >= 0) {
+                val progress = progressLayout {
+                    text("DFS Progress:")
+                    progressBar()
+                    percentage()
+                    completed()
+                }
+                animation = t.animation { progress.build(completed = it.toLong(), total = queue.size.toLong()) }
             }
-            val animation = t.animation<Int> { progress.build(completed = it.toLong(), total = queue.size.toLong()) }
 
             count = 0
             val stack = arrayListOf<Row>()
@@ -332,9 +348,21 @@ class CFind(
                     stack.addAll(nextRow(currentRow, rows, lookaheadRows).first)
                 } while (stack.isNotEmpty() && currentRow.depth < maxDepth)
 
-                animation.update(count++)
+                animation?.update(count++)
 
-                if (stack.isNotEmpty()) newQueue.add(row)
+                if (stack.isNotEmpty()) {
+                    row.prunedDepth = maxDepth
+                    newQueue.add(row)
+                }
+            }
+
+            if (verbosity >= 0) {
+                t.cursor.move {
+                    up(1)
+                    startOfLine()
+                    clearScreenAfterCursor()
+                }
+                t.cursor.hide(showOnExit = true)
             }
 
             queue = newQueue  // Replace the old queue
@@ -401,16 +429,21 @@ class CFind(
      * Searches for a possible next row given the previous rows provided. Returns null if row cannot be found.
      */
     fun nextRow(
-        currentRow: Row?, rows: List<Row>, lookaheadRows: List<List<Row?>>, lookaheadDepth: Int = 0
+        currentRow: Row?,
+        rows: List<Row>,
+        lookaheadRows: List<List<Row?>>,
+        lookaheadDepth: Int = 0,
+        lookaheadMemo: IntArray? = null
     ): Pair<List<Row>, Int> {
         // Keeping track of time taken for each segment for profiling
         // val timeSource = TimeSource.Monotonic
 
         // Encodes the neighbourhood with the central cell located at coordinate
-        fun encodeNeighbourhood(coordinate: Coordinate, row: IntArray? = null): Int {
+        fun encodeNeighbourhood(coordinate: Coordinate, row: IntArray? = null, index: Int = -1, partialKey: Int = -1): Int {
             var key = 0
             var power = pow(rule.numStates, mainNeighbourhood.size)
 
+            // Ignore cells that we know are background cells
             if (coordinate !in neighbourhoodWithoutBg) {
                 neighbourhoodWithoutBg[coordinate] = mainNeighbourhood.filter { (it, _) ->
                     if (symmetry == ShipSymmetry.ASYMMETRIC || symmetry == ShipSymmetry.GLIDE) (it + coordinate).x in 0..<width
@@ -418,7 +451,24 @@ class CFind(
                 }.map { (it, p) -> Pair(it + coordinate, p) }.toList()
             }
 
-            neighbourhoodWithoutBg[coordinate]!!.forEach { (it, p) -> key += rows[it, 0, row] * p }
+            // Optimisations to compute the neighbourhood for lookahead faster
+            if (partialKey == -1) {
+                if (lookaheadDepth != 0) {
+                    memorisedlookaheadNeighbourhood[lookaheadDepth - 1].forEach {
+                        (it, p) -> key += rows[it + coordinate, 0, row] * p
+                    }
+                    if (index != -1) lookaheadMemo!![index] = key
+
+                    lookaheadNeighbourhood[lookaheadDepth - 1].forEach {
+                        (it, p) -> key += rows[it + coordinate, 0, row] * p
+                    }
+                } else neighbourhoodWithoutBg[coordinate]!!.forEach { (it, p) -> key += rows[it, 0, row] * p }
+            } else {
+                key = partialKey
+                lookaheadNeighbourhood[lookaheadDepth - 1].forEach { (it, p) ->
+                    key += rows[it + coordinate, 0, row] * p
+                }
+            }
 
             // Adding current cell state & next cell state
             key += rows[coordinate, 0, row] * power
@@ -443,16 +493,28 @@ class CFind(
 
         // Computing the lookup tables for the current row
         val memo = Array<IntArray?>(width + leftBC.size) { null }
+        val _lookaheadMemo = IntArray(width + leftBC.size) { -1 }
         fun lookup(it: Int, row: IntArray? = null): IntArray {
-            if (indices.last() == 0 || memo[it] == null) {  // Ensures that no effort is wasted if the row could never succeed
-                // val startTime = timeSource.markNow()
-                memo[it] = successorTable[encodeNeighbourhood(Coordinate(it, 0) - baseCoordinates.last(), row)]
-                // println("Successor lookup performed in ${(timeSource.markNow() - startTime).inWholeNanoseconds}ns", verbosity = 2)
+            // Ensures that no effort is wasted if the row could never succeed
+            if (indices.last() == 0 || memo[it] == null) {
+                if (lookaheadMemo != null && lookaheadMemo[it] == -1) {
+                    memo[it] = successorTable[
+                        encodeNeighbourhood(
+                            Coordinate(it, 0) - baseCoordinates.last(), row,
+                            index = it,
+                            partialKey = lookaheadMemo[it]
+                        )
+                    ]
+                } else memo[it] = successorTable[
+                    encodeNeighbourhood(
+                        Coordinate(it, 0) - baseCoordinates.last(), row,
+                        index = it,
+                        partialKey = lookaheadMemo?.get(it) ?: -1
+                    )
+                ]
                 return memo[it]!!
             } else {
-                // val startTime = timeSource.markNow()
                 val temp = memo[it]!!
-                // println("Successor memorised lookup performed in ${(timeSource.markNow() - startTime).inWholeNanoseconds}ns", verbosity = 2)
                 return temp
             }
         }
@@ -512,12 +574,14 @@ class CFind(
             val node = stack.removeLast()
             maxDepth = maxOf(maxDepth, node.depth)
 
+            // If no cells are changed before depthToCheck, the row will be rejected by lookahead again
             if (depthToCheck + additionalDepth < node.depth) continue
             else depthToCheck = width
 
             // Check extra boundary conditions at the start
             if (rightBC.isNotEmpty() && bcDepth == 1 && node.depth == 1 && !checkBoundaryCondition(node, rightBC)) continue
 
+            // Stuff that is done at the end of the search
             if (node.depth == width) {
                 // Telling algorithm which branches can be pruned and which branches can jump to the end
                 node.predecessor!!.applyOnPredecessor {
@@ -551,7 +615,8 @@ class CFind(
                             null,
                             newRows.first() as List<Row>,
                             newRows.subList(1, newRows.size),
-                            lookaheadDepth + 1
+                            lookaheadDepth + 1,
+                            _lookaheadMemo
                         )
 
                         if (lookaheadOutput.isEmpty()) {
