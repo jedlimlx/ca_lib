@@ -1,10 +1,11 @@
-import rules.hrot.HROT
+import rules.hrot.HROTGenerations
 import search.cfind.CFind
 import search.cfind.ShipSymmetry
 
+
 actual fun main() {
-    val circularSearchP2K1 = CFind(
-        HROT("R2,C2,S5-8,B6-7,NC"), 2, 1, 7, ShipSymmetry.EVEN
+    val generationsSearch = CFind(
+        HROTGenerations("23/3/3"), 5, 1, 8, ShipSymmetry.EVEN, verbosity = 1
     )
-    circularSearchP2K1.search()
+    generationsSearch.search()
 }

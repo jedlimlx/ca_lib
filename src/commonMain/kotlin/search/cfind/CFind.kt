@@ -54,6 +54,7 @@ class CFind(
     val centralHeight: Int = -neighbourhood.minOf { it.minOf { it.y } }
 
     val baseCoordinates: List<Coordinate> = neighbourhood[0].filter { it.y == -centralHeight }.sortedBy { it.x }
+    val reversedBaseCoordinate: List<Coordinate> = baseCoordinates.reversed().subList(1, baseCoordinates.size)
     val baseCoordinateMap: IntArray = baseCoordinates.map { neighbourhood[0].indexOf(it) }.toIntArray()
 
     val continuousBaseCoordinates: Boolean = (baseCoordinates.maxOf { it.x } -
@@ -400,7 +401,7 @@ class CFind(
      * Searches for a possible next row given the previous rows provided. Returns null if row cannot be found.
      */
     fun nextRow(
-        currentRow: Row, rows: List<Row>, lookaheadRows: List<List<Row?>>, lookaheadDepth: Int = 0
+        currentRow: Row?, rows: List<Row>, lookaheadRows: List<List<Row?>>, lookaheadDepth: Int = 0
     ): Pair<List<Row>, Int> {
         // Keeping track of time taken for each segment for profiling
         // val timeSource = TimeSource.Monotonic
@@ -432,7 +433,7 @@ class CFind(
         fun encodeKey(coordinate: Coordinate, row: IntArray? = null): Int {
             var key = 0
             var power = 1
-            baseCoordinates.subList(0, baseCoordinates.size - 1).reversed().forEach {
+            reversedBaseCoordinate.forEach {
                 key += rows[it + coordinate, 0, row] * power
                 power *= rule.numStates
             }
@@ -461,7 +462,7 @@ class CFind(
             // val startTime = timeSource.markNow()
 
             var satisfyBC = true
-            val cells = node.completeRow.toIntArray()
+            val cells = node.completeRow
 
             bcList.forEach {
                 val coordinate = -it + offset
@@ -479,6 +480,9 @@ class CFind(
 
             return satisfyBC
         }
+
+        // Remember the row that evolved into this one
+        val prevRow = currentRow?.getPredecessor(k - 1)
 
         // Lookup table to prune and combine branches of search
         val table: Array<IntArray> = Array(width) {
@@ -531,7 +535,11 @@ class CFind(
                     else leftBC.size
                 )
                 if (checkBoundaryCondition(node, bcList, offset=Coordinate(width - 1, 0))) {
-                    val row = Row(currentRow, node.completeRow.toIntArray(), rule.numStates)
+                    val row = Row(
+                        currentRow,
+                        node.completeRow,
+                        rule.numStates
+                    )
                     if (lookaheadDepth < this.lookaheadDepth) {
                         val newRows = lookaheadRows.mapIndexed { index, rows ->
                             val temp = lookaheadIndices[lookaheadDepth].min()
@@ -540,7 +548,7 @@ class CFind(
                         }
 
                         val (lookaheadOutput, temp) = nextRow(
-                            row,
+                            null,
                             newRows.first() as List<Row>,
                             newRows.subList(1, newRows.size),
                             lookaheadDepth + 1
@@ -577,9 +585,12 @@ class CFind(
             // startTime = timeSource.markNow()
 
             var deadend = true
-            val row = node.completeRow.toIntArray()
+            val row = node.completeRow
             val shifted = (node.cells * rule.numStates).mod(pow(rule.numStates, baseCoordinates.size - 1))
-            for (i in 0 ..< rule.numStates) {
+            val possibleSuccessors = if (prevRow != null) rule.possibleSuccessors[0][prevRow.cells[node.depth]].toList()
+            else (0..<rule.numStates)
+
+            for (i in possibleSuccessors) {
                 if (((lookup(node.depth, row)[if (baseCoordinates.size > 1) node.cells else 0] shr i) and 0b1) == 1) {
                     deadend = false
                     stack.add(
@@ -587,7 +598,7 @@ class CFind(
                             node,
                             if (continuousBaseCoordinates) (
                                     if (baseCoordinates.size > 1) shifted + i else 0
-                            ) else encodeKey(
+                                    ) else encodeKey(
                                 Coordinate(node.depth, 0) - baseCoordinates.last(),
                                 row
                             ), i,

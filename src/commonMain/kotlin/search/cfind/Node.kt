@@ -8,8 +8,8 @@ data class Node(
     val numStates: Int,
     val singleBaseCoordinate: Boolean = false
 ) {
-    val completeRow: List<Int> by lazy {
-        predecessor?.completeRow?.plus(listOf(prevCell)) ?: listOf()
+    val completeRow: IntArray by lazy {
+        predecessor?.completeRow?.plus(intArrayOf(prevCell)) ?: intArrayOf()
     }
 
     fun changePredecessor(node: Node): Node {
