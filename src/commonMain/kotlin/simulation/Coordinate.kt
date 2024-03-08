@@ -27,6 +27,13 @@ class Coordinate(val x: Int = 0, val y: Int = 0) : Comparable<Coordinate> {
     operator fun minus(other: Coordinate): Coordinate = Coordinate(x - other.x, y - other.y)
 
     /**
+     * Multiplies the coordinate by the inputted number
+     * @param other The other number to multiply the coordinate by
+     * @return Returns the new coordinate
+     */
+    operator fun times(other: Int): Coordinate = Coordinate(other * x, other * y)
+
+    /**
      * (x, y) -> (-x, -y)
      * @return Returns the new coordinate
      */

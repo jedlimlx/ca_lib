@@ -23,7 +23,7 @@ class CFind(
     val k: Int,
     val width: Int,
     val symmetry: ShipSymmetry,
-    val direction: Direction = Direction.NORTH,
+    val direction: Coordinate = Coordinate(0, 1),
     val maxQueueSize: Int = 1 shl 20,  // 2 ^ 20
     val minDeepeningIncrement: Int = 2,
     lookaheadDepth: Int = Int.MAX_VALUE,
@@ -36,14 +36,10 @@ class CFind(
     // TODO Handle alternating stuff properly / don't support alternating neighbourhoods
 
     // Rotate the direction of the neighbour so the ship will go north
+    val basisVectors = Pair(Coordinate(direction.y, -direction.x), direction)
     val neighbourhood: List<List<Coordinate>> = rule.neighbourhood.map {
         it.map {
-            when (direction) {
-                Direction.SOUTH -> Coordinate(it.x, -it.y)
-                Direction.EAST -> Coordinate(it.y, -it.x)
-                Direction.WEST -> Coordinate(-it.y, it.x)
-                else -> it
-            }
+            basisVectors.first * it.x + basisVectors.second * it.y
         }.toList()
     }.toList()
 
@@ -216,6 +212,7 @@ class CFind(
 
         // Printing out some debugging information
         println(brightRed(bold("\nNeighbourhood\n----------------")), verbosity = 1)
+        println((bold("Basis Vectors: ") + "${basisVectors.first} / ${basisVectors.second}"), verbosity = 1)
         println((bold("Neighbourhood Height: ") + "$centralHeight / $height"), verbosity = 1)
         println((bold("Extra Boundary Conditions: ") + "$leftBC / $rightBC"), verbosity = 1)
         println((bold("Right BC Depth: ") + "$bcDepth"), verbosity = 1)
@@ -521,8 +518,6 @@ class CFind(
 
         // Checks boundary conditions
         fun checkBoundaryCondition(node: Node, bcList: List<Coordinate>, offset: Coordinate = Coordinate()): Boolean {
-            // val startTime = timeSource.markNow()
-
             var satisfyBC = true
             val cells = node.completeRow
 
@@ -537,8 +532,6 @@ class CFind(
                     return@forEach
                 }
             }
-
-            // println("${bcList.size} BCs checked in ${(timeSource.markNow() - startTime).inWholeNanoseconds}ns", verbosity = 2)
 
             return satisfyBC
         }
@@ -632,8 +625,6 @@ class CFind(
             }
 
             // Pruning branches that are known to be deadends
-            // var startTime = timeSource.markNow()
-
             val finalNodes = table[node.depth][node.cells]
             if (finalNodes == 0) continue
             // else if (finalNodes != null) {
@@ -645,9 +636,6 @@ class CFind(
             // }
 
             // println("Branches pruned in ${(timeSource.markNow() - startTime).inWholeNanoseconds}ns", verbosity = 2)
-
-            // Adding successors
-            // startTime = timeSource.markNow()
 
             var deadend = true
             val row = node.completeRow
@@ -682,9 +670,6 @@ class CFind(
                 if (table[it.depth][it.cells] == -1)
                     table[it.depth][it.cells] = 0
             }
-
-            // println("Successor states added in ${(timeSource.markNow() - startTime).inWholeNanoseconds}ns", verbosity = 2)
-            // println("\n-------------------------\n", verbosity = 2)
         }
 
         return Pair(completedRows, maxDepth)
