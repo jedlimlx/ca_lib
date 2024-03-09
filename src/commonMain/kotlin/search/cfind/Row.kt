@@ -3,7 +3,7 @@ package search.cfind
 import simulation.DenseGrid
 import simulation.Grid
 
-class Row(val predecessor: Row?, val cells: IntArray, val numStates: Int) {
+class Row(val predecessor: Row?, val cells: IntArray, val offset: Int, val numStates: Int, val period: Int) {
     private val hash by lazy {
         cells.reduceIndexed { index, acc, state ->
             acc + state * pow(numStates, index)
@@ -12,6 +12,9 @@ class Row(val predecessor: Row?, val cells: IntArray, val numStates: Int) {
 
     var depth = 0
     var prunedDepth = 0
+
+    val phase: Int
+        get() { return depth.mod(period) }
 
     init {
         if (predecessor != null) {
@@ -34,7 +37,7 @@ class Row(val predecessor: Row?, val cells: IntArray, val numStates: Int) {
         while (predecessor != null) {
             if (depth - n == predecessor.depth) break
 
-            list.add(Row(null, predecessor.cells, numStates))
+            list.add(Row(null, predecessor.cells, offset, numStates, period))
             predecessor = predecessor.predecessor
         }
 

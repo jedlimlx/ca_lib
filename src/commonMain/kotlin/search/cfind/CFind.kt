@@ -233,9 +233,9 @@ class CFind(
         )
 
         // Initialising BFS queue with (height - 1) * period empty rows
-        var currentRow = Row(null, IntArray(width) { 0 }, rule.numStates)
+        var currentRow = Row(null, IntArray(width) { 0 }, 0, rule.numStates, period)
         for (i in 1 .. period * (height - 1)) {
-            currentRow = Row(currentRow, IntArray(width) { 0 }, rule.numStates)
+            currentRow = Row(currentRow, IntArray(width) { 0 }, 0, rule.numStates, period)
         }
 
         var queue: ArrayDeque<Row> = ArrayDeque(period * height)
@@ -432,9 +432,6 @@ class CFind(
         lookaheadDepth: Int = 0,
         lookaheadMemo: IntArray? = null
     ): Pair<List<Row>, Int> {
-        // Keeping track of time taken for each segment for profiling
-        // val timeSource = TimeSource.Monotonic
-
         // Encodes the neighbourhood with the central cell located at coordinate
         fun encodeNeighbourhood(coordinate: Coordinate, row: IntArray? = null, index: Int = -1, partialKey: Int = -1): Int {
             var key = 0
@@ -568,8 +565,13 @@ class CFind(
             maxDepth = maxOf(maxDepth, node.depth)
 
             // If no cells are changed before depthToCheck, the row will be rejected by lookahead again
-            if (depthToCheck + additionalDepth < node.depth) continue
-            else depthToCheck = width
+            if (
+                symmetry != ShipSymmetry.GLIDE ||
+                (period.mod(2) == 0 && rows.last().phase.mod(period) == 1)
+            ) {
+                if (depthToCheck + additionalDepth < node.depth) continue
+                else depthToCheck = width
+            }
 
             // Check extra boundary conditions at the start
             if (rightBC.isNotEmpty() && bcDepth == 1 && node.depth == 1 && !checkBoundaryCondition(node, rightBC)) continue
@@ -578,9 +580,6 @@ class CFind(
             if (node.depth == width) {
                 // Telling algorithm which branches can be pruned and which branches can jump to the end
                 node.predecessor!!.applyOnPredecessor {
-                    // if (table[it.depth][it.cells] == -1) {
-                    //     table[it.depth][it.cells] = arrayListOf(node)
-                    // } else table[it.depth][it.cells]!!.add(node)
                     table[it.depth][it.cells] = 1
                 }
 
@@ -595,7 +594,9 @@ class CFind(
                     val row = Row(
                         currentRow,
                         node.completeRow,
-                        rule.numStates
+                        0,
+                        rule.numStates,
+                        period
                     )
                     if (lookaheadDepth < this.lookaheadDepth) {
                         val newRows = lookaheadRows.mapIndexed { index, rows ->
@@ -627,15 +628,6 @@ class CFind(
             // Pruning branches that are known to be deadends
             val finalNodes = table[node.depth][node.cells]
             if (finalNodes == 0) continue
-            // else if (finalNodes != null) {
-            //     finalNodes.forEach {
-            //         val finalNode = it.changePredecessor(node)
-            //         stack.add(finalNode)
-            //     }
-            //     continue
-            // }
-
-            // println("Branches pruned in ${(timeSource.markNow() - startTime).inWholeNanoseconds}ns", verbosity = 2)
 
             var deadend = true
             val row = node.completeRow
@@ -665,8 +657,6 @@ class CFind(
 
             // Telling the algorithm to prune these branches of they are ever seen again
             if (deadend) node.applyOnPredecessor {
-                // if (table[it.depth][it.cells] == null)
-                //    table[it.depth][it.cells] = ArrayList()
                 if (table[it.depth][it.cells] == -1)
                     table[it.depth][it.cells] = 0
             }
@@ -690,7 +680,10 @@ class CFind(
         return if (coordinate.y > 0 && coordinate.y < this.size) {
             if (generation == 0) this[coordinate.y - 1].cells[coordinate.x]
             else if (coordinate.y == centralHeight && generation == 1) {
-                if (symmetry != ShipSymmetry.GLIDE) this.last().cells[coordinate.x]
+                if (
+                    symmetry != ShipSymmetry.GLIDE ||
+                    (period.mod(2) == 0 && this.last().phase.mod(period) == 0)
+                ) this.last().cells[coordinate.x]
                 else this.last().cells[width - coordinate.x - 1]
             }
             else -1  // means that the cell state is not known
