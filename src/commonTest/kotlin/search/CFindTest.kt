@@ -91,4 +91,15 @@ class Test {
 
         assertEquals(diagonalSearch.searchResults.size, 1)
     }
+
+    @Test
+    fun hashTest() {
+        val hashSearch = CFind(
+            HROT("R2,C2,S4-6,B5-6,N#"), 2, 1, 7, ShipSymmetry.EVEN,
+            verbosity = 1, numShips = 1
+        )
+        hashSearch.search()
+
+        assertEquals(hashSearch.searchResults.size, 1)
+    }
 }

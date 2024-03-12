@@ -41,6 +41,7 @@ class CFind(
     }.toList()
 
     // Compute statistics about the periodicity of the integer lattice (for oblique and diagonal searches)
+    // TODO Figure out why oblique searches don't work
     val spacing = direction.x * direction.x + direction.y * direction.y
     val k = if (symmetry != ShipSymmetry.GLIDE) _k * spacing else _k
     val period = if (symmetry == ShipSymmetry.GLIDE && direction == Coordinate(1, 1)) _period / 2 else _period
@@ -93,16 +94,22 @@ class CFind(
     val centralHeight: Int = -neighbourhood.minOf { it.minOf { it.y } }
 
     val baseCoordinates: List<Coordinate> = neighbourhood[0].filter { it.y == -centralHeight }.sortedBy { it.x }
-    val reversedBaseCoordinate: List<Coordinate> = baseCoordinates.reversed().subList(1, baseCoordinates.size)
     val baseCoordinateMap: IntArray = baseCoordinates.map { neighbourhood[0].indexOf(it) }.toIntArray()
-
     val continuousBaseCoordinates: Boolean = (baseCoordinates.maxOf { it.x } -
             baseCoordinates.minOf { it.x } + 1) == baseCoordinates.size
+
+    val reversedBaseCoordinate: List<Coordinate> = run {
+        (  // we need to fill in the gaps between the base coordinates
+            (baseCoordinates.minOf { it.x } ..< baseCoordinates.maxOf { it.x } step spacing).reversed()
+        ).map { Coordinate(it, -centralHeight) }.toList()
+    }
+
+    // baseCoordinates.reversed().subList(1, baseCoordinates.size)
 
     private val temp: Map<Int, Coordinate> = neighbourhood[0].map { it.x }.toSet().sorted().map { index ->
         Pair(index, neighbourhood[0].filter { it.x == index }.minBy { it.y })
     }.toMap()
-    val combinedBC: List<Coordinate> = (temp.keys.min() .. temp.keys.max()).map {
+    val combinedBC: List<Coordinate> = (temp.keys.min() .. temp.keys.max() step spacing).map {
         if (it in temp) {  // TODO properly handle cases where temp[it + 1] or temp[it - 1] doesn't exist
             if (it > temp.keys.min() && it < temp.keys.max()) {
                 if (it < baseCoordinates.last().x) {
@@ -229,10 +236,12 @@ class CFind(
         power *= rule.numStates
 
         // Building the inner lookup table
-        IntArray(pow(rule.numStates, baseCoordinates.size - 1)) {
+        IntArray(pow(rule.numStates, reversedBaseCoordinate.size)) {
             var power = 1
-            for (i in 1 ..< baseCoordinates.size) {
-                lst[baseCoordinateMap[baseCoordinateMap.size - i - 1]] = getDigit(it, power, rule.numStates)
+            for (c in reversedBaseCoordinate) {
+                if (c in baseCoordinates)
+                    lst[baseCoordinateMap[baseCoordinates.indexOf(c)]] = getDigit(it, power, rule.numStates)
+
                 power *= rule.numStates
             }
 
@@ -262,7 +271,7 @@ class CFind(
         println((bold("Right BC Depth: ") + "$bcDepth"), verbosity = 1)
         println((bold("Base Coordinates: ") + "$baseCoordinates"), verbosity = 1)
         println((bold("Base Coordinate Map: ") + "${baseCoordinateMap.toList()}"), verbosity = 1)
-        println((bold("Continuous Base Coordinates: ") + "$continuousBaseCoordinates"), verbosity = 1)
+        println((bold("Continuous Base Coordinates: ") + "${reversedBaseCoordinate.toList()}"), verbosity = 1)
         println((bold("Additional Depth (for lookahead): ") + "$additionalDepth"), verbosity = 1)
 
         println(brightRed(bold("\nLattice\n----------------")), verbosity = 1)
@@ -588,6 +597,7 @@ class CFind(
 
                 val tempCoordinate = coordinate + baseCoordinates.last()
                 val temp = tempCoordinate.x - offsets[(depth - tempCoordinate.y * period).mod(offsets.size)]
+                if (temp.mod(spacing) != 0) return@forEach
 
                 val boundaryState = rows[coordinate + baseCoordinates.last(), 0, cells]
                 val lookupTable = if (it in baseCoordinates) lookup(temp / spacing)
@@ -607,7 +617,7 @@ class CFind(
 
         // Lookup table to prune and combine branches of search
         val table: Array<IntArray> = Array(width) {
-            IntArray(pow(rule.numStates, baseCoordinates.size - 1)) { -1 }
+            IntArray(pow(rule.numStates, reversedBaseCoordinate.size)) { -1 }
         }
 
         // Computing the initial key for the inner lookup table
@@ -700,19 +710,15 @@ class CFind(
 
             var deadend = true
             val row = node.completeRow
-            val shifted = (node.cells * rule.numStates).mod(pow(rule.numStates, baseCoordinates.size - 1))
+            val shifted = (node.cells * rule.numStates).mod(pow(rule.numStates, reversedBaseCoordinate.size))
             val possibleSuccessors = (0..<rule.numStates)
 
             // if (prevRow != null) rule.possibleSuccessors[0][prevRow[node.depth]].toList()
             //            else
+            // TODO Fix possible successors
 
             for (i in possibleSuccessors) {
-                val newKey = if (continuousBaseCoordinates) (
-                        if (baseCoordinates.size > 1) shifted + i else 0
-                        ) else encodeKey(
-                    Coordinate(node.depth, 0) - baseCoordinates.last(),
-                    row
-                )
+                val newKey = if (baseCoordinates.size > 1) shifted + i else 0
 
                 if (
                     ((lookup(node.depth, row)[if (baseCoordinates.size > 1) node.cells else 0] shr i) and 0b1) == 1 &&
@@ -731,7 +737,7 @@ class CFind(
                 }
             }
 
-            // Telling the algorithm to prune these branches of they are ever seen again
+            // Telling the algorithm to prune these branches if they are ever seen again
             if (deadend) node.applyOnPredecessor {
                 if (table[it.depth][it.cells] == -1)
                     table[it.depth][it.cells] = 0
