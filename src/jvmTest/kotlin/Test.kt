@@ -41,7 +41,7 @@ class Test {
         startTime = timeSource.markNow()
 
         val minibugsSearch = CFind(
-            HROT("R2,C2,S6-9,B7-8,NM"), 2, 1, 8, ShipSymmetry.ASYMMETRIC, verbosity = -1
+            HROT("R2,C2,S6-9,B7-8,NM"), 2, 1, 8, ShipSymmetry.ASYMMETRIC, verbosity = -1, numShips = 1
         )
         minibugsSearch.search()
 

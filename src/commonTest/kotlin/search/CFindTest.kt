@@ -4,6 +4,7 @@ import rules.hrot.HROT
 import rules.hrot.HROTGenerations
 import search.cfind.CFind
 import search.cfind.ShipSymmetry
+import simulation.Coordinate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.TimeSource
@@ -59,5 +60,35 @@ class Test {
         lifeSearchP4K2.search()
 
         assertEquals(lifeSearchP4K2.searchResults.size, 2)
+    }
+
+    @Test
+    fun dfsTest() {
+        val lifeSearchP4K1 = CFind(
+            HROT("B3/S23"), 4, 1, 7, ShipSymmetry.ODD, verbosity = 1, numShips = 1,
+            maxQueueSize = 2 shl 13
+        )
+        lifeSearchP4K1.search()
+
+        assertEquals(lifeSearchP4K1.searchResults.size, 1)
+    }
+
+    @Test
+    fun diagonalTest() {
+        val glideDiagonalSearch = CFind(
+            HROT("B3/S23"), 4, 1, 2, ShipSymmetry.GLIDE,
+            verbosity = 1, direction = Coordinate(1, 1)
+        )
+        glideDiagonalSearch.search()
+
+        assertEquals(glideDiagonalSearch.searchResults.size, 1)
+
+        val diagonalSearch = CFind(
+            HROT("B34/S34"), 3, 1, 3F, ShipSymmetry.ASYMMETRIC,
+            verbosity = 1, direction = Coordinate(1, 1)
+        )
+        diagonalSearch.search()
+
+        assertEquals(diagonalSearch.searchResults.size, 1)
     }
 }

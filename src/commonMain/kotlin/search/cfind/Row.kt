@@ -1,12 +1,13 @@
 package search.cfind
 
+import simulation.Coordinate
 import simulation.DenseGrid
 import simulation.Grid
 
-class Row(val predecessor: Row?, val cells: IntArray, val offset: Int, val numStates: Int, val period: Int) {
+class Row(val predecessor: Row?, val cells: IntArray, val search: CFind) {
     private val hash by lazy {
         cells.reduceIndexed { index, acc, state ->
-            acc + state * pow(numStates, index)
+            acc + state * pow(search.rule.numStates, index)
         }
     }
 
@@ -14,13 +15,21 @@ class Row(val predecessor: Row?, val cells: IntArray, val offset: Int, val numSt
     var prunedDepth = 0
 
     val phase: Int
-        get() { return depth.mod(period) }
+        get() { return depth.mod(search.period) }
+
+    val offset: Int
+        get() { return search.offsets[depth.mod(search.offsets.size)] }
 
     init {
         if (predecessor != null) {
             depth = predecessor.depth + 1
             prunedDepth = maxOf(depth, predecessor.prunedDepth)
         }
+    }
+
+    operator fun get(index: Int): Int {
+        if ((index - offset).mod(search.spacing) != 0) return 0
+        return cells[(index - offset) / search.spacing]
     }
 
     fun getPredecessor(n: Int): Row? {
@@ -37,7 +46,7 @@ class Row(val predecessor: Row?, val cells: IntArray, val offset: Int, val numSt
         while (predecessor != null) {
             if (depth - n == predecessor.depth) break
 
-            list.add(Row(null, predecessor.cells, offset, numStates, period))
+            list.add(Row(null, predecessor.cells, search))
             predecessor = predecessor.predecessor
         }
 
@@ -66,13 +75,15 @@ class Row(val predecessor: Row?, val cells: IntArray, val offset: Int, val numSt
         var temp: Row?
         var predecessor = this
 
-        var counter = 0
+        var counter = this.offset
         while (true) {
             predecessor.cells.forEachIndexed { index, state ->
-                grid[index, -counter] = state
+                grid[translate(index * search.spacing + predecessor.offset, -counter)] = state
                 when(symmetry) {
-                    ShipSymmetry.EVEN -> grid[2 * predecessor.cells.size - 1 - index, -counter] = state
-                    ShipSymmetry.ODD -> grid[2 * predecessor.cells.size - 2 - index, -counter] = state
+                    ShipSymmetry.EVEN -> grid[translate(2 * predecessor.cells.size * search.spacing - 1 -
+                            (index * search.spacing + predecessor.offset), -counter)] = state
+                    ShipSymmetry.ODD -> grid[translate(2 * predecessor.cells.size * search.spacing - 2 -
+                            (index * search.spacing + predecessor.offset), -counter)] = state
                     else -> {}
                 }
             }
@@ -83,6 +94,13 @@ class Row(val predecessor: Row?, val cells: IntArray, val offset: Int, val numSt
             predecessor = temp
             counter++
         }
+    }
+
+    private fun translate(y: Int, x: Int): Coordinate {
+        return Coordinate(
+            (-x * search.direction.x + y * search.direction.y) / search.spacing,
+            (y * search.direction.x + x * search.direction.y) / search.spacing
+        )
     }
 
     override fun hashCode() = hash

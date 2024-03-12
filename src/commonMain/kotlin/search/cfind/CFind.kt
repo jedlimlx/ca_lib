@@ -1,10 +1,7 @@
 package search.cfind
 
-import com.github.ajalt.mordant.animation.Animation
-import com.github.ajalt.mordant.animation.animation
 import com.github.ajalt.mordant.rendering.TextColors.*
 import com.github.ajalt.mordant.rendering.TextStyles.bold
-import com.github.ajalt.mordant.widgets.progressLayout
 import patterns.Pattern
 import patterns.Spaceship
 import rules.Rule
@@ -19,8 +16,8 @@ import kotlin.time.TimeSource
  */
 class CFind(
     val rule: Rule,
-    val period: Int,
-    val k: Int,
+    val _period: Int,
+    val _k: Int,
     val width: Int,
     val symmetry: ShipSymmetry,
     val direction: Coordinate = Coordinate(0, 1),
@@ -42,6 +39,53 @@ class CFind(
             basisVectors.first * it.x + basisVectors.second * it.y
         }.toList()
     }.toList()
+
+    // Compute statistics about the periodicity of the integer lattice (for oblique and diagonal searches)
+    val spacing = direction.x * direction.x + direction.y * direction.y
+    val k = if (symmetry != ShipSymmetry.GLIDE) _k * spacing else _k
+    val period = if (symmetry == ShipSymmetry.GLIDE && direction == Coordinate(1, 1)) _period / 2 else _period
+
+    // Computing the backOff array to be used when gcd(k, period) > 1
+    val backOff = IntArray(period) { -1 }.apply {
+        this[0] = k
+
+        var count = 0
+        for (i in 0..<period) {
+            var index = 0
+            while (this[(count + index + k).mod(period)] != -1) { index++ }
+
+            this[count.mod(period)] = (index + k).mod(period)
+            count += this[count.mod(period)]
+        }
+
+        this[count.mod(period)] = (period - count).mod(period)
+    }
+
+    private val tempOffsets = IntArray(spacing) {
+        for (y in 0..<spacing) {
+            if ((it * direction.y - y * direction.x).mod(spacing) == 0) {
+                return@IntArray y
+            }
+        }
+
+        0
+    }
+    val offsets = IntArray(this.period * this.k *
+            (if (symmetry == ShipSymmetry.GLIDE && direction == Coordinate(1, 1)) 2 else 1)
+    ) { -1 }.apply {
+        if (symmetry != ShipSymmetry.GLIDE || direction != Coordinate(1, 1)) {
+            for (i in 0 ..<k) {
+                var count = i
+                while (count < period * k) {
+                    this[count] = tempOffsets[i.mod(tempOffsets.size)]
+                    count += backOff[count.mod(period)]
+                }
+            }
+        } else {
+            for (i in 0..<period) this[i] = i.mod(2)
+            for (i in period ..< period*2) this[i] = (i + 1).mod(2)
+        }
+    }
 
     // Compute various statistics about the neighbourhood
     // TODO Get neighbourhood coordinate direction conventions right
@@ -208,11 +252,11 @@ class CFind(
     override fun search() {
         println(bold("Beginning search for width ${green("$width")} " +
                 "spaceship with ${green("$symmetry")} symmetry moving towards ${green("$direction")} at " +
-                "${green("${k}c/$period")}${if (rule is RuleFamily) " in ${green(rule.rulestring)}" else ""}..."))
+                "${green("${_k}c/$_period")}${if (rule is RuleFamily) " in ${green(rule.rulestring)}" else ""}..."))
 
         // Printing out some debugging information
         println(brightRed(bold("\nNeighbourhood\n----------------")), verbosity = 1)
-        println((bold("Basis Vectors: ") + "${basisVectors.first} / ${basisVectors.second}"), verbosity = 1)
+        println((bold("Neighbourhood: ") + "${neighbourhood.toList()}"), verbosity = 1)
         println((bold("Neighbourhood Height: ") + "$centralHeight / $height"), verbosity = 1)
         println((bold("Extra Boundary Conditions: ") + "$leftBC / $rightBC"), verbosity = 1)
         println((bold("Right BC Depth: ") + "$bcDepth"), verbosity = 1)
@@ -221,8 +265,14 @@ class CFind(
         println((bold("Continuous Base Coordinates: ") + "$continuousBaseCoordinates"), verbosity = 1)
         println((bold("Additional Depth (for lookahead): ") + "$additionalDepth"), verbosity = 1)
 
+        println(brightRed(bold("\nLattice\n----------------")), verbosity = 1)
+        println((bold("Basis Vectors: ") + "${basisVectors.first} / ${basisVectors.second}"), verbosity = 1)
+        println((bold("Spacing: ") + "$spacing"), verbosity = 1)
+        println((bold("Offsets: ") + "${offsets.toList()}"), verbosity = 1)
+
         println(brightRed(bold("\nMisc\n----------------")), verbosity = 1)
         println((bold("Successor Table Size: ") + "${successorTable.size}"), verbosity = 1)
+        println((bold("Backoff Table: ") + "${backOff.toList()}"), verbosity = 1)
         println((bold("Maximum Lookahead Depth: ") + "$maxLookaheadDepth"), verbosity = 1)
         println((bold("Lookahead Depth: ") + "$lookaheadDepth"), verbosity = 1)
         println(
@@ -233,12 +283,12 @@ class CFind(
         )
 
         // Initialising BFS queue with (height - 1) * period empty rows
-        var currentRow = Row(null, IntArray(width) { 0 }, 0, rule.numStates, period)
+        var currentRow = Row(null, IntArray(width) { 0 }, this)
         for (i in 1 .. period * (height - 1)) {
-            currentRow = Row(currentRow, IntArray(width) { 0 }, 0, rule.numStates, period)
+            currentRow = Row(currentRow, IntArray(width) { 0 }, this)
         }
 
-        var queue: ArrayDeque<Row> = ArrayDeque(period * height)
+        var queue: ArrayDeque<Row> = ArrayDeque(maxQueueSize)
         queue.add(currentRow)
 
         // Take note of the starting time
@@ -250,10 +300,11 @@ class CFind(
 
         // Main loop of algorithm
         var count = 0
-        var clearPartial = false
+        var clearPartial: Boolean
         var clearLines = 0
         while (shipsFound < numShips) {
             // BFS round runs until the queue size exceeds the maximum queue size
+            clearPartial = false
             while (queue.size < maxQueueSize) {
                 if (queue.isEmpty()) {
                     println(
@@ -279,7 +330,7 @@ class CFind(
 
                 // Get the rows that will need to be used to find the next row
                 val (rows, lookaheadRows) = extractRows(currentRow)
-                queue.addAll(nextRow(currentRow, rows, lookaheadRows).first)
+                queue.addAll(nextRow(currentRow, rows, lookaheadRows, depth = currentRow.depth + 1).first)
 
                 if ((count++).mod(partialFrequency) == 0) {
                     val grid = currentRow.toGrid(period, symmetry)
@@ -305,23 +356,15 @@ class CFind(
 
             if (shipsFound == numShips) break
 
-            println(bold("\nBeginning depth-first search round, queue size ${queue.size} "))
+            val message = "Beginning depth-first search round, queue size ${queue.size}"
+            println(bold("\n$message"))
 
             // DFS round runs for a certain deepening increment
-            var animation: Animation<Int>? = null
-            if (verbosity >= 0) {
-                val progress = progressLayout {
-                    text("DFS Progress:")
-                    progressBar()
-                    percentage()
-                    completed()
-                }
-                animation = t.animation { progress.build(completed = it.toLong(), total = queue.size.toLong()) }
-            }
-
             count = 0
+            clearPartial = false
+
             val stack = arrayListOf<Row>()
-            val newQueue = ArrayDeque<Row>(queue.size / 40)
+            val newQueue = ArrayDeque<Row>(maxQueueSize)
             for (row in queue) {
                 // Placing row within DFS stack
                 stack.clear()
@@ -331,39 +374,57 @@ class CFind(
                 val maxDepth = row.prunedDepth + minDeepeningIncrement
 
                 do {
+                    if (stack.isEmpty()) break
+
                     // Get the current row that is going to be analysed
                     currentRow = stack.removeLast()
-
-                    // Check if the ship is completed
-                    checkCompletedShip(currentRow)
-
-                    // Check the transposition table for looping components
-                    if (checkEquivalentState(currentRow)) continue
+                    if (currentRow.depth == maxDepth) {
+                        row.prunedDepth = maxDepth
+                        newQueue.add(Row(row.predecessor, row.cells.toList().toIntArray(), this))
+                        break
+                    }
 
                     // Get the rows that will need to be used to find the next row
                     val (rows, lookaheadRows) = extractRows(currentRow)
-                    stack.addAll(nextRow(currentRow, rows, lookaheadRows).first)
-                } while (stack.isNotEmpty() && currentRow.depth < maxDepth)
+                    stack.addAll(nextRow(currentRow, rows, lookaheadRows, depth = currentRow.depth + 1).first)
+                } while (true)
 
-                animation?.update(count++)
+                if ((count++).mod(partialFrequency) == 0) {
+                    val grid = currentRow.toGrid(period, symmetry)
+                    grid.rule = rule
 
-                if (stack.isNotEmpty()) {
-                    row.prunedDepth = maxDepth
-                    newQueue.add(row)
+                    if (verbosity >= 0 && clearPartial) {
+                        t.cursor.move {
+                            up(3 + clearLines)
+                            startOfLine()
+                            clearScreenAfterCursor()
+                        }
+                        t.cursor.hide(showOnExit = true)
+                    }
+
+                    val rle = grid.toRLE().chunked(70)
+                    clearLines = rle.size
+
+                    println(bold(
+                        "\nChecked ${count - 1} / $maxQueueSize rows, pruned ${(1000 - (newQueue.size * 1000 / count)) / 10.0}%"
+                    ))
+                    println("x = 0, y = 0, rule = ${rule}\n" + rle.joinToString("\n"))
+                    clearPartial = true
                 }
             }
 
-            if (verbosity >= 0) {
+            if (verbosity >= 0 && clearPartial) {
                 t.cursor.move {
-                    up(1)
+                    up(4 + clearLines)
                     startOfLine()
                     clearScreenAfterCursor()
                 }
                 t.cursor.hide(showOnExit = true)
             }
 
+            queue.clear()  // Clear the old queue
             queue = newQueue  // Replace the old queue
-            print(bold("-> ${queue.size}"))
+            println(bold("$message -> ${queue.size}"))
         }
 
         println(
@@ -430,7 +491,8 @@ class CFind(
         rows: List<Row>,
         lookaheadRows: List<List<Row?>>,
         lookaheadDepth: Int = 0,
-        lookaheadMemo: IntArray? = null
+        lookaheadMemo: IntArray? = null,
+        depth: Int = 0
     ): Pair<List<Row>, Int> {
         // Encodes the neighbourhood with the central cell located at coordinate
         fun encodeNeighbourhood(coordinate: Coordinate, row: IntArray? = null, index: Int = -1, partialKey: Int = -1): Int {
@@ -440,7 +502,8 @@ class CFind(
             // Ignore cells that we know are background cells
             if (coordinate !in neighbourhoodWithoutBg) {
                 neighbourhoodWithoutBg[coordinate] = mainNeighbourhood.filter { (it, _) ->
-                    if (symmetry == ShipSymmetry.ASYMMETRIC || symmetry == ShipSymmetry.GLIDE) (it + coordinate).x in 0..<width
+                    if (symmetry == ShipSymmetry.ASYMMETRIC || symmetry == ShipSymmetry.GLIDE)
+                            (it + coordinate).x in 0..<width * spacing
                     else (it + coordinate).x >= 0
                 }.map { (it, p) -> Pair(it + coordinate, p) }.toList()
             }
@@ -449,26 +512,26 @@ class CFind(
             if (partialKey == -1) {
                 if (lookaheadDepth != 0) {
                     memorisedlookaheadNeighbourhood[lookaheadDepth - 1].forEach {
-                        (it, p) -> key += rows[it + coordinate, 0, row] * p
+                        (it, p) -> key += rows[it + coordinate, 0, row, depth] * p
                     }
                     if (index != -1) lookaheadMemo!![index] = key
 
                     lookaheadNeighbourhood[lookaheadDepth - 1].forEach {
-                        (it, p) -> key += rows[it + coordinate, 0, row] * p
+                        (it, p) -> key += rows[it + coordinate, 0, row, depth] * p
                     }
-                } else neighbourhoodWithoutBg[coordinate]!!.forEach { (it, p) -> key += rows[it, 0, row] * p }
+                } else neighbourhoodWithoutBg[coordinate]!!.forEach { (it, p) -> key += rows[it, 0, row, depth] * p }
             } else {
                 key = partialKey
                 lookaheadNeighbourhood[lookaheadDepth - 1].forEach { (it, p) ->
-                    key += rows[it + coordinate, 0, row] * p
+                    key += rows[it + coordinate, 0, row, depth] * p
                 }
             }
 
             // Adding current cell state & next cell state
-            key += rows[coordinate, 0, row] * power
+            key += rows[coordinate, 0, row, depth] * power
             power *= rule.numStates
 
-            key += rows[coordinate, 1, row] * power
+            key += rows[coordinate, 1, row, depth] * power
 
             return key
         }
@@ -478,7 +541,7 @@ class CFind(
             var key = 0
             var power = 1
             reversedBaseCoordinate.forEach {
-                key += rows[it + coordinate, 0, row] * power
+                key += rows[it + coordinate, 0, row, depth] * power
                 power *= rule.numStates
             }
 
@@ -494,14 +557,14 @@ class CFind(
                 if (lookaheadMemo != null && lookaheadMemo[it] == -1) {
                     memo[it] = successorTable[
                         encodeNeighbourhood(
-                            Coordinate(it, 0) - baseCoordinates.last(), row,
+                            translate(Coordinate(it, 0), depth) - baseCoordinates.last(), row,
                             index = it,
                             partialKey = lookaheadMemo[it]
                         )
                     ]
                 } else memo[it] = successorTable[
                     encodeNeighbourhood(
-                        Coordinate(it, 0) - baseCoordinates.last(), row,
+                        translate(Coordinate(it, 0), depth) - baseCoordinates.last(), row,
                         index = it,
                         partialKey = lookaheadMemo?.get(it) ?: -1
                     )
@@ -515,13 +578,19 @@ class CFind(
 
         // Checks boundary conditions
         fun checkBoundaryCondition(node: Node, bcList: List<Coordinate>, offset: Coordinate = Coordinate()): Boolean {
+            if ((offset.x - offsets[(depth - offset.y * period).mod(offsets.size)]).mod(spacing) != 0) return true
+
             var satisfyBC = true
             val cells = node.completeRow
 
             bcList.forEach {
                 val coordinate = -it + offset
+
+                val tempCoordinate = coordinate + baseCoordinates.last()
+                val temp = tempCoordinate.x - offsets[(depth - tempCoordinate.y * period).mod(offsets.size)]
+
                 val boundaryState = rows[coordinate + baseCoordinates.last(), 0, cells]
-                val lookupTable = if (it in baseCoordinates) lookup(coordinate.x + baseCoordinates.last().x)
+                val lookupTable = if (it in baseCoordinates) lookup(temp / spacing)
                 else successorTable[encodeNeighbourhood(coordinate, cells)]
 
                 if (((lookupTable[encodeKey(coordinate, cells)] shr boundaryState) and 0b1) != 1) {
@@ -590,13 +659,12 @@ class CFind(
                     if (symmetry != ShipSymmetry.ASYMMETRIC && symmetry != ShipSymmetry.GLIDE) baseCoordinates.last().x
                     else leftBC.size
                 )
-                if (checkBoundaryCondition(node, bcList, offset=Coordinate(width - 1, 0))) {
+
+                if (checkBoundaryCondition(node, bcList, offset=Coordinate(width * spacing - 1, 0))) {
                     val row = Row(
                         currentRow,
                         node.completeRow,
-                        0,
-                        rule.numStates,
-                        period
+                        this
                     )
                     if (lookaheadDepth < this.lookaheadDepth) {
                         val newRows = lookaheadRows.mapIndexed { index, rows ->
@@ -610,7 +678,8 @@ class CFind(
                             newRows.first() as List<Row>,
                             newRows.subList(1, newRows.size),
                             lookaheadDepth + 1,
-                            _lookaheadMemo
+                            _lookaheadMemo,
+                            depth - lookaheadIndices[lookaheadDepth].min()
                         )
 
                         if (lookaheadOutput.isEmpty()) {
@@ -618,7 +687,7 @@ class CFind(
                         } else completedRows.add(row)
                     } else {
                         completedRows.add(row)
-                        return Pair(completedRows, maxDepth)
+                        if (lookaheadDepth != 0) return Pair(completedRows, maxDepth)
                     }
                 }
 
@@ -632,21 +701,28 @@ class CFind(
             var deadend = true
             val row = node.completeRow
             val shifted = (node.cells * rule.numStates).mod(pow(rule.numStates, baseCoordinates.size - 1))
-            val possibleSuccessors = if (prevRow != null) rule.possibleSuccessors[0][prevRow.cells[node.depth]].toList()
-            else (0..<rule.numStates)
+            val possibleSuccessors = (0..<rule.numStates)
+
+            // if (prevRow != null) rule.possibleSuccessors[0][prevRow[node.depth]].toList()
+            //            else
 
             for (i in possibleSuccessors) {
-                if (((lookup(node.depth, row)[if (baseCoordinates.size > 1) node.cells else 0] shr i) and 0b1) == 1) {
+                val newKey = if (continuousBaseCoordinates) (
+                        if (baseCoordinates.size > 1) shifted + i else 0
+                        ) else encodeKey(
+                    Coordinate(node.depth, 0) - baseCoordinates.last(),
+                    row
+                )
+
+                if (
+                    ((lookup(node.depth, row)[if (baseCoordinates.size > 1) node.cells else 0] shr i) and 0b1) == 1 &&
+                    (node.depth + 1 == width || table[node.depth + 1][newKey] != 0)
+                ) {
                     deadend = false
                     stack.add(
                         Node(
                             node,
-                            if (continuousBaseCoordinates) (
-                                    if (baseCoordinates.size > 1) shifted + i else 0
-                                    ) else encodeKey(
-                                Coordinate(node.depth, 0) - baseCoordinates.last(),
-                                row
-                            ), i,
+                            newKey, i,
                             node.depth + 1,
                             rule.numStates,
                             baseCoordinates.size == 1
@@ -665,26 +741,35 @@ class CFind(
         return Pair(completedRows, maxDepth)
     }
 
-    private operator fun List<Row>.get(coordinate: Coordinate, generation: Int, currentRow: IntArray? = null): Int {
+    /**
+     * Translates the [coordinate] from the internal representation to the actual coordinate on the integer lattice
+     */
+    private fun translate(coordinate: Coordinate, depth: Int) =
+        Coordinate(coordinate.x * spacing + offsets[depth.mod(offsets.size)], 0)
+
+    private operator fun List<Row>.get(coordinate: Coordinate, generation: Int, currentRow: IntArray? = null, depth: Int = 0): Int {
         if (coordinate.x < 0) return 0  // TODO allow different backgrounds
-        if (coordinate.x >= width) {
+        if (coordinate.x >= width * spacing) {
             return when (symmetry) {
                 ShipSymmetry.ASYMMETRIC -> 0
                 ShipSymmetry.GLIDE -> 0
-                ShipSymmetry.EVEN -> this[Coordinate(2 * width - coordinate.x - 1, coordinate.y), generation, currentRow]
-                ShipSymmetry.ODD -> this[Coordinate(2 * width - coordinate.x - 2, coordinate.y), generation, currentRow]
+                ShipSymmetry.EVEN -> this[Coordinate(2 * width * spacing - coordinate.x - 1, coordinate.y), generation, currentRow]
+                ShipSymmetry.ODD -> this[Coordinate(2 * width * spacing - coordinate.x - 2, coordinate.y), generation, currentRow]
             }
         }
 
-        if (coordinate.y == 0 && currentRow != null) return currentRow[coordinate.x]
+        if (coordinate.y == 0 && currentRow != null) {
+            if ((coordinate.x - offsets[depth.mod(offsets.size)]).mod(spacing) != 0) return 0
+            return currentRow[(coordinate.x - offsets[depth.mod(offsets.size)]) / spacing]
+        }
         return if (coordinate.y > 0 && coordinate.y < this.size) {
-            if (generation == 0) this[coordinate.y - 1].cells[coordinate.x]
+            if (generation == 0) this[coordinate.y - 1][coordinate.x]
             else if (coordinate.y == centralHeight && generation == 1) {
                 if (
                     symmetry != ShipSymmetry.GLIDE ||
                     (period.mod(2) == 0 && this.last().phase.mod(period) == 0)
-                ) this.last().cells[coordinate.x]
-                else this.last().cells[width - coordinate.x - 1]
+                ) this.last()[coordinate.x]
+                else this.last()[width * spacing - coordinate.x - 1]
             }
             else -1  // means that the cell state is not known
         } else -1

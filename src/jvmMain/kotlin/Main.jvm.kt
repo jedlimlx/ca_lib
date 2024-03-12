@@ -1,16 +1,15 @@
 import rules.hrot.HROT
+import rules.hrot.HROTGenerations
+import rules.nontotalistic.rules.INT
 import search.cfind.CFind
 import search.cfind.ShipSymmetry
+import simulation.Coordinate
 
 
 actual fun main() {
-    val lifeSearchP4K1 = CFind(
-        HROT("B3/S23"), 4, 1, 7, ShipSymmetry.ODD, verbosity = 1, numShips = 1
+    val glideDiagonalSearch = CFind(
+        INT("B2n3/S23-q"), 3, 1, 13, ShipSymmetry.GLIDE,
+        verbosity = 1, maxQueueSize = 2 shl 18
     )
-    lifeSearchP4K1.search()
-
-    val minibugsSearch = CFind(
-        HROT("R2,C2,S6-9,B7-9,NM"), 2, 1, 10, ShipSymmetry.GLIDE, verbosity = 1
-    )
-    minibugsSearch.search()
+    glideDiagonalSearch.search()
 }
