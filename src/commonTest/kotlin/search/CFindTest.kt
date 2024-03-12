@@ -84,7 +84,7 @@ class Test {
         assertEquals(glideDiagonalSearch.searchResults.size, 1)
 
         val diagonalSearch = CFind(
-            HROT("B34/S34"), 3, 1, 3F, ShipSymmetry.ASYMMETRIC,
+            HROT("B34/S34"), 3, 1, 3, ShipSymmetry.ASYMMETRIC,
             verbosity = 1, direction = Coordinate(1, 1)
         )
         diagonalSearch.search()
