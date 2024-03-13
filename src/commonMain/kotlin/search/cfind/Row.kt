@@ -32,11 +32,11 @@ class Row(val predecessor: Row?, val cells: IntArray, val search: CFind) {
         return cells[(index - offset) / search.spacing]
     }
 
-    fun getPredecessor(n: Int): Row? {
+    fun getPredecessor(n: Int): Row? {  // TODO take width into account when getting the predecessor
         if (n < 0) return null
         if (n == 0) return this
-        if (n == 1) return predecessor
-        return predecessor?.getPredecessor(n - 1)
+
+        return predecessor?.getPredecessor(n - this.depth + predecessor.depth)
     }
 
     fun getAllPredecessors(n: Int): List<Row> {

@@ -684,7 +684,7 @@ class CFind(
                         }
 
                         val (lookaheadOutput, temp) = nextRow(
-                            null,
+                            null,  // TODO apply possible successors optimisation to lookahead as well
                             newRows.first() as List<Row>,
                             newRows.subList(1, newRows.size),
                             lookaheadDepth + 1,
@@ -711,10 +711,9 @@ class CFind(
             var deadend = true
             val row = node.completeRow
             val shifted = (node.cells * rule.numStates).mod(pow(rule.numStates, reversedBaseCoordinate.size))
-            val possibleSuccessors = (0..<rule.numStates)
+            val possibleSuccessors = if (prevRow != null) rule.possibleSuccessors[0][prevRow.cells[node.depth]].toList()
+            else (0..<rule.numStates)
 
-            // if (prevRow != null) rule.possibleSuccessors[0][prevRow[node.depth]].toList()
-            //            else
             // TODO Fix possible successors
 
             for (i in possibleSuccessors) {

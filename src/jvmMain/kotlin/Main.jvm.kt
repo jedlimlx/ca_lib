@@ -25,9 +25,14 @@ actual fun main() {
 //    )
 //    minibugsSearch.search()
 
-    val vonNeumannDiagonalSearch = CFind(  //NW1010101010100010101010101, R2,C2,S2-4,B4,8,10,NN
-        HROT("R2,C2,S2-4,B4,8,10,NN"), 3, 1, 4,
-        ShipSymmetry.ODD, verbosity = 1, direction = Coordinate(1, 1)
+//    val hashSearch = CFind(
+//        HROT("R3,C2,S5-9,B7-9,N#"), 3, 1, 5,
+//        ShipSymmetry.EVEN, verbosity = 1, maxQueueSize = 2 shl 18, minDeepeningIncrement = 8
+//    )
+//    hashSearch.search()
+
+    val generationsSearch = CFind(
+        HROTGenerations("23/3/3"), 4, 1, 7, ShipSymmetry.ODD, verbosity = 1
     )
-    vonNeumannDiagonalSearch.search()
+    generationsSearch.search()
 }
