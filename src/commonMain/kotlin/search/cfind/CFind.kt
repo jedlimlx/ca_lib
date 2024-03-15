@@ -24,6 +24,7 @@ class CFind(
     val maxQueueSize: Int = 1 shl 20,  // 2 ^ 20
     val minDeepeningIncrement: Int = 2,
     lookaheadDepth: Int = Int.MAX_VALUE,
+    val dfs: Boolean = false,
     val numShips: Int = Int.MAX_VALUE,
     val partialFrequency: Int = 1000,
     verbosity: Int = 0
@@ -60,6 +61,12 @@ class CFind(
         }
 
         this[count.mod(period)] = (period - count).mod(period)
+    }
+    val fwdOff = run {
+        val array = IntArray(period) { -1 }
+        backOff.forEachIndexed { index, it -> array[(it + index).mod(period)] = it }
+
+        array
     }
 
     private val tempOffsets = IntArray(spacing) {
@@ -100,8 +107,8 @@ class CFind(
 
     val reversedBaseCoordinate: List<Coordinate> = run {
         (  // we need to fill in the gaps between the base coordinates
-            (baseCoordinates.minOf { it.x } ..< baseCoordinates.maxOf { it.x } step spacing).reversed()
-        ).map { Coordinate(it, -centralHeight) }.toList()
+                (baseCoordinates.minOf { it.x } ..< baseCoordinates.maxOf { it.x } step spacing).reversed()
+                ).map { Coordinate(it, -centralHeight) }.toList()
     }
 
     // baseCoordinates.reversed().subList(1, baseCoordinates.size)
@@ -151,15 +158,39 @@ class CFind(
     val equivalentStates: HashMap<Int, List<Row>> = hashMapOf()
 
     // Computing the rows that should be used in computing the next state
-    val indices = IntArray(height) {
-        if (it < height - 1) (it + 1) * period
-        else centralHeight * period - k
+    val indices = Array(period) { phase ->
+        IntArray(height) {
+            if (it < height - 1) (it + 1) * period
+            else centralHeight * period - backOff[phase]
+        }
     }
 
-    private val tempIndices = indices.indices.map { depth ->
-        indices.map { it - indices.sorted()[depth] }
+    private val tempIndices = run {
+        val lst = arrayListOf(indices)
+        for (i in indices[0].indices) {
+            lst.add(
+                Array(period) { phase ->
+                    //println(lst.last()[phase].toList())
+                    val temp = lst.last()[phase].filter { it > 0 }.min()
+                    val pos = lst.last()[phase].indexOf(temp)
+
+                    if (pos < indices[0].size - 1) lst.last()[phase].map { it - temp }.toIntArray()
+                    else {
+                        val fwdOffset = fwdOff[(phase - temp).mod(period)]
+                        lst.last()[phase].map {
+                            if (it - temp != 0) it - temp + backOff[phase] - fwdOffset
+                            else 0
+                        }.toIntArray()
+                    }
+                }
+            )
+        }
+
+        lst.subList(1, lst.size)
     }
-    val maxLookaheadDepth = tempIndices.run {
+
+    // TODO make sure its legit to only check 0th element
+    val maxLookaheadDepth = tempIndices.map { it[0] }.run {
         val known = hashSetOf<Int>()
         var output = 0
         var breakLoop = false
@@ -189,24 +220,24 @@ class CFind(
         output
     }  // double or even triple lookahead is possible for higher-range rules
     val lookaheadDepth = minOf(lookaheadDepth, maxLookaheadDepth)
-    val lookaheadIndices = tempIndices.subList(0, this.lookaheadDepth)
+    val lookaheadIndices = if (this.lookaheadDepth == 0) listOf() else tempIndices.subList(0, this.lookaheadDepth)
 
-    val additionalDepth: Int = when (indices.indexOf(indices.min())) {
+    val additionalDepth: Int = when (indices[0].indexOf(indices[0].min())) {
         0 -> neighbourhood[0].filter { it.y == baseCoordinates[0].y + 1 }.maxOf{ it.x } + 1 - baseCoordinates.last().x
-        indices.size - 1 -> baseCoordinates.last().x - 1
+        indices[0].size - 1 -> baseCoordinates.last().x - 1
         else -> -1
     }
 
     // Computing neighbourhoods to be memorised for lookahead
     val memorisedlookaheadNeighbourhood: List<List<Pair<Coordinate, Int>>> = lookaheadIndices.indices.map {
-        if (lookaheadIndices[it].indexOf(lookaheadIndices[it].min()) == 0) {
+        if (lookaheadIndices[it][0].indexOf(lookaheadIndices[it][0].min()) == 0) {
             mainNeighbourhood.filter { (it, _) -> it.y > -centralHeight + 1 }
         } else {
             mainNeighbourhood
         }
     }.toList()
     val lookaheadNeighbourhood: List<List<Pair<Coordinate, Int>>> = lookaheadIndices.indices.map {
-        if (lookaheadIndices[it].indexOf(lookaheadIndices[it].min()) == 0) {
+        if (lookaheadIndices[it][0].indexOf(lookaheadIndices[it][0].min()) == 0) {
             mainNeighbourhood.filter { (it, _) -> it.y == -centralHeight + 1 }
         } else {
             listOf()
@@ -282,13 +313,15 @@ class CFind(
         println(brightRed(bold("\nMisc\n----------------")), verbosity = 1)
         println((bold("Successor Table Size: ") + "${successorTable.size}"), verbosity = 1)
         println((bold("Backoff Table: ") + "${backOff.toList()}"), verbosity = 1)
+        println((bold("Reverse Backoff Table: ") + "${fwdOff.toList()}"), verbosity = 1)
         println((bold("Maximum Lookahead Depth: ") + "$maxLookaheadDepth"), verbosity = 1)
         println((bold("Lookahead Depth: ") + "$lookaheadDepth"), verbosity = 1)
         println(
             (
-                bold("Row Indices: ") +
-                        "\n${indices.toList()}\n${lookaheadIndices.map { it.toList() }.joinToString("\n")}"
-            ), verbosity = 1
+                    bold("Row Indices: ") +
+                            "\n${indices.map { it.toList() }.toList()}" +
+                            "\n${lookaheadIndices.map { it.map { it.toList() }.toList() }.joinToString("\n")}"
+                    ), verbosity = 1
         )
 
         // Initialising BFS queue with (height - 1) * period empty rows
@@ -326,7 +359,8 @@ class CFind(
                 }
 
                 // Get the current row that is going to be analysed
-                currentRow = queue.removeFirst()
+                if (dfs) currentRow = queue.removeLast()
+                else currentRow = queue.removeFirst()
 
                 // Check if the ship is completed
                 if (checkCompletedShip(currentRow)) {
@@ -439,7 +473,7 @@ class CFind(
         println(
             bold(
                 "\nSearch terminated in ${green("${(timeSource.markNow() - startTime).inWholeMilliseconds / 1000.0}s")}. " +
-                "${green("$shipsFound")} ship${if (shipsFound == 1) "" else "s"} found."
+                        "${green("$shipsFound")} ship${if (shipsFound == 1) "" else "s"} found."
             )
         )
     }
@@ -488,8 +522,8 @@ class CFind(
      * It will return a pair of rows - one for the regular successor search and the other for lookahead
      */
     fun extractRows(row: Row): Pair<List<Row>, List<List<Row?>>> = Pair(
-        indices.map { row.getPredecessor(it - 1)!! }.toList(),
-        lookaheadIndices.map { it.map { row.getPredecessor(it - 1) }.toList() }
+        indices[(row.depth + 1).mod(period)].map { row.getPredecessor(it - 1)!! }.toList(),
+        lookaheadIndices.map { it[(row.depth + 1).mod(period)].map { row.getPredecessor(it - 1) }.toList() }
     )
 
     /**
@@ -512,7 +546,7 @@ class CFind(
             if (coordinate !in neighbourhoodWithoutBg) {
                 neighbourhoodWithoutBg[coordinate] = mainNeighbourhood.filter { (it, _) ->
                     if (symmetry == ShipSymmetry.ASYMMETRIC || symmetry == ShipSymmetry.GLIDE)
-                            (it + coordinate).x in 0..<width * spacing
+                        (it + coordinate).x in 0..<width * spacing
                     else (it + coordinate).x >= 0
                 }.map { (it, p) -> Pair(it + coordinate, p) }.toList()
             }
@@ -521,12 +555,12 @@ class CFind(
             if (partialKey == -1) {
                 if (lookaheadDepth != 0) {
                     memorisedlookaheadNeighbourhood[lookaheadDepth - 1].forEach {
-                        (it, p) -> key += rows[it + coordinate, 0, row, depth] * p
+                            (it, p) -> key += rows[it + coordinate, 0, row, depth] * p
                     }
                     if (index != -1) lookaheadMemo!![index] = key
 
                     lookaheadNeighbourhood[lookaheadDepth - 1].forEach {
-                        (it, p) -> key += rows[it + coordinate, 0, row, depth] * p
+                            (it, p) -> key += rows[it + coordinate, 0, row, depth] * p
                     }
                 } else neighbourhoodWithoutBg[coordinate]!!.forEach { (it, p) -> key += rows[it, 0, row, depth] * p }
             } else {
@@ -562,7 +596,7 @@ class CFind(
         val _lookaheadMemo = IntArray(width + leftBC.size) { -1 }
         fun lookup(it: Int, row: IntArray? = null): IntArray {
             // Ensures that no effort is wasted if the row could never succeed
-            if (indices.last() == 0 || memo[it] == null) {
+            if (memo[it] == null) {
                 if (lookaheadMemo != null && lookaheadMemo[it] == -1) {
                     memo[it] = successorTable[
                         encodeNeighbourhood(
@@ -613,12 +647,10 @@ class CFind(
         }
 
         // Remember the row that evolved into this one
-        val prevRow = currentRow?.getPredecessor(k - 1)
+        val prevRow = currentRow?.getPredecessor(fwdOff[depth.mod(period)] - 1)
 
         // Lookup table to prune and combine branches of search
-        val table: Array<IntArray> = Array(width) {
-            IntArray(pow(rule.numStates, reversedBaseCoordinate.size)) { -1 }
-        }
+        val table: Array<IntArray> = Array(width) { IntArray(pow(rule.numStates, reversedBaseCoordinate.size)) { -1 } }
 
         // Computing the initial key for the inner lookup table
         val key = encodeKey(-baseCoordinates.last())
@@ -653,14 +685,12 @@ class CFind(
             }
 
             // Check extra boundary conditions at the start
-            if (rightBC.isNotEmpty() && bcDepth == 1 && node.depth == 1 && !checkBoundaryCondition(node, rightBC)) continue
+            if (node.depth == 1 && bcDepth == 1 && rightBC.isNotEmpty() && !checkBoundaryCondition(node, rightBC)) continue
 
             // Stuff that is done at the end of the search
             if (node.depth == width) {
                 // Telling algorithm which branches can be pruned and which branches can jump to the end
-                node.predecessor!!.applyOnPredecessor {
-                    table[it.depth][it.cells] = 1
-                }
+                node.predecessor!!.applyOnPredecessor { table[it.depth][it.cells] = 1 }
 
                 if (bcDepth != 1 && rightBC.isNotEmpty() && !checkBoundaryCondition(node, rightBC)) continue
 
@@ -671,15 +701,11 @@ class CFind(
                 )
 
                 if (checkBoundaryCondition(node, bcList, offset=Coordinate(width * spacing - 1, 0))) {
-                    val row = Row(
-                        currentRow,
-                        node.completeRow,
-                        this
-                    )
+                    val row = Row(currentRow, node.completeRow, this)
                     if (lookaheadDepth < this.lookaheadDepth) {
                         val newRows = lookaheadRows.mapIndexed { index, rows ->
-                            val temp = lookaheadIndices[lookaheadDepth].min()
-                            val tempIndices = lookaheadIndices[index + lookaheadDepth]
+                            val temp = lookaheadIndices[lookaheadDepth][depth.mod(period)].min()  // TODO may not be legit
+                            val tempIndices = lookaheadIndices[index + lookaheadDepth][depth.mod(period)]
                             rows.mapIndexed { index, value -> if (tempIndices[index] == temp) row else value }
                         }
 
@@ -689,15 +715,14 @@ class CFind(
                             newRows.subList(1, newRows.size),
                             lookaheadDepth + 1,
                             _lookaheadMemo,
-                            depth - lookaheadIndices[lookaheadDepth].min()
+                            depth - lookaheadIndices[lookaheadDepth][depth.mod(period)].min()
                         )
 
-                        if (lookaheadOutput.isEmpty()) {
-                            depthToCheck = temp
-                        } else completedRows.add(row)
+                        if (lookaheadOutput.isEmpty()) depthToCheck = temp
+                        else completedRows.add(row)
                     } else {
                         completedRows.add(row)
-                        if (lookaheadDepth != 0) return Pair(completedRows, maxDepth)
+                        if (this.lookaheadDepth != 0) return Pair(completedRows, maxDepth)
                     }
                 }
 
@@ -715,7 +740,6 @@ class CFind(
             else (0..<rule.numStates)
 
             // TODO Fix possible successors
-
             for (i in possibleSuccessors) {
                 val newKey = if (baseCoordinates.size > 1) shifted + i else 0
 
