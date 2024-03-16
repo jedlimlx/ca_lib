@@ -12,13 +12,6 @@ data class Node(
         predecessor?.completeRow?.plus(intArrayOf(prevCell)) ?: intArrayOf()
     }
 
-    fun changePredecessor(node: Node): Node {
-        if (this.depth > node.depth && predecessor != null)
-            return Node(predecessor!!.changePredecessor(node), cells, prevCell, depth, numStates, singleBaseCoordinate)
-
-        return node
-    }
-
     fun applyOnPredecessor(f: (Node) -> Unit) {
         f(this)
         predecessor?.applyOnPredecessor(f)

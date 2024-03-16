@@ -22,6 +22,8 @@ class INT : BaseINT {
         }
     }
 
+    override val equivalentStates: IntArray = intArrayOf(0, 1)
+
     constructor(birth: INTTransitions, survival: INTTransitions, neighbourhoodString: String) {
         this.birth = birth
         this.survival = survival

@@ -40,6 +40,8 @@ class HROTExtendedGenerations : BaseHROT {
     override val neighbourhood: Array<Array<Coordinate>>
     override val possibleSuccessors: Array<Array<IntArray>>
 
+    override val equivalentStates: IntArray
+
     //language=RegExp
     val extendedGenerations = "(0-)?[1-9][0-9]*(-[1-9][0-9]*)*"
     override val regex: List<Regex> = listOf(
@@ -79,6 +81,8 @@ class HROTExtendedGenerations : BaseHROT {
                 else -> intArrayOf(it, (it + 1) % numStates)
             }
         })
+
+        equivalentStates = (0..<numStates).toList().toIntArray()
     }
 
     /**
@@ -171,6 +175,8 @@ class HROTExtendedGenerations : BaseHROT {
                 else -> intArrayOf(it, (it + 1) % numStates)
             }
         })
+
+        equivalentStates = (0..<numStates).toList().toIntArray()
     }
 
     override fun canoniseRulestring(): String {

@@ -89,7 +89,7 @@ abstract class Rule {
      */
     open val colours: Array<Colour> by lazy {
         Array(numStates) {
-            when(it) {
+            when (it) {
                 0 -> Colour(0, 0, 0)
                 1 -> if (numStates > 2) Colour(255, 0, 0) else Colour(255, 255, 255)
                 else -> Colour(255, (it - 1) * 255 / (numStates - 2), 0)
@@ -107,6 +107,12 @@ abstract class Rule {
      * The possible successor cell states of each cell state
      */
     abstract val possibleSuccessors: Array<Array<IntArray>>
+
+    /**
+     * Shows which states are equivalent to with other states
+     * (i.e. can be swapped around within a neighbourhood without changing the output)
+     */
+    abstract val equivalentStates: IntArray
 
     /**
      * The transition function of the rule

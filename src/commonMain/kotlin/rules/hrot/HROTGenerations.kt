@@ -32,6 +32,8 @@ class HROTGenerations : BaseHROT {
     override val neighbourhood: Array<Array<Coordinate>>
     override val possibleSuccessors: Array<Array<IntArray>>
 
+    override val equivalentStates: IntArray
+
     val stateWeights: IntArray?
 
     override val regex: List<Regex> = listOf(
@@ -71,6 +73,8 @@ class HROTGenerations : BaseHROT {
                 else -> intArrayOf((it + 1) % numStates)
             }
         })
+
+        equivalentStates = intArrayOf(0, 1) + IntArray(numStates - 2) { 0 }
     }
 
     /**
@@ -168,6 +172,8 @@ class HROTGenerations : BaseHROT {
                 else -> intArrayOf((it + 1) % numStates)
             }
         })
+
+        equivalentStates = intArrayOf(0, 1, 0) // + IntArray(numStates - 2) { 0 }
     }
 
     override fun canoniseRulestring(): String {

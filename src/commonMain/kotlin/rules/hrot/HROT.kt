@@ -31,6 +31,8 @@ class HROT : BaseHROT {
     override val neighbourhood: Array<Array<Coordinate>>
     override val possibleSuccessors: Array<Array<IntArray>>
 
+    override val equivalentStates: IntArray = intArrayOf(0, 1)
+
     override val regex: List<Regex> = listOf(
         Regex("R[0-9]+,C[02],S${transitionRegex},B${transitionRegex}${neighbourhoodRegex}"),
         Regex("([BSbs][0-8]*/?[BSbs][0-8]*|[BSbs]?[0-8]*/[BSbs]?[0-8]*)"),

@@ -1,6 +1,7 @@
 package search.cfind
 
 import com.github.ajalt.mordant.rendering.TextColors.*
+import com.github.ajalt.mordant.rendering.TextStyles
 import com.github.ajalt.mordant.rendering.TextStyles.bold
 import patterns.Pattern
 import patterns.Spaceship
@@ -107,11 +108,9 @@ class CFind(
 
     val reversedBaseCoordinate: List<Coordinate> = run {
         (  // we need to fill in the gaps between the base coordinates
-                (baseCoordinates.minOf { it.x } ..< baseCoordinates.maxOf { it.x } step spacing).reversed()
-                ).map { Coordinate(it, -centralHeight) }.toList()
+            (baseCoordinates.minOf { it.x } ..< baseCoordinates.maxOf { it.x } step spacing).reversed()
+        ).map { Coordinate(it, -centralHeight) }.toList()
     }
-
-    // baseCoordinates.reversed().subList(1, baseCoordinates.size)
 
     private val temp: Map<Int, Coordinate> = neighbourhood[0].map { it.x }.toSet().sorted().map { index ->
         Pair(index, neighbourhood[0].filter { it.x == index }.minBy { it.y })
@@ -245,6 +244,13 @@ class CFind(
     }.toList()
 
     // Building lookup tables
+    val numEquivalentStates: Int = rule.equivalentStates.distinct().size
+    val equivalentStateSets: List<List<Int>> = run {
+        val lst = List<ArrayList<Int>>(numEquivalentStates) { arrayListOf() }
+        rule.equivalentStates.forEachIndexed { actualState, state -> lst[state].add(actualState) }
+
+        lst
+    }
     val successorTable: Array<IntArray> = Array(
         pow(rule.numStates, neighbourhood[0].size - baseCoordinates.size + 2)
     ) {
@@ -267,13 +273,13 @@ class CFind(
         power *= rule.numStates
 
         // Building the inner lookup table
-        IntArray(pow(rule.numStates, reversedBaseCoordinate.size)) {
+        IntArray(pow(numEquivalentStates, reversedBaseCoordinate.size)) {
             var power = 1
             for (c in reversedBaseCoordinate) {
                 if (c in baseCoordinates)
-                    lst[baseCoordinateMap[baseCoordinates.indexOf(c)]] = getDigit(it, power, rule.numStates)
+                    lst[baseCoordinateMap[baseCoordinates.indexOf(c)]] = getDigit(it, power, numEquivalentStates)
 
-                power *= rule.numStates
+                power *= numEquivalentStates
             }
 
             // Output will be represented in binary with the ith digit representing if state i can be used
@@ -318,10 +324,19 @@ class CFind(
         println((bold("Lookahead Depth: ") + "$lookaheadDepth"), verbosity = 1)
         println(
             (
-                    bold("Row Indices: ") +
-                            "\n${indices.map { it.toList() }.toList()}" +
-                            "\n${lookaheadIndices.map { it.map { it.toList() }.toList() }.joinToString("\n")}"
-                    ), verbosity = 1
+                bold("Row Indices: ") +
+                "\n${indices.map { it.toList() }.toList()}" +
+                "\n${tempIndices.subList(0, this.lookaheadDepth).map { 
+                    it.map { it.toList() }.toList() 
+                }.joinToString("\n")}" +
+                gray(
+                    "\n${
+                        tempIndices.subList(this.lookaheadDepth, tempIndices.size).map { 
+                            it.map { it.toList() }.toList() 
+                        }.joinToString("\n")
+                    }"
+                )
+            ), verbosity = 1
         )
 
         // Initialising BFS queue with (height - 1) * period empty rows
@@ -584,8 +599,8 @@ class CFind(
             var key = 0
             var power = 1
             reversedBaseCoordinate.forEach {
-                key += rows[it + coordinate, 0, row, depth] * power
-                power *= rule.numStates
+                key += rule.equivalentStates[rows[it + coordinate, 0, row, depth]] * power
+                power *= numEquivalentStates
             }
 
             return key
@@ -656,13 +671,13 @@ class CFind(
         val key = encodeKey(-baseCoordinates.last())
 
         // Finally running the search
-        val completedRows = arrayListOf<Row>()
+        var completedRows = arrayListOf<Row>()
         val stack = ArrayList<Node>(10)
         stack.add(
             Node(
                 null,
                 key,
-                key.mod(rule.numStates),
+                key.mod(numEquivalentStates),
                 0,
                 rule.numStates,
                 baseCoordinates.size == 1
@@ -701,6 +716,36 @@ class CFind(
                 )
 
                 if (checkBoundaryCondition(node, bcList, offset=Coordinate(width * spacing - 1, 0))) {
+//                    val row = Row(currentRow, node.completeRow, this)
+//
+//                    // Find out which cells need to be replaced
+//                    val indexes = arrayListOf<Int>()
+//                    row.cells.forEachIndexed { index, it ->
+//                        if (equivalentStateSets[it].size > 1)
+//                            indexes.add(index)
+//                    }
+//
+//                    for (i in 0..<pow(equivalentStateSets[0].size, indexes.size)) {
+//                        val array = row.cells.copyOf()
+//
+//                        // Replacing those cells
+//                        var power = 1
+//                        var skip = false
+//                        for (j in 0..<indexes.size) {
+//                            val state = equivalentStateSets[0][getDigit(i, power, equivalentStateSets[0].size)]
+//                            if (prevRow != null && state in rule.possibleSuccessors[0][prevRow.cells[indexes[j]]])
+//                                array[indexes[j]] = state
+//                            else {
+//                                skip = true
+//                                break
+//                            }
+//
+//                            power *= equivalentStateSets[0].size
+//                        }
+//
+//                        if (skip) continue
+
+                    // Running the lookahead
                     val row = Row(currentRow, node.completeRow, this)
                     if (lookaheadDepth < this.lookaheadDepth) {
                         val newRows = lookaheadRows.mapIndexed { index, rows ->
@@ -718,8 +763,10 @@ class CFind(
                             depth - lookaheadIndices[lookaheadDepth][depth.mod(period)].min()
                         )
 
-                        if (lookaheadOutput.isEmpty()) depthToCheck = temp
-                        else completedRows.add(row)
+                        if (lookaheadOutput.isEmpty()) {
+                            // if (i == 0) depthToCheck = -1
+                            depthToCheck = maxOf(depthToCheck, temp)
+                        } else completedRows.add(row)
                     } else {
                         completedRows.add(row)
                         if (this.lookaheadDepth != 0) return Pair(completedRows, maxDepth)
@@ -735,13 +782,13 @@ class CFind(
 
             var deadend = true
             val row = node.completeRow
-            val shifted = (node.cells * rule.numStates).mod(pow(rule.numStates, reversedBaseCoordinate.size))
+            val shifted = (node.cells * numEquivalentStates).mod(pow(numEquivalentStates, reversedBaseCoordinate.size))
             val possibleSuccessors = if (prevRow != null) rule.possibleSuccessors[0][prevRow.cells[node.depth]].toList()
-            else (0..<rule.numStates)
+            else (0..<numEquivalentStates)
 
             // TODO Fix possible successors
             for (i in possibleSuccessors) {
-                val newKey = if (baseCoordinates.size > 1) shifted + i else 0
+                val newKey = if (baseCoordinates.size > 1) shifted + rule.equivalentStates[i] else 0
 
                 if (
                     ((lookup(node.depth, row)[if (baseCoordinates.size > 1) node.cells else 0] shr i) and 0b1) == 1 &&
@@ -766,6 +813,35 @@ class CFind(
                     table[it.depth][it.cells] = 0
             }
         }
+
+        // Split up the equivalent states into the actual number of rows
+        // TODO do this splitting up more generally
+//        if (numEquivalentStates != rule.numStates) {
+//            val actualRows = arrayListOf<Row>()
+//            completedRows.forEach {
+//                // Find out which cells need to be replaced
+//                val indexes = arrayListOf<Int>()
+//                it.cells.forEachIndexed { index, it ->
+//                    if (equivalentStateSets[it].size > 1)
+//                        indexes.add(index)
+//                }
+//
+//                // Replacing those cells
+//                for (i in 0..<pow(equivalentStateSets[1].size, indexes.size)) {
+//                    val array = it.cells.copyOf()
+//
+//                    var power = 1
+//                    for (j in 0..<indexes.size) {
+//                        array[indexes[j]] = getDigit(i, power, equivalentStateSets[1].size)
+//                        power *= equivalentStateSets[1].size
+//                    }
+//
+//                    actualRows.add(Row(currentRow, array, this))
+//                }
+//            }
+//
+//            completedRows = actualRows
+//        }
 
         return Pair(completedRows, maxDepth)
     }
