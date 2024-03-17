@@ -282,7 +282,7 @@ class HROT : BaseHROT {
         if (intersection.isNotEmpty()) state.add(1)
         if (intersection.size < transitionSet.size) state.add(0)
 
-        return intersection
+        return state
     }
 
     private fun newRuleWithTransitions(birth: Iterable<Int>, survival: Iterable<Int>): HROT =

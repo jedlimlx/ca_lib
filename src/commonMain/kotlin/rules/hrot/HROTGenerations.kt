@@ -173,7 +173,7 @@ class HROTGenerations : BaseHROT {
             }
         })
 
-        equivalentStates = intArrayOf(0, 1, 0) // + IntArray(numStates - 2) { 0 }
+        equivalentStates = intArrayOf(0, 1) + IntArray(numStates - 2) { 0 }
     }
 
     override fun canoniseRulestring(): String {
@@ -352,7 +352,7 @@ class HROTGenerations : BaseHROT {
         if (intersection.isNotEmpty()) state.add(1)
         if (intersection.size < transitionSet.size) state.add((cellState + 1).mod(numStates))
 
-        return intersection
+        return state
     }
 
     private fun newRuleWithTransitions(birth: Iterable<Int>, survival: Iterable<Int>): HROTGenerations =
