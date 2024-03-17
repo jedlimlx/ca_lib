@@ -179,4 +179,8 @@ class INT : BaseINT {
             else -> if (cells in survival) 1 else 0
         }
     }
+
+    override fun transitionFuncWithUnknowns(cells: IntArray, cellState: Int, generation: Int, coordinate: Coordinate): Set<Int> {
+        TODO("Not implemented yet")
+    }
 }

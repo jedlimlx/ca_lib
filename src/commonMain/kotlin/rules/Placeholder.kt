@@ -10,4 +10,7 @@ internal class Placeholder : Rule() {
     override val equivalentStates: IntArray = intArrayOf(0, 1)
 
     override fun transitionFunc(cells: IntArray, cellState: Int, generation: Int, coordinate: Coordinate): Int = 0
+    override fun transitionFuncWithUnknowns(cells: IntArray, cellState: Int, generation: Int, coordinate: Coordinate): Set<Int> {
+        TODO("Not implemented yet")
+    }
 }

@@ -124,6 +124,16 @@ abstract class Rule {
     abstract fun transitionFunc(cells: IntArray, cellState: Int, generation: Int, coordinate: Coordinate): Int
 
     /**
+     * The set of all possible states the cell could be in given a certain neighbourhood \
+     * with unknown cells marked as -1
+     * @param cells The cells surrounding the central cell (in the order specified by [neighbourhood])
+     * @param cellState The state of the central cell
+     * @param generation The generation of current simulation (for alternating rules)
+     * @param coordinate The coordinate of the central cell (for rules that change based on parity, etc.)
+     */
+    abstract fun transitionFuncWithUnknowns(cells: IntArray, cellState: Int, generation: Int, coordinate: Coordinate): Set<Int>
+
+    /**
      * Steps the grid forward by [generations] generations.
      * @param generations The number of generations to step the grid forward by
      * @return Returns the modified grid

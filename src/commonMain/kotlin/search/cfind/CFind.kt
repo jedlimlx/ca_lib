@@ -326,9 +326,9 @@ class CFind(
             (
                 bold("Row Indices: ") +
                 "\n${indices.map { it.toList() }.toList()}" +
-                "\n${tempIndices.subList(0, this.lookaheadDepth).map { 
+                if (this.lookaheadDepth != 0) "\n${tempIndices.subList(0, this.lookaheadDepth).map { 
                     it.map { it.toList() }.toList() 
-                }.joinToString("\n")}" +
+                }.joinToString("\n")}" else "" +
                 gray(
                     "\n${
                         tempIndices.subList(this.lookaheadDepth, tempIndices.size).map { 

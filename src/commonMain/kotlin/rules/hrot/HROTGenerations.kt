@@ -333,6 +333,28 @@ class HROTGenerations : BaseHROT {
         }
     }
 
+    override fun transitionFuncWithUnknowns(cells: IntArray, cellState: Int, generation: Int, coordinate: Coordinate): Set<Int> {
+        var unknowns = 0
+        var live = 0
+        cells.forEach {
+            if (it == -1) unknowns++
+            else if (it == 1) live++
+        }
+
+        val transitionSet = (live..(live+unknowns)).toSet()
+
+        val state = hashSetOf<Int>()
+        val intersection = when(cellState) {
+            0 -> transitionSet intersect birth
+            else -> transitionSet intersect survival
+        }
+
+        if (intersection.isNotEmpty()) state.add(1)
+        if (intersection.size < transitionSet.size) state.add((cellState + 1).mod(numStates))
+
+        return intersection
+    }
+
     private fun newRuleWithTransitions(birth: Iterable<Int>, survival: Iterable<Int>): HROTGenerations =
         HROTGenerations(birth, survival, numStates, neighbourhood[0], weights, stateWeights)
 }

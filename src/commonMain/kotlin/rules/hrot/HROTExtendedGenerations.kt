@@ -326,6 +326,10 @@ class HROTExtendedGenerations : BaseHROT {
         }
     }
 
+    override fun transitionFuncWithUnknowns(cells: IntArray, cellState: Int, generation: Int, coordinate: Coordinate): Set<Int> {
+        TODO("Not implemented yet")
+    }
+
     private fun newRuleWithTransitions(birth: Iterable<Int>, survival: Iterable<Int>): HROTExtendedGenerations =
         HROTExtendedGenerations(birth, survival, numStates, neighbourhood[0], weights, activeStates)
 }

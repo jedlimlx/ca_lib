@@ -46,7 +46,7 @@ actual fun main() {
 //    generationsSearch.search()
 
     val generationsSearch = CFind(
-        HROTGenerations("R2,C3,S9-17,B9-11,18-22,NW0010003330130310333000100"), 2, 1, 9,
+        HROTGenerations("345/367/3"), 2, 1, 5,
         ShipSymmetry.ASYMMETRIC, verbosity = 1
     )
     generationsSearch.search()
