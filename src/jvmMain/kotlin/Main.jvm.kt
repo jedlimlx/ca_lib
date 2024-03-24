@@ -7,21 +7,15 @@ import simulation.Coordinate
 
 
 actual fun main() {
-//    val almostLifeP4K1 = CFind(
-//        HROT("R2,C2,S6-11,B9-11,NW0010003330130310333000100"), 4, 1, 5, ShipSymmetry.EVEN
-//    )
-//    almostLifeP4K1.search()
-
-    val factorioSearch = CFind(
-        HROT("R2,C2,S2,B3,NN"), 3, 1, 7, ShipSymmetry.GLIDE, verbosity = 1
+    val vonNeumannSearch = CFind(
+        HROT("R2,C2,S2,B3,NN"), 3, 1, 8, ShipSymmetry.ODD, verbosity = 1
     )
-    factorioSearch.search()
+    vonNeumannSearch.search()
 
-//    val lifeSearch = CFind(
-//        HROT("B3/S23"), 4, 2, 7, ShipSymmetry.ASYMMETRIC, verbosity = 1,
-//        maxQueueSize = 1 shl 17, lookaheadDepth = 0
+//    val factorioSearch = CFind(
+//        HROT("R2,C2,S2,B3,NN"), 3, 1, 7, ShipSymmetry.GLIDE, verbosity = 1
 //    )
-//    lifeSearch.search()
+//    factorioSearch.search()
 
 //    val hashSearch = CFind(
 //        HROT("R2,C2,S4-6,B5-6,N#"), 2, 1, 7, ShipSymmetry.EVEN,
@@ -30,8 +24,7 @@ actual fun main() {
 //    hashSearch.search()
 
 //    val minibugsSearch = CFind(
-//        HROT("R2,C2,S6-9,B7-8,NM"), 2, 1, 8, ShipSymmetry.ASYMMETRIC, verbosity = 1,
-//        numShips = 1
+//        HROT("R2,C2,S6-9,B7-8,NM"), 4, 1, 6, ShipSymmetry.EVEN, verbosity = 1
 //    )
 //    minibugsSearch.search()
 

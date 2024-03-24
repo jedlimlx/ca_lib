@@ -125,13 +125,13 @@ abstract class Rule {
 
     /**
      * The set of all possible states the cell could be in given a certain neighbourhood \
-     * with unknown cells marked as -1
+     * with unknown cells marked as -1 encoded in binary
      * @param cells The cells surrounding the central cell (in the order specified by [neighbourhood])
      * @param cellState The state of the central cell
      * @param generation The generation of current simulation (for alternating rules)
      * @param coordinate The coordinate of the central cell (for rules that change based on parity, etc.)
      */
-    abstract fun transitionFuncWithUnknowns(cells: IntArray, cellState: Int, generation: Int, coordinate: Coordinate): Set<Int>
+    abstract fun transitionFuncWithUnknowns(cells: IntArray, cellState: Int, generation: Int, coordinate: Coordinate): Int
 
     /**
      * Steps the grid forward by [generations] generations.

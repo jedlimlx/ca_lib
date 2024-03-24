@@ -5,10 +5,13 @@ import simulation.DenseGrid
 import simulation.Grid
 
 class Row(val predecessor: Row?, val cells: IntArray, val search: CFind) {
-    private val hash by lazy {
-        cells.reduceIndexed { index, acc, state ->
-            acc + state * pow(search.rule.numStates, index)
+    private val hash = run {
+        var hash = 0
+        for (i in cells.indices) {
+            hash += cells[i] * pow(search.rule.numStates, i)
         }
+
+        hash
     }
 
     var depth = 0
@@ -28,8 +31,9 @@ class Row(val predecessor: Row?, val cells: IntArray, val search: CFind) {
     }
 
     operator fun get(index: Int): Int {
-        if ((index - offset).mod(search.spacing) != 0) return 0
-        return cells[(index - offset) / search.spacing]
+        if (search.spacing != 1 && (index - offset).mod(search.spacing) != 0) return 0
+        if (search.spacing == 1) return cells[index]
+        else return cells[(index - offset) / search.spacing]
     }
 
     fun getPredecessor(n: Int): Row? {  // TODO take width into account when getting the predecessor
@@ -78,12 +82,12 @@ class Row(val predecessor: Row?, val cells: IntArray, val search: CFind) {
         var counter = this.offset
         while (true) {
             predecessor.cells.forEachIndexed { index, state ->
-                grid[translate(index * search.spacing + predecessor.offset, -counter)] = state
+                grid[translate(index * search.spacing + predecessor.offset, -counter)] = state.toInt()
                 when(symmetry) {
                     ShipSymmetry.EVEN -> grid[translate(2 * predecessor.cells.size * search.spacing - 1 -
-                            (index * search.spacing + predecessor.offset), -counter)] = state
+                            (index * search.spacing + predecessor.offset), -counter)] = state.toInt()
                     ShipSymmetry.ODD -> grid[translate(2 * predecessor.cells.size * search.spacing - 2 -
-                            (index * search.spacing + predecessor.offset), -counter)] = state
+                            (index * search.spacing + predecessor.offset), -counter)] = state.toInt()
                     else -> {}
                 }
             }

@@ -263,24 +263,23 @@ class HROT : BaseHROT {
         }
     }
 
-    override fun transitionFuncWithUnknowns(cells: IntArray, cellState: Int, generation: Int, coordinate: Coordinate): Set<Int> {
+    override fun transitionFuncWithUnknowns(cells: IntArray, cellState: Int, generation: Int, coordinate: Coordinate): Int {
         var unknowns = 0
         var live = 0
-        cells.forEach {
-            if (it == -1) unknowns++
-            else if (it == 1) live++
+        cells.forEachIndexed { index, it ->
+            if (it == -1) unknowns += (weights?.get(index) ?: 1)
+            else if (it == 1) live += (weights?.get(index) ?: 1)
         }
 
-        val transitionSet = (live..(live+unknowns)).toSet()
-
-        val state = hashSetOf<Int>()
-        val intersection = when(cellState) {
-            0 -> transitionSet intersect birth
-            else -> transitionSet intersect survival
+        var count = 0
+        for (i in live..(live+unknowns)) {
+            if (if (cellState == 1) i in survival else i in birth)
+                count++
         }
 
-        if (intersection.isNotEmpty()) state.add(1)
-        if (intersection.size < transitionSet.size) state.add(0)
+        var state = 0b00
+        if (count != 0) state += 0b10
+        if (count < unknowns + 1) state += 0b01
 
         return state
     }

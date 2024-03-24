@@ -180,7 +180,7 @@ class INT : BaseINT {
         }
     }
 
-    override fun transitionFuncWithUnknowns(cells: IntArray, cellState: Int, generation: Int, coordinate: Coordinate): Set<Int> {
+    override fun transitionFuncWithUnknowns(cells: IntArray, cellState: Int, generation: Int, coordinate: Coordinate): Int {
         TODO("Not implemented yet")
     }
 }
