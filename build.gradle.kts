@@ -53,12 +53,14 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1-Beta")
                 implementation("com.github.ajalt.mordant:mordant:2.3.0")
             }
         }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1-Beta")
                 implementation("com.github.ajalt.mordant:mordant:2.3.0")
             }
         }

@@ -1,5 +1,6 @@
 package search.cfind
 
+import PLATFORM
 import com.github.ajalt.mordant.rendering.TextColors.*
 import com.github.ajalt.mordant.rendering.TextStyles.bold
 import patterns.Pattern
@@ -8,9 +9,6 @@ import rules.Rule
 import rules.RuleFamily
 import search.SearchProgram
 import simulation.Coordinate
-import kotlin.math.log
-import kotlin.math.log2
-import kotlin.math.pow
 import kotlin.time.TimeSource
 
 /**
@@ -24,18 +22,20 @@ class CFind(
     val width: Int,
     val symmetry: ShipSymmetry,
     val direction: Coordinate = Coordinate(0, 1),
-    val maxQueueSize: Int = 1 shl 22,  // 2 ^ 24
+    val maxQueueSize: Int = 1 shl 22,
     minDeepeningIncrement: Int = -1,
     lookaheadDepth: Int = Int.MAX_VALUE,
     val dfs: Boolean = false,
     val numShips: Int = Int.MAX_VALUE,
     val partialFrequency: Int = 1000,
+    val numThreads: Int = 1,
     verbosity: Int = 0
 ): SearchProgram(verbosity) {
     override val searchResults: MutableList<Pattern> = mutableListOf()
 
     // TODO Handle alternating stuff properly / don't support alternating neighbourhoods
     var minDeepeningIncrement = if (minDeepeningIncrement == -1) _period else minDeepeningIncrement
+    val originalMinDeepening = this.minDeepeningIncrement
 
     // Rotate the direction of the neighbour so the ship will go north
     val basisVectors = Pair(Coordinate(direction.y, -direction.x), direction)
@@ -453,82 +453,93 @@ class CFind(
 
             if (shipsFound == numShips) break
 
+            // DFS round runs for a certain deepening increment
             val message = "Beginning depth-first search round, queue size ${queue.size}"
             println(bold("\n$message"))
 
-            // DFS round runs for a certain deepening increment
             count = 0
             clearPartial = false
 
             var num = 0
-            val stack = arrayListOf<Row>()
-            val newQueue = ArrayDeque<Row>(maxQueueSize)
-            for (row in queue) {
-                // Placing row within DFS stack
-                stack.clear()
-                stack.add(row)
+            val newQueue: ArrayDeque<Row>
+            if (PLATFORM == "JVM" && numThreads > 1) {
+                val output = multithreadedDfs(currentRow, queue, this)
+                newQueue = output.first
+                num = output.second
+            } else {
+                newQueue = ArrayDeque<Row>(maxQueueSize)
+                val stack = arrayListOf<Row>()
+                for (row in queue) {
+                    // Placing row within DFS stack
+                    stack.clear()
+                    stack.add(row)
 
-                // Computing the depth that needs the row needs to be pruned until
-                val maxDepth = minOf(
-                    row.prunedDepth + minDeepeningIncrement,
-                    row.depth + (2 * minDeepeningIncrement)
-                )
+                    // Computing the depth that needs the row needs to be pruned until
+                    val maxDepth = minOf(
+                        row.prunedDepth + minDeepeningIncrement,
+                        row.depth + (2 * originalMinDeepening)
+                    )
 
-                if (row.prunedDepth > maxDepth) {
-                    newQueue.add(row)
-                    continue
-                }
-
-                num += maxDepth - row.depth
-
-                do {
-                    if (stack.isEmpty()) break
-
-                    // Get the current row that is going to be analysed
-                    currentRow = stack.removeLast()
-                    if (currentRow.depth == maxDepth) {
-                        row.prunedDepth = maxDepth
+                    if (row.prunedDepth > maxDepth) {
                         newQueue.add(row)
-                        break
+                        continue
                     }
 
-                    // Get the rows that will need to be used to find the next row
-                    val (rows, lookaheadRows) = extractRows(currentRow)
-                    val successors = nextRow(currentRow, rows, lookaheadRows, depth = currentRow.depth + 1).first
-                    currentRow.numSuccessors = successors.size
+                    num += maxDepth - row.depth
 
-                    if (successors.isEmpty()) currentRow.predecessor!!.addDeadend(currentRow.hashCode())
-                    else {
-                        if (currentRow.deadends != null) {
-                            stack.addAll(successors.filter { it.hashCode() !in currentRow.deadends!! })
-                        } else stack.addAll(successors)
-                    }
-                } while (true)
+                    do {
+                        if (stack.isEmpty()) break
 
-                if ((count++).mod(partialFrequency) == 0) {
-                    val grid = currentRow.toGrid(period, symmetry)
-                    grid.rule = rule
-
-                    if (verbosity >= 0 && clearPartial) {
-                        t.cursor.move {
-                            up(3 + clearLines)
-                            startOfLine()
-                            clearScreenAfterCursor()
+                        // Get the current row that is going to be analysed
+                        currentRow = stack.removeLast()
+                        if (currentRow.depth == maxDepth) {
+                            row.prunedDepth = maxDepth
+                            newQueue.add(row)
+                            break
                         }
-                        t.cursor.hide(showOnExit = true)
+
+                        // Get the rows that will need to be used to find the next row
+                        val (rows, lookaheadRows) = extractRows(currentRow)
+                        val successors = nextRow(currentRow, rows, lookaheadRows, depth = currentRow.depth + 1).first
+                        currentRow.numSuccessors = successors.size
+
+                        if (successors.isEmpty()) currentRow.predecessor!!.addDeadend(currentRow.hashCode())
+                        else {
+                            if (currentRow.deadends != null) {
+                                stack.addAll(successors.filter { it.hashCode() !in currentRow.deadends!! })
+                            } else stack.addAll(successors)
+                        }
+                    } while (true)
+
+                    if ((count++).mod(partialFrequency) == 0) {
+                        val grid = currentRow.toGrid(period, symmetry)
+                        grid.rule = rule
+
+                        if (verbosity >= 0 && clearPartial) {
+                            t.cursor.move {
+                                up(3 + clearLines)
+                                startOfLine()
+                                clearScreenAfterCursor()
+                            }
+                            t.cursor.hide(showOnExit = true)
+                        }
+
+                        val rle = grid.toRLE().chunked(70)
+                        clearLines = rle.size
+
+                        println(
+                            bold(
+                                "\nChecked ${count - 1} / $maxQueueSize rows, pruned ${(10000 - (newQueue.size * 10000 / count)) / 100.0}%"
+                            )
+                        )
+                        println("x = 0, y = 0, rule = ${rule}\n" + rle.joinToString("\n"))
+                        clearPartial = true
                     }
-
-                    val rle = grid.toRLE().chunked(70)
-                    clearLines = rle.size
-
-                    println(bold(
-                        "\nChecked ${count - 1} / $maxQueueSize rows, pruned ${(10000 - (newQueue.size * 10000 / count)) / 100.0}%"
-                    ))
-                    println("x = 0, y = 0, rule = ${rule}\n" + rle.joinToString("\n"))
-                    clearPartial = true
                 }
             }
 
+
+            // Clean up the output once the DFS round is done
             if (verbosity >= 0 && clearPartial) {
                 t.cursor.move {
                     up(4 + clearLines)
@@ -541,15 +552,16 @@ class CFind(
             queue.clear()  // Clear the old queue
             queue = newQueue  // Replace the old queue
 
+            // Print out some status information
             val averageDeepening = num / maxQueueSize.toDouble()
             println(bold("$message -> ${queue.size}, average deepening " +
                     "${(100 * averageDeepening).toInt() / 100.0}"))
 
             // Increase the minimum deepening increment if it is too small
-//            if (averageDeepening > minDeepeningIncrement * 2) {
-//                println(bold("\nIncreasing minimum deepening increment $minDeepeningIncrement -> ${(averageDeepening / 2).toInt()}"))
-//                minDeepeningIncrement = (averageDeepening / 2).toInt()
-//            }
+            if (averageDeepening > minDeepeningIncrement * 1.5 && originalMinDeepening * 2 > averageDeepening / 1.5) {
+                println(bold("\nIncreasing minimum deepening increment $minDeepeningIncrement -> ${(averageDeepening / 1.5).toInt()}"))
+                minDeepeningIncrement = (averageDeepening / 1.5).toInt()
+            }
         }
 
         println(
@@ -963,6 +975,9 @@ class CFind(
         } else -1
     }
 }
+
+expect fun multithreadedDfs(currentRow: Row, queue: ArrayDeque<Row>, cfind: CFind): Pair<ArrayDeque<Row>, Int>
+
 private fun getDigit(number: Int, power: Int, base: Int) = number.floorDiv(power).mod(base)
 
 private fun pow(base: Int, exponent: Int): Int {

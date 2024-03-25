@@ -14,7 +14,8 @@ actual fun main() {
 //    lifeSearchP4K1.search()
 
     val vonNeumannSearch = CFind(
-        HROT("R2,C2,S2,B3,NN"), 3, 1, 8, ShipSymmetry.ODD, verbosity = 1
+        HROT("R2,C2,S2,B3,NN"), 3, 1, 8, ShipSymmetry.ODD, verbosity = 1,
+        maxQueueSize = 1 shl 24
     )
     vonNeumannSearch.search()
 

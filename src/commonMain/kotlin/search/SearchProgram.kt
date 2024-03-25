@@ -31,7 +31,7 @@ abstract class SearchProgram(val verbosity: Int = -1) {
     /**
      * The Mordant terminal used for all the pretty-printing
      */
-    protected val t = Terminal(AnsiLevel.TRUECOLOR, interactive=true)
+    val t = Terminal(AnsiLevel.TRUECOLOR, interactive=true)
 
     protected fun print(x: Any, verbosity: Int = 0) {
         if (verbosity <= this.verbosity)
