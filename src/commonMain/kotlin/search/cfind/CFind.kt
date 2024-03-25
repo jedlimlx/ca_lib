@@ -8,6 +8,9 @@ import rules.Rule
 import rules.RuleFamily
 import search.SearchProgram
 import simulation.Coordinate
+import kotlin.math.log
+import kotlin.math.log2
+import kotlin.math.pow
 import kotlin.time.TimeSource
 
 /**
@@ -22,7 +25,7 @@ class CFind(
     val symmetry: ShipSymmetry,
     val direction: Coordinate = Coordinate(0, 1),
     val maxQueueSize: Int = 1 shl 22,  // 2 ^ 24
-    val minDeepeningIncrement: Int = 2,
+    minDeepeningIncrement: Int = -1,
     lookaheadDepth: Int = Int.MAX_VALUE,
     val dfs: Boolean = false,
     val numShips: Int = Int.MAX_VALUE,
@@ -32,6 +35,7 @@ class CFind(
     override val searchResults: MutableList<Pattern> = mutableListOf()
 
     // TODO Handle alternating stuff properly / don't support alternating neighbourhoods
+    var minDeepeningIncrement = if (minDeepeningIncrement == -1) _period else minDeepeningIncrement
 
     // Rotate the direction of the neighbour so the ship will go north
     val basisVectors = Pair(Coordinate(direction.y, -direction.x), direction)
@@ -419,8 +423,12 @@ class CFind(
 
                 // Get the rows that will need to be used to find the next row
                 val (rows, lookaheadRows) = extractRows(currentRow)
-                queue.addAll(nextRow(currentRow, rows, lookaheadRows, depth = currentRow.depth + 1).first)
+                val successors = nextRow(currentRow, rows, lookaheadRows, depth = currentRow.depth + 1).first
+                if (currentRow.deadends != null) {
+                    queue.addAll(successors.filter { it.hashCode() !in currentRow.deadends!! })
+                } else queue.addAll(successors)
 
+                // Printing out the partials
                 if ((count++).mod(partialFrequency) == 0) {
                     val grid = currentRow.toGrid(period, symmetry)
                     grid.rule = rule
@@ -452,6 +460,7 @@ class CFind(
             count = 0
             clearPartial = false
 
+            var num = 0
             val stack = arrayListOf<Row>()
             val newQueue = ArrayDeque<Row>(maxQueueSize)
             for (row in queue) {
@@ -460,7 +469,17 @@ class CFind(
                 stack.add(row)
 
                 // Computing the depth that needs the row needs to be pruned until
-                val maxDepth = row.prunedDepth + minDeepeningIncrement
+                val maxDepth = minOf(
+                    row.prunedDepth + minDeepeningIncrement,
+                    row.depth + (2 * minDeepeningIncrement)
+                )
+
+                if (row.prunedDepth > maxDepth) {
+                    newQueue.add(row)
+                    continue
+                }
+
+                num += maxDepth - row.depth
 
                 do {
                     if (stack.isEmpty()) break
@@ -475,7 +494,15 @@ class CFind(
 
                     // Get the rows that will need to be used to find the next row
                     val (rows, lookaheadRows) = extractRows(currentRow)
-                    stack.addAll(nextRow(currentRow, rows, lookaheadRows, depth = currentRow.depth + 1).first)
+                    val successors = nextRow(currentRow, rows, lookaheadRows, depth = currentRow.depth + 1).first
+                    currentRow.numSuccessors = successors.size
+
+                    if (successors.isEmpty()) currentRow.predecessor!!.addDeadend(currentRow.hashCode())
+                    else {
+                        if (currentRow.deadends != null) {
+                            stack.addAll(successors.filter { it.hashCode() !in currentRow.deadends!! })
+                        } else stack.addAll(successors)
+                    }
                 } while (true)
 
                 if ((count++).mod(partialFrequency) == 0) {
@@ -495,7 +522,7 @@ class CFind(
                     clearLines = rle.size
 
                     println(bold(
-                        "\nChecked ${count - 1} / $maxQueueSize rows, pruned ${(1000 - (newQueue.size * 1000 / count)) / 10.0}%"
+                        "\nChecked ${count - 1} / $maxQueueSize rows, pruned ${(10000 - (newQueue.size * 10000 / count)) / 100.0}%"
                     ))
                     println("x = 0, y = 0, rule = ${rule}\n" + rle.joinToString("\n"))
                     clearPartial = true
@@ -513,7 +540,16 @@ class CFind(
 
             queue.clear()  // Clear the old queue
             queue = newQueue  // Replace the old queue
-            println(bold("$message -> ${queue.size}"))
+
+            val averageDeepening = num / maxQueueSize.toDouble()
+            println(bold("$message -> ${queue.size}, average deepening " +
+                    "${(100 * averageDeepening).toInt() / 100.0}"))
+
+            // Increase the minimum deepening increment if it is too small
+//            if (averageDeepening > minDeepeningIncrement * 2) {
+//                println(bold("\nIncreasing minimum deepening increment $minDeepeningIncrement -> ${(averageDeepening / 2).toInt()}"))
+//                minDeepeningIncrement = (averageDeepening / 2).toInt()
+//            }
         }
 
         println(
@@ -927,7 +963,6 @@ class CFind(
         } else -1
     }
 }
-
 private fun getDigit(number: Int, power: Int, base: Int) = number.floorDiv(power).mod(base)
 
 private fun pow(base: Int, exponent: Int): Int {

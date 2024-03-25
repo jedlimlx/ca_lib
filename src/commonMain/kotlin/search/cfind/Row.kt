@@ -23,6 +23,9 @@ class Row(val predecessor: Row?, val cells: IntArray, val search: CFind) {
     val offset: Int
         get() { return search.offsets[depth.mod(search.offsets.size)] }
 
+    var numSuccessors: Int = -1
+    var deadends: HashSet<Int>? = null
+
     init {
         if (predecessor != null) {
             depth = predecessor.depth + 1
@@ -73,6 +76,15 @@ class Row(val predecessor: Row?, val cells: IntArray, val search: CFind) {
     }
 
     fun isEmpty(): Boolean = hash == 0
+
+    fun addDeadend(hash: Int) {
+        if (deadends == null) deadends = hashSetOf(hash)
+        else deadends!!.add(hash)
+
+        if (deadends!!.size == numSuccessors) {
+            predecessor!!.addDeadend(hash)
+        }
+    }
 
     fun toGrid(period: Int, symmetry: ShipSymmetry): Grid {
         val grid = DenseGrid()
