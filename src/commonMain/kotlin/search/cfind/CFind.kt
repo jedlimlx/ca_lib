@@ -28,7 +28,7 @@ class CFind(
     val dfs: Boolean = false,
     val numShips: Int = Int.MAX_VALUE,
     val partialFrequency: Int = 1000,
-    val numThreads: Int = 1,
+    val numThreads: Int = 8,
     verbosity: Int = 0
 ): SearchProgram(verbosity) {
     override val searchResults: MutableList<Pattern> = mutableListOf()
