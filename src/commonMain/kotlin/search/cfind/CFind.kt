@@ -463,11 +463,11 @@ class CFind(
             var num = 0
             val newQueue: ArrayDeque<Row>
             if (PLATFORM == "JVM" && numThreads > 1) {
-                val output = multithreadedDfs(currentRow, queue, this)
+                val output = multithreadedDfs(queue, this)
                 newQueue = output.first
                 num = output.second
             } else {
-                newQueue = ArrayDeque<Row>(maxQueueSize)
+                newQueue = ArrayDeque(maxQueueSize)
                 val stack = arrayListOf<Row>()
                 for (row in queue) {
                     // Placing row within DFS stack
@@ -477,7 +477,7 @@ class CFind(
                     // Computing the depth that needs the row needs to be pruned until
                     val maxDepth = minOf(
                         row.prunedDepth + minDeepeningIncrement,
-                        row.depth + (2 * originalMinDeepening)
+                        row.depth + (3 * originalMinDeepening)
                     )
 
                     if (row.prunedDepth > maxDepth) {
@@ -558,7 +558,7 @@ class CFind(
                     "${(100 * averageDeepening).toInt() / 100.0}"))
 
             // Increase the minimum deepening increment if it is too small
-            if (averageDeepening > minDeepeningIncrement * 1.5 && originalMinDeepening * 2 > averageDeepening / 1.5) {
+            if (averageDeepening > minDeepeningIncrement * 1.5 && originalMinDeepening * 3 > averageDeepening / 1.5) {
                 println(bold("\nIncreasing minimum deepening increment $minDeepeningIncrement -> ${(averageDeepening / 1.5).toInt()}"))
                 minDeepeningIncrement = (averageDeepening / 1.5).toInt()
             }
@@ -976,7 +976,7 @@ class CFind(
     }
 }
 
-expect fun multithreadedDfs(currentRow: Row, queue: ArrayDeque<Row>, cfind: CFind): Pair<ArrayDeque<Row>, Int>
+expect fun multithreadedDfs(queue: ArrayDeque<Row>, cfind: CFind): Pair<ArrayDeque<Row>, Int>
 
 private fun getDigit(number: Int, power: Int, base: Int) = number.floorDiv(power).mod(base)
 

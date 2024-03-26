@@ -6,30 +6,38 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.util.concurrent.Executors
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 
 actual fun multithreadedDfs(
-    currentRow: Row,
     queue: ArrayDeque<Row>,
     cfind: CFind
 ): Pair<ArrayDeque<Row>, Int> {
     var num = 0
     val newQueue = ArrayDeque<Row>(cfind.maxQueueSize)
 
+    // Synchronisation primitives
     val mutex = Object()
     val mutex2 = Object()
-    val rowsPerThread = queue.size / cfind.numThreads
-    val threads = ArrayList<Thread>(cfind.numThreads)
+    val mutex3 = Object()
+
+    val executor = Executors.newFixedThreadPool(cfind.numThreads) as ThreadPoolExecutor
+
+    // Split the queue into different batches to prevent overloading executor with too many tasks
+    val batchSize = 2000
+    val batches = queue.size / batchSize
 
     var count = 0
     var clearPartial = false
     var clearLines = 0
-    for (tt in 0..<cfind.numThreads) {
-        val endPoint = if (tt == cfind.numThreads - 1) queue.size else rowsPerThread*(tt+1)
-        val thread = Thread {
-            var currentRow: Row = currentRow
+    for (b in 0 ..< batches) {
+        executor.submit {
             val stack = arrayListOf<Row>()
-            for (i in rowsPerThread*tt ..< endPoint) {
+            val end = if (b == batches - 1) queue.size else batchSize*(b+1)
+            for (i in batchSize*b..<end) {
                 val row = queue[i]
+                var currentRow = row
 
                 // Placing row within DFS stack
                 stack.clear()
@@ -38,15 +46,18 @@ actual fun multithreadedDfs(
                 // Computing the depth that needs the row needs to be pruned until
                 val maxDepth = minOf(
                     row.prunedDepth + cfind.minDeepeningIncrement,
-                    row.depth + (2 * cfind.originalMinDeepening)
+                    row.depth + (3 * cfind.originalMinDeepening)
                 )
 
                 if (row.prunedDepth > maxDepth) {
-                    synchronized (mutex) { newQueue.add(row) }
-                    continue
+                    synchronized(mutex) {
+                        newQueue.add(row)
+                        count++
+                        return@submit
+                    }
                 }
 
-                num += maxDepth - row.depth
+                synchronized(mutex3) { num += maxDepth - row.depth }
 
                 do {
                     if (stack.isEmpty()) break
@@ -55,7 +66,7 @@ actual fun multithreadedDfs(
                     currentRow = stack.removeLast()
                     if (currentRow.depth == maxDepth) {
                         row.prunedDepth = maxDepth
-                        synchronized (mutex) { newQueue.add(row) }
+                        synchronized(mutex) { newQueue.add(row) }
                         break
                     }
 
@@ -72,7 +83,7 @@ actual fun multithreadedDfs(
                     }
                 } while (true)
 
-                synchronized (mutex2) {
+                synchronized(mutex2) {
                     if ((count++).mod(cfind.partialFrequency) == 0) {
                         val grid = currentRow.toGrid(cfind.period, cfind.symmetry)
                         grid.rule = cfind.rule
@@ -91,8 +102,8 @@ actual fun multithreadedDfs(
 
                         println(
                             TextStyles.bold(
-                            "\nChecked ${count - 1} / ${cfind.maxQueueSize} rows, " +
-                                    "pruned ${(10000 - (newQueue.size * 10000 / count)) / 100.0}%"
+                                "\nChecked ${count - 1} / ${cfind.maxQueueSize} rows, " +
+                                        "pruned ${(10000 - (newQueue.size * 10000 / count)) / 100.0}%"
                             )
                         )
                         println("x = 0, y = 0, rule = ${cfind.rule}\n" + rle.joinToString("\n"))
@@ -101,11 +112,9 @@ actual fun multithreadedDfs(
                 }
             }
         }
-        thread.start()
-        threads.add(thread)
     }
 
-    // Await completion of all threads
-    threads.forEach { it.join() }
+    executor.shutdown()
+    executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS)
     return Pair(newQueue, num)
 }

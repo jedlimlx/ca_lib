@@ -13,10 +13,11 @@ actual fun main() {
 //    )
 //    lifeSearchP4K1.search()
 
-    val vonNeumannSearch = CFind(
-        HROT("R2,C2,S2,B3,NN"), 3, 1, 8, ShipSymmetry.EVEN, verbosity = 1
-    )
-    vonNeumannSearch.search()
+//    val vonNeumannSearch = CFind(
+//        HROT("R2,C2,S2,B3,NN"), 4, 1, 6, ShipSymmetry.ODD, verbosity = 1,
+//        maxQueueSize = 1 shl 20
+//    )
+//    vonNeumannSearch.search()
 
 //    val factorioSearch = CFind(
 //        HROT("R2,C2,S2,B3,NN"), 3, 1, 7, ShipSymmetry.GLIDE, verbosity = 1
@@ -29,10 +30,10 @@ actual fun main() {
 //    )
 //    hashSearch.search()
 
-//    val minibugsSearch = CFind(
-//        HROT("R2,C2,S6-9,B7-8,NM"), 5, 1, 4, ShipSymmetry.ODD, verbosity = 1
-//    )
-//    minibugsSearch.search()
+    val minibugsSearch = CFind(
+        HROT("R2,C2,S6-9,B7-8,NM"), 4, 1, 6, ShipSymmetry.ODD, verbosity = 1
+    )
+    minibugsSearch.search()
 
 //    val hashSearch = CFind(
 //        HROT("R3,C2,S5-9,B7-9,N#"), 4, 1, 5,
