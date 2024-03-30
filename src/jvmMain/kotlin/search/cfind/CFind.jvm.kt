@@ -1,11 +1,6 @@
 package search.cfind
 
 import com.github.ajalt.mordant.rendering.TextStyles
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
@@ -100,13 +95,13 @@ actual fun multithreadedDfs(
                         val rle = grid.toRLE().chunked(70)
                         clearLines = rle.size
 
-                        println(
+                        cfind.t.println(
                             TextStyles.bold(
                                 "\nChecked ${count - 1} / ${cfind.maxQueueSize} rows, " +
                                         "pruned ${(10000 - (newQueue.size * 10000 / count)) / 100.0}%"
                             )
                         )
-                        println("x = 0, y = 0, rule = ${cfind.rule}\n" + rle.joinToString("\n"))
+                        cfind.t.println("x = 0, y = 0, rule = ${cfind.rule}\n" + rle.joinToString("\n"))
                         clearPartial = true
                     }
                 }

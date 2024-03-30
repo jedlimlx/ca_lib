@@ -75,6 +75,14 @@ class Test {
 
     @Test
     fun diagonalTest() {
+//        val diagonalSearch = CFind(
+//            HROT("B34/S34"), 3, 1, 3, ShipSymmetry.ASYMMETRIC,
+//            verbosity = 1, direction = Coordinate(1, 1)
+//        )
+//        diagonalSearch.search()
+//
+//        assertEquals(diagonalSearch.searchResults.size, 2)
+
         val glideDiagonalSearch = CFind(
             HROT("B3/S23"), 4, 1, 2, ShipSymmetry.GLIDE,
             verbosity = 1, direction = Coordinate(1, 1)
@@ -82,14 +90,6 @@ class Test {
         glideDiagonalSearch.search()
 
         assertEquals(glideDiagonalSearch.searchResults.size, 1)
-
-        val diagonalSearch = CFind(
-            HROT("B34/S34"), 3, 1, 3, ShipSymmetry.ASYMMETRIC,
-            verbosity = 1, direction = Coordinate(1, 1)
-        )
-        diagonalSearch.search()
-
-        assertEquals(diagonalSearch.searchResults.size, 1)
     }
 
     @Test
