@@ -83,7 +83,7 @@ actual fun multithreadedDfs(
                         val grid = currentRow.toGrid(cfind.period, cfind.symmetry)
                         grid.rule = cfind.rule
 
-                        if (cfind.verbosity >= 0 && clearPartial) {
+                        if (cfind.verbosity >= 0 && clearPartial && !cfind.stdin) {
                             cfind.t.cursor.move {
                                 up(3 + clearLines)
                                 startOfLine()
@@ -92,16 +92,13 @@ actual fun multithreadedDfs(
                             cfind.t.cursor.hide(showOnExit = true)
                         }
 
-                        val rle = grid.toRLE().chunked(70)
-                        clearLines = rle.size
-
-                        cfind.t.println(
+                        cfind.println(
                             TextStyles.bold(
                                 "\nChecked ${count - 1} / ${cfind.maxQueueSize} rows, " +
                                         "pruned ${(10000 - (newQueue.size * 10000 / count)) / 100.0}%"
                             )
                         )
-                        cfind.t.println("x = 0, y = 0, rule = ${cfind.rule}\n" + rle.joinToString("\n"))
+                        clearLines = cfind.printRLE(grid)
                         clearPartial = true
                     }
                 }

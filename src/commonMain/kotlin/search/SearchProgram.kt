@@ -33,12 +33,12 @@ abstract class SearchProgram(val verbosity: Int = -1) {
      */
     val t = Terminal(AnsiLevel.TRUECOLOR, interactive=true)
 
-    protected fun print(x: Any, verbosity: Int = 0) {
+    open fun print(x: Any, verbosity: Int = 0) {
         if (verbosity <= this.verbosity)
             t.print(x)
     }
 
-    protected fun println(x: Any, verbosity: Int = 0) {
+    open fun println(x: Any, verbosity: Int = 0) {
         if (verbosity <= this.verbosity)
             t.println(x)
     }

@@ -3,12 +3,14 @@ package search.cfind
 import PLATFORM
 import com.github.ajalt.mordant.rendering.TextColors.*
 import com.github.ajalt.mordant.rendering.TextStyles.bold
+import kotlinx.serialization.json.Json
 import patterns.Pattern
 import patterns.Spaceship
 import rules.Rule
 import rules.RuleFamily
 import search.SearchProgram
 import simulation.Coordinate
+import simulation.Grid
 import kotlin.time.TimeSource
 
 /**
@@ -29,6 +31,7 @@ class CFind(
     val numShips: Int = Int.MAX_VALUE,
     val partialFrequency: Int = 1000,
     val numThreads: Int = 8,
+    val stdin: Boolean = false,
     verbosity: Int = 0
 ): SearchProgram(verbosity) {
     override val searchResults: MutableList<Pattern> = mutableListOf()
@@ -118,25 +121,31 @@ class CFind(
 
     val widthsByHeight: IntArray = IntArray(height) { height ->
         val minY = neighbourhood[0].minOf { it.y }
-        (neighbourhood[0].filter { it.y == height + minY }.maxOf { it.x } -  // ceiling division
-                neighbourhood[0].filter { it.y == height + minY }.minOf { it.x } + spacing) / spacing
+        if (neighbourhood[0].count { it.y == height + minY } > 0) {
+            (neighbourhood[0].filter { it.y == height + minY }.maxOf { it.x } -  // ceiling division
+                    neighbourhood[0].filter { it.y == height + minY }.minOf { it.x } + spacing) / spacing
+        } else -1
     }
 
     private val temp: Map<Int, Coordinate> = neighbourhood[0].map { it.x }.toSet().sorted().map { index ->
         Pair(index, neighbourhood[0].filter { it.x == index }.minBy { it.y })
     }.toMap()
     val combinedBC: List<Coordinate> = (temp.keys.min() .. temp.keys.max() step spacing).map {
-        if (it in temp) {  // TODO properly handle cases where temp[it + 1] or temp[it - 1] doesn't exist
+        if (it in temp) {
             if (it > temp.keys.min() && it < temp.keys.max()) {
                 if (it < baseCoordinates.last().x) {
-                    if (temp[it - 1]!!.y < temp[it]!!.y) return@map Coordinate(it, temp[it - 1]!!.y)
+                    var i = 0
+                    while((it - ++i) !in temp) continue
+                    if (temp[it - i]!!.y < temp[it]!!.y) return@map Coordinate(it, temp[it - i]!!.y)
                     else return@map temp[it]!!
                 } else {
-                    if (temp[it + 1]!!.y < temp[it]!!.y) return@map Coordinate(it, temp[it + 1]!!.y)
+                    var i = 0
+                    while((it + ++i) !in temp) continue
+                    if (temp[it + i]!!.y < temp[it]!!.y) return@map Coordinate(it, temp[it + i]!!.y)
                     else return@map temp[it]!!
                 }
             }
-        } else {
+        } else {  // TODO properly handle cases where temp[it + 1] or temp[it - 1] doesn't exist
             if (it < baseCoordinates.last().x) return@map Coordinate(it, temp[it - 1]!!.y)
             else return@map Coordinate(it, temp[it + 1]!!.y)
         }
@@ -179,7 +188,6 @@ class CFind(
         for (i in indices[0].indices) {
             lst.add(
                 Array(period) { phase ->
-                    //println(lst.last()[phase].toList())
                     val temp = lst.last()[phase].filter { it > 0 }.min()
                     val pos = lst.last()[phase].indexOf(temp)
 
@@ -357,6 +365,9 @@ class CFind(
         } else null
     }
 
+    // The queue that will store everything
+    var queue: ArrayDeque<Row> = ArrayDeque(maxQueueSize)
+
     override fun search() {
         println(bold("Beginning search for width ${green("$width")} " +
                 "spaceship with ${green("$symmetry")} symmetry moving towards ${green("$direction")} at " +
@@ -388,19 +399,19 @@ class CFind(
         println((bold("Lookahead Depth: ") + "$lookaheadDepth"), verbosity = 1)
         println(
             (
-                    bold("Row Indices: ") +
-                            "\n${indices.map { it.toList() }.toList()}" +
-                            (if (this.lookaheadDepth != 0) "\n${tempIndices.subList(0, this.lookaheadDepth).map {
-                                it.map { it.toList() }.toList()
-                            }.joinToString("\n")}" else "") +
-                            gray(
-                                "\n${
-                                    tempIndices.subList(this.lookaheadDepth, tempIndices.size).map {
-                                        it.map { it.toList() }.toList()
-                                    }.joinToString("\n")
-                                }"
-                            )
-                    ), verbosity = 1
+                bold("Row Indices: ") +
+                "\n${indices.map { it.toList() }.toList()}" +
+                (if (this.lookaheadDepth != 0) "\n${tempIndices.subList(0, this.lookaheadDepth).map {
+                    it.map { it.toList() }.toList()
+                }.joinToString("\n")}" else "") +
+                gray(
+                    "\n${
+                        tempIndices.subList(this.lookaheadDepth, tempIndices.size).map {
+                            it.map { it.toList() }.toList()
+                        }.joinToString("\n")
+                    }"
+                )
+            ), verbosity = 1
         )
 
         // Initialising BFS queue with (height - 1) * period empty rows
@@ -409,7 +420,6 @@ class CFind(
             currentRow = Row(currentRow, IntArray(width) { 0 }, this)
         }
 
-        var queue: ArrayDeque<Row> = ArrayDeque(maxQueueSize)
         queue.add(currentRow)
 
         // Take note of the starting time
@@ -462,7 +472,7 @@ class CFind(
                     val grid = currentRow.toGrid(period, symmetry)
                     grid.rule = rule
 
-                    if (verbosity >= 0 && clearPartial) {
+                    if (verbosity >= 0 && clearPartial && !stdin) {
                         t.cursor.move {
                             up(3 + clearLines)
                             startOfLine()
@@ -471,11 +481,8 @@ class CFind(
                         t.cursor.hide(showOnExit = true)
                     }
 
-                    val rle = grid.toRLE().chunked(70)
-                    clearLines = rle.size
-
                     println(bold("\nQueue Size: ${queue.size} / $maxQueueSize"))
-                    println("x = 0, y = 0, rule = ${rule}\n" + rle.joinToString("\n"))
+                    clearLines = printRLE(grid)
                     clearPartial = true
                 }
             }
@@ -546,7 +553,7 @@ class CFind(
                         val grid = currentRow.toGrid(period, symmetry)
                         grid.rule = rule
 
-                        if (verbosity >= 0 && clearPartial) {
+                        if (verbosity >= 0 && clearPartial && !stdin) {
                             t.cursor.move {
                                 up(3 + clearLines)
                                 startOfLine()
@@ -555,22 +562,19 @@ class CFind(
                             t.cursor.hide(showOnExit = true)
                         }
 
-                        val rle = grid.toRLE().chunked(70)
-                        clearLines = rle.size
-
                         println(
                             bold(
                                 "\nChecked ${count - 1} / $maxQueueSize rows, pruned ${(10000 - (newQueue.size * 10000 / count)) / 100.0}%"
                             )
                         )
-                        println("x = 0, y = 0, rule = ${rule}\n" + rle.joinToString("\n"))
+                        clearLines = printRLE(grid)
                         clearPartial = true
                     }
                 }
             }
 
             // Clean up the output once the DFS round is done
-            if (verbosity >= 0 && clearPartial) {
+            if (verbosity >= 0 && clearPartial && !stdin) {
                 t.cursor.move {
                     up(4 + clearLines)
                     startOfLine()
@@ -603,11 +607,28 @@ class CFind(
     }
 
     override fun stop() {
-        TODO("Not yet implemented")
+        TODO ("Not yet implemented")
     }
 
     override fun saveToFile(filename: String) {
-        TODO("Not yet implemented")
+        println(bold("Saving results to file..."))
+
+        val added = HashSet<Long>(queue.size)
+        for (row in queue) {
+            println("${row.id} ${row.predecessor?.id ?: -1} ${row.depth} ${row.prunedDepth} ${row.hashCode()}")
+            added.add(row.id)
+        }
+
+        println("-")
+
+        for (row in queue) {
+            row.applyOnPredecessor {
+                if (it.id !in added) {
+                    println("${row.id} ${row.predecessor?.id ?: -1} ${row.depth} ${row.prunedDepth} ${row.hashCode()}")
+                    added.add(row.id)
+                }
+            }
+        }
     }
 
     /**
@@ -615,6 +636,8 @@ class CFind(
      */
     fun checkCompletedShip(row: Row): Boolean {
         if (row.completeShip((height - 1) * period) == 1) {
+            if (stdin) return true
+
             val grid = row.toGrid(period, symmetry)
             grid.rule = rule
 
@@ -1110,6 +1133,19 @@ class CFind(
             }
             else -1  // means that the cell state is not known
         } else -1
+    }
+
+    override fun println(x: Any, verbosity: Int) {
+        if (verbosity <= this.verbosity && !stdin)
+            t.println(x)
+    }
+
+    fun printRLE(grid: Grid, verbosity: Int = 0): Int {
+        val rle = grid.toRLE().chunked(if (stdin) Int.MAX_VALUE else 70)
+        if (verbosity <= this.verbosity)
+            t.println("x = 0, y = 0, rule = ${rule}\n" + rle.joinToString("\n"))
+
+        return rle.size
     }
 }
 

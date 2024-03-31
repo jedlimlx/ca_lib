@@ -4,6 +4,7 @@ plugins {
     application
     id("org.jetbrains.dokka") version "1.9.10"
     kotlin("multiplatform") version "1.9.20"
+    kotlin("plugin.serialization") version "1.9.20"
 }
 group = "org.jedlimlx"
 version = "1.0"
@@ -53,14 +54,13 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1-Beta")
                 implementation("com.github.ajalt.mordant:mordant:2.3.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
             }
         }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1-Beta")
                 implementation("com.github.ajalt.mordant:mordant:2.3.0")
             }
         }

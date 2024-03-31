@@ -4,11 +4,16 @@ import simulation.Coordinate
 import simulation.DenseGrid
 import simulation.Grid
 
-class Row(val predecessor: Row?, val cells: IntArray, val search: CFind) {
+class Row(val predecessor: Row?, val cells: IntArray, var search: CFind? = null) {
+    companion object { var counter: Long = 0L }
+
+    // unique id for each row
+    val id = counter++
+
     private val hash = run {
         var hash = 0
         for (i in cells.indices) {
-            hash += cells[i] * pow(search.rule.numStates, i)
+            hash += cells[i] * pow(search!!.rule.numStates, i)
         }
 
         hash
@@ -18,10 +23,10 @@ class Row(val predecessor: Row?, val cells: IntArray, val search: CFind) {
     var prunedDepth = 0
 
     val phase: Int
-        get() { return depth.mod(search.period) }
+        get() { return depth.mod(search!!.period) }
 
     val offset: Int
-        get() { return search.offsets[depth.mod(search.offsets.size)] }
+        get() { return search!!.offsets[depth.mod(search!!.offsets.size)] }
 
     var numSuccessors: Int = -1
     var deadends: HashSet<Int>? = null
@@ -34,9 +39,9 @@ class Row(val predecessor: Row?, val cells: IntArray, val search: CFind) {
     }
 
     operator fun get(index: Int): Int {
-        if (search.spacing != 1 && (index - offset).mod(search.spacing) != 0) return 0
-        if (search.spacing == 1) return cells[index]
-        else return cells[(index - offset) / search.spacing]
+        if (search!!.spacing != 1 && (index - offset).mod(search!!.spacing) != 0) return 0
+        if (search!!.spacing == 1) return cells[index]
+        else return cells[(index - offset) / search!!.spacing]
     }
 
     fun getPredecessor(n: Int): Row? {  // TODO take width into account when getting the predecessor
@@ -53,7 +58,7 @@ class Row(val predecessor: Row?, val cells: IntArray, val search: CFind) {
         while (predecessor != null) {
             if (depth - n == predecessor.depth) break
 
-            list.add(Row(null, predecessor.cells, search))
+            list.add(Row(null, predecessor.cells, search!!))
             predecessor = predecessor.predecessor
         }
 
@@ -94,12 +99,12 @@ class Row(val predecessor: Row?, val cells: IntArray, val search: CFind) {
         var counter = this.offset
         while (true) {
             predecessor.cells.forEachIndexed { index, state ->
-                grid[translate(index * search.spacing + predecessor.offset, -counter)] = state.toInt()
+                grid[translate(index * search!!.spacing + predecessor.offset, -counter)] = state.toInt()
                 when(symmetry) {
-                    ShipSymmetry.EVEN -> grid[translate(2 * predecessor.cells.size * search.spacing - 1 -
-                            (index * search.spacing + predecessor.offset), -counter)] = state.toInt()
-                    ShipSymmetry.ODD -> grid[translate(2 * predecessor.cells.size * search.spacing - 2 -
-                            (index * search.spacing + predecessor.offset), -counter)] = state.toInt()
+                    ShipSymmetry.EVEN -> grid[translate(2 * predecessor.cells.size * search!!.spacing - 1 -
+                            (index * search!!.spacing + predecessor.offset), -counter)] = state.toInt()
+                    ShipSymmetry.ODD -> grid[translate(2 * predecessor.cells.size * search!!.spacing - 2 -
+                            (index * search!!.spacing + predecessor.offset), -counter)] = state.toInt()
                     else -> {}
                 }
             }
@@ -112,10 +117,17 @@ class Row(val predecessor: Row?, val cells: IntArray, val search: CFind) {
         }
     }
 
+    fun applyOnPredecessor(f: (Row) -> Unit) {
+        if (predecessor != null) {
+            f(predecessor)
+            predecessor.applyOnPredecessor { f(it) }
+        }
+    }
+
     private fun translate(y: Int, x: Int): Coordinate {
         return Coordinate(
-            (-x * search.direction.x + y * search.direction.y) / search.spacing,
-            (y * search.direction.x + x * search.direction.y) / search.spacing
+            (-x * search!!.direction.x + y * search!!.direction.y) / search!!.spacing,
+            (y * search!!.direction.x + x * search!!.direction.y) / search!!.spacing
         )
     }
 
