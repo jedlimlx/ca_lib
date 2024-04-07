@@ -1,5 +1,6 @@
 package search.cfind
 
+import LRUCache
 import PLATFORM
 import com.github.ajalt.mordant.rendering.TextColors.*
 import com.github.ajalt.mordant.rendering.TextStyles.bold
@@ -53,6 +54,7 @@ class CFind(
     val spacing = direction.x * direction.x + direction.y * direction.y
     val k = if (symmetry != ShipSymmetry.GLIDE) _k * spacing else _k
     val period = if (symmetry == ShipSymmetry.GLIDE && direction == Coordinate(1, 1)) _period / 2 else _period
+    val backoffPeriod = period * ((k + period) / period)
 
     // Computing the backOff array to be used when gcd(k, period) > 1
     val backOff = IntArray(period) { -1 }.apply {
@@ -63,11 +65,11 @@ class CFind(
             var index = 0
             while (this[(count + index + k).mod(period)] != -1) { index++ }
 
-            this[count.mod(period)] = (index + k).mod(period)
+            this[count.mod(period)] = (index + k).mod(backoffPeriod)
             count += this[count.mod(period)]
         }
 
-        this[count.mod(period)] = (period - count).mod(period)
+        this[count.mod(period)] = (period - count).mod(backoffPeriod)
     }
     val fwdOff = run {
         val array = IntArray(period) { -1 }
@@ -118,6 +120,8 @@ class CFind(
                 (baseCoordinates.minOf { it.x } ..< baseCoordinates.maxOf { it.x } step spacing).reversed()
         ).map { Coordinate(it, -centralHeight) }.toList()
     }
+
+    val lastBaseCoordinate = baseCoordinates.last()
 
     val widthsByHeight: IntArray = IntArray(height) { height ->
         val minY = neighbourhood[0].minOf { it.y }
@@ -173,7 +177,7 @@ class CFind(
     val neighbourhoodWithoutBg: HashMap<Coordinate, List<Pair<Coordinate, Int>>> = hashMapOf()
 
     // Initialising the transposition table
-    val equivalentStates: HashMap<Int, List<Int>> = hashMapOf()
+    val equivalentStates: LRUCache<Int, IntArray> = LRUCache(1 shl 25)
 
     // Computing the rows that should be used in computing the next state
     val indices = Array(period) { phase ->
@@ -365,8 +369,10 @@ class CFind(
         } else null
     }
 
-    // The queue that will store everything
-    var queue: ArrayDeque<Row> = ArrayDeque(maxQueueSize)
+    // We will represent the queue as a linked list
+    var head: Row? = null
+    var tail: Row? = null
+    var queueSize = 0
 
     override fun search() {
         println(bold("Beginning search for width ${green("$width")} " +
@@ -417,10 +423,17 @@ class CFind(
         // Initialising BFS queue with (height - 1) * period empty rows
         var currentRow = Row(null, IntArray(width) { 0 }, this)
         for (i in 1 .. period * (height - 1)) {
-            currentRow = Row(currentRow, IntArray(width) { 0 }, this)
+            val nextRow = Row(currentRow, IntArray(width) { 0 }, this)
+            currentRow.next = nextRow
+            nextRow.prev = currentRow
+
+            currentRow = nextRow
         }
 
-        queue.add(currentRow)
+        // We will represent the queue as a linked list
+        queueSize = 1
+        head = if (!dfs) currentRow else null
+        tail = if (dfs) currentRow else null
 
         // Take note of the starting time
         val timeSource = TimeSource.Monotonic
@@ -436,8 +449,8 @@ class CFind(
         while (shipsFound < numShips) {
             // BFS round runs until the queue size exceeds the maximum queue size
             clearPartial = false
-            while (queue.size < maxQueueSize) {
-                if (queue.isEmpty()) {
+            while (queueSize < maxQueueSize) {
+                if (queueSize == 0) {
                     println(
                         bold(
                             "\nSearch terminated in ${green("${(timeSource.markNow() - startTime).inWholeMilliseconds / 1000.0}s")}. " +
@@ -448,8 +461,17 @@ class CFind(
                 }
 
                 // Get the current row that is going to be analysed
-                if (dfs) currentRow = queue.removeLast()
-                else currentRow = queue.removeFirst()
+                if (dfs) {
+                    currentRow = tail!!
+                    tail = currentRow.prev
+                } else {
+                    currentRow = head!!
+                    head = currentRow.next
+                }
+
+                // Removes the row from the linked list
+                currentRow.pop()
+                queueSize--
 
                 // Check if the ship is completed
                 if (checkCompletedShip(currentRow)) {
@@ -463,9 +485,20 @@ class CFind(
                 // Get the rows that will need to be used to find the next row
                 val (rows, lookaheadRows) = extractRows(currentRow)
                 val successors = nextRow(currentRow, rows, lookaheadRows, depth = currentRow.depth + 1).first
-                if (currentRow.deadends != null) {
-                    queue.addAll(successors.filter { it.hashCode() !in currentRow.deadends!! })
-                } else queue.addAll(successors)
+
+                // Adding the new rows to the linked list
+                val temp = if (currentRow.deadends != null) {
+                    successors.filter { it.hashCode() !in currentRow.deadends!! }
+                } else successors
+
+                queueSize += temp.size
+                temp.forEach {
+                    if (head == null) head = it
+
+                    tail?.next = it
+                    it.prev = tail
+                    tail = it
+                }
 
                 // Printing out the partials
                 if ((count++).mod(partialFrequency) == 0) {
@@ -481,7 +514,7 @@ class CFind(
                         t.cursor.hide(showOnExit = true)
                     }
 
-                    println(bold("\nQueue Size: ${queue.size} / $maxQueueSize"))
+                    println(bold("\nQueue Size: $queueSize / $maxQueueSize"))
                     clearLines = printRLE(grid)
                     clearPartial = true
                 }
@@ -490,24 +523,23 @@ class CFind(
             if (shipsFound == numShips) break
 
             // DFS round runs for a certain deepening increment
-            val message = "Beginning depth-first search round, queue size ${queue.size}"
+            val message = "Beginning depth-first search round, queue size $queueSize"
             println(bold("\n$message"))
 
             count = 0
             clearPartial = false
 
             var num = 0
-            val newQueue: ArrayDeque<Row>
             if (PLATFORM == "JVM" && numThreads > 1) {
-                val output = multithreadedDfs(queue, this)
-                newQueue = output.first
-                num = output.second
+                val output = multithreadedDfs(this)
+                num = output
 
                 clearPartial = true
             } else {
-                newQueue = ArrayDeque(maxQueueSize)
+                var row = head
+                var prunedCount = 0
                 val stack = arrayListOf<Row>()
-                for (row in queue) {
+                while (row != null) {
                     // Placing row within DFS stack
                     stack.clear()
                     stack.add(row)
@@ -515,24 +547,27 @@ class CFind(
                     // Computing the depth that needs the row needs to be pruned until
                     val maxDepth = minOf(
                         row.prunedDepth + minDeepeningIncrement,
-                        row.depth + (3 * originalMinDeepening)
+                        row.depth + (2 * originalMinDeepening)
                     )
 
-                    if (row.prunedDepth > maxDepth) {
-                        newQueue.add(row)
-                        continue
-                    }
+                    if (row.prunedDepth > maxDepth) continue
 
                     num += maxDepth - row.depth
 
                     do {
-                        if (stack.isEmpty()) break
+                        if (stack.isEmpty()) {
+                            if (head!!.id == row.id) head = row.next
+                            if (tail!!.id == row.id) tail = row.prev
+
+                            queueSize--
+                            prunedCount++
+                            break
+                        }
 
                         // Get the current row that is going to be analysed
                         currentRow = stack.removeLast()
                         if (currentRow.depth == maxDepth) {
                             row.prunedDepth = maxDepth
-                            newQueue.add(row)
                             break
                         }
 
@@ -564,12 +599,17 @@ class CFind(
 
                         println(
                             bold(
-                                "\nChecked ${count - 1} / $maxQueueSize rows, pruned ${(10000 - (newQueue.size * 10000 / count)) / 100.0}%"
+                                "\nChecked ${count - 1} / $maxQueueSize rows, " +
+                                        "pruned ${(10000 - ((count - prunedCount) * 10000 / count)) / 100.0}%"
                             )
                         )
                         clearLines = printRLE(grid)
                         clearPartial = true
                     }
+
+                    val temp = row.next
+                    if (stack.isEmpty()) row.pop()
+                    row = temp
                 }
             }
 
@@ -583,16 +623,13 @@ class CFind(
                 t.cursor.hide(showOnExit = true)
             }
 
-            queue.clear()  // Clear the old queue
-            queue = newQueue  // Replace the old queue
-
             // Print out some status information
             val averageDeepening = num / maxQueueSize.toDouble()
-            println(bold("$message -> ${queue.size}, average deepening " +
+            println(bold("$message -> $queueSize, average deepening " +
                     "${(100 * averageDeepening).toInt() / 100.0}"))
 
             // Increase the minimum deepening increment if it is too small
-            if (averageDeepening > minDeepeningIncrement * 1.5 && originalMinDeepening * 3 > averageDeepening / 1.5) {
+            if (averageDeepening > minDeepeningIncrement * 1.5 && originalMinDeepening * 2 > averageDeepening / 1.5) {
                 println(bold("\nIncreasing minimum deepening increment $minDeepeningIncrement -> ${(averageDeepening / 1.5).toInt()}"))
                 minDeepeningIncrement = (averageDeepening / 1.5).toInt()
             }
@@ -611,24 +648,24 @@ class CFind(
     }
 
     override fun saveToFile(filename: String) {
-        println(bold("Saving results to file..."))
-
-        val added = HashSet<Long>(queue.size)
-        for (row in queue) {
-            println("${row.id} ${row.predecessor?.id ?: -1} ${row.depth} ${row.prunedDepth} ${row.hashCode()}")
-            added.add(row.id)
-        }
-
-        println("-")
-
-        for (row in queue) {
-            row.applyOnPredecessor {
-                if (it.id !in added) {
-                    println("${row.id} ${row.predecessor?.id ?: -1} ${row.depth} ${row.prunedDepth} ${row.hashCode()}")
-                    added.add(row.id)
-                }
-            }
-        }
+//        println(bold("Saving results to file..."))
+//
+//        val added = HashSet<Long>(queue.size)
+//        for (row in queue) {
+//            println("${row.id} ${row.predecessor?.id ?: -1} ${row.depth} ${row.prunedDepth} ${row.hashCode()}")
+//            added.add(row.id)
+//        }
+//
+//        println("-")
+//
+//        for (row in queue) {
+//            row.applyOnPredecessor {
+//                if (it.id !in added) {
+//                    println("${row.id} ${row.predecessor?.id ?: -1} ${row.depth} ${row.prunedDepth} ${row.hashCode()}")
+//                    added.add(row.id)
+//                }
+//            }
+//        }
     }
 
     /**
@@ -658,7 +695,7 @@ class CFind(
         val rows = row.getAllPredecessors((height - 1) * period)
         if (rows.hashCode() in equivalentStates.keys) {
             var equivalent = true
-            val state = equivalentStates[rows.hashCode()]!!
+            val state = equivalentStates.get(rows.hashCode())!!
             for (i in state.indices) {
                 if (state[i] != rows[i].hashCode()) {
                     equivalent = false
@@ -668,7 +705,7 @@ class CFind(
 
             if (!equivalent) return false
         } else {
-            equivalentStates[rows.hashCode()] = rows.map { it.hashCode() }
+            equivalentStates.put(rows.hashCode(), rows.map { it.hashCode() }.toIntArray())
             return false
         }
 
@@ -756,7 +793,7 @@ class CFind(
         fun encodeKey(coordinate: Coordinate, row: IntArray? = null, rows: List<Row?> = rows2): Int {
             var key = 0
             var power = 1
-            reversedBaseCoordinate.forEach {
+            for (it in reversedBaseCoordinate) {
                 key += rule.equivalentStates[rows[it + coordinate, 0, row, depth]] * power
                 power *= numEquivalentStates
             }
@@ -772,14 +809,14 @@ class CFind(
                 if (lookaheadMemo != null && lookaheadMemo[it] == -1) {
                     memo[it] = successorTable[
                         encodeNeighbourhood(
-                            translate(Coordinate(it, 0), depth) - baseCoordinates.last(), row,
+                            translate(Coordinate(it, 0), depth) - lastBaseCoordinate, row,
                             index = it,
                             partialKey = lookaheadMemo[it]
                         )
                     ]
                 } else memo[it] = successorTable[
                     encodeNeighbourhood(
-                        translate(Coordinate(it, 0), depth) - baseCoordinates.last(), row,
+                        translate(Coordinate(it, 0), depth) - lastBaseCoordinate, row,
                         index = it,
                         partialKey = lookaheadMemo?.get(it) ?: -1
                     )
@@ -866,12 +903,15 @@ class CFind(
             minX = 0
         }
 
+        val lookaheadDepthDiff = if (lookaheadDepth < this.lookaheadDepth)
+            lookaheadIndices[lookaheadDepth][depth.mod(period)].min()
+        else 0
         fun approximateLookahead(index: Int, row: Int): Boolean {
             val index = index - additionalDepth
             if (index < 0) return true
 
-            val depth = depth - lookaheadIndices[lookaheadDepth][depth.mod(period)].min()
-            val coordinate = translate(Coordinate(index, 0) - baseCoordinates.last(), depth)
+            val depth = depth - lookaheadDepthDiff
+            val coordinate = translate(Coordinate(index, 0) - lastBaseCoordinate, depth)
 
             // Computing the lookahead neighbourhood
             var key = 0
@@ -914,7 +954,7 @@ class CFind(
 
                 // Do not consider boundary conditions if they do not check valid cells (for diagonal / oblique searches)
                 val index: Int
-                val tempCoordinate = coordinate + baseCoordinates.last()
+                val tempCoordinate = coordinate + lastBaseCoordinate
                 if (spacing != 1) {
                     val temp = tempCoordinate.x - offsets[(depth - tempCoordinate.y * period).mod(offsets.size)]
                     if (temp.mod(spacing) != 0) return@forEach
@@ -975,12 +1015,12 @@ class CFind(
         // Compute which boundary conditions need to be checked on the left side of the neighbourhood
         val bcList = leftBC.subList(
             0,
-            if (symmetry != ShipSymmetry.ASYMMETRIC && symmetry != ShipSymmetry.GLIDE) baseCoordinates.last().x
+            if (symmetry != ShipSymmetry.ASYMMETRIC && symmetry != ShipSymmetry.GLIDE) lastBaseCoordinate.x
             else leftBC.size
         )
 
         // Computing the initial key for the inner lookup table
-        val key = 0  //encodeKey(-baseCoordinates.last())
+        val key = 0  //encodeKey(-lastBaseCoordinate)
 
         // Finally running the search
         val completedRows = arrayListOf<Row>()
@@ -1047,7 +1087,7 @@ class CFind(
                             newRows.subList(1, newRows.size),
                             lookaheadDepth + 1,
                             if (approximateLookahead) _lookaheadMemo2 else _lookaheadMemo,
-                            depth - lookaheadIndices[lookaheadDepth][depth.mod(period)].min()
+                            depth - lookaheadDepthDiff
                         )
 
                         if (approximateLookahead) {
@@ -1149,7 +1189,7 @@ class CFind(
     }
 }
 
-expect fun multithreadedDfs(queue: ArrayDeque<Row>, cfind: CFind): Pair<ArrayDeque<Row>, Int>
+expect fun multithreadedDfs(cfind: CFind): Int
 
 private fun getDigit(number: Int, power: Int, base: Int) = number.floorDiv(power).mod(base)
 

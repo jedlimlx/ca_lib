@@ -19,6 +19,7 @@ class Row(val predecessor: Row?, val cells: IntArray, var search: CFind? = null)
         hash
     }
 
+    // information about the row and its position within the larger ship
     var depth = 0
     var prunedDepth = 0
 
@@ -30,6 +31,10 @@ class Row(val predecessor: Row?, val cells: IntArray, var search: CFind? = null)
 
     var numSuccessors: Int = -1
     var deadends: HashSet<Int>? = null
+
+    // represent the queue as a linked list
+    var next: Row? = null
+    var prev: Row? = null
 
     init {
         if (predecessor != null) {
@@ -129,6 +134,17 @@ class Row(val predecessor: Row?, val cells: IntArray, var search: CFind? = null)
             (-x * search!!.direction.x + y * search!!.direction.y) / search!!.spacing,
             (y * search!!.direction.x + x * search!!.direction.y) / search!!.spacing
         )
+    }
+
+    fun pop(): Row {
+        // link the pointers of the neighbouring rows
+        this.prev?.next = this.next
+        this.next?.prev = this.prev
+
+        // remove pointers within the row
+        this.next = null
+        this.prev = null
+        return this
     }
 
     override fun hashCode() = hash

@@ -102,4 +102,21 @@ class Test {
 
         assertEquals(hashSearch.searchResults.size, 1)
     }
+
+    @Test
+    fun superluminalTest() {
+        val superluminalSearch = CFind(
+            HROT("R2,C2,S4,B4,NM"), 2, 3, 5, ShipSymmetry.EVEN, verbosity = 1
+        )
+        superluminalSearch.search()
+
+        assertEquals(superluminalSearch.searchResults.size, 1)
+
+        val superluminalGlideSearch = CFind(
+            HROT("R2,C2,S4,B4,NM"), 2, 3, 6, ShipSymmetry.GLIDE, verbosity = 1
+        )
+        superluminalGlideSearch.search()
+
+        assertEquals(superluminalSearch.searchResults.size, 1)
+    }
 }

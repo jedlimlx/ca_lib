@@ -1,8 +1,5 @@
 package search.cfind
 
-actual fun multithreadedDfs(
-    queue: ArrayDeque<Row>,
-    cfind: CFind
-): Pair<ArrayDeque<Row>, Int> {
+actual fun multithreadedDfs(cfind: CFind): Int {
     TODO("Not yet implemented")
 }

@@ -5,63 +5,81 @@ import java.util.concurrent.Executors
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 
-actual fun multithreadedDfs(
-    queue: ArrayDeque<Row>,
-    cfind: CFind
-): Pair<ArrayDeque<Row>, Int> {
+actual fun multithreadedDfs(cfind: CFind): Int {
     var num = 0
-    val newQueue = ArrayDeque<Row>(cfind.maxQueueSize)
 
     // Synchronisation primitives
     val mutex = Object()
     val mutex2 = Object()
-    val mutex3 = Object()
 
-    val executor = Executors.newFixedThreadPool(cfind.numThreads) as ThreadPoolExecutor
-
-    // Split the queue into different batches to prevent overloading executor with too many tasks
-    val batchSize = 2000
-    val batches = queue.size / batchSize
-
+    // Other shared variables
     var count = 0
+    var prunedCount = 0
+
     var clearPartial = false
     var clearLines = 0
-    for (b in 0 ..< batches) {
-        executor.submit {
-            val stack = arrayListOf<Row>()
-            val end = if (b == batches - 1) queue.size else batchSize*(b+1)
-            for (i in batchSize*b..<end) {
-                val row = queue[i]
-                var currentRow = row
 
+    var row: Row? = cfind.head
+
+    val threadLst = arrayListOf<Thread>()
+    for (i in 0 ..< cfind.numThreads) {
+        val thread = Thread {
+            val stack = arrayListOf<Row>()
+            while (true) {
                 // Placing row within DFS stack
                 stack.clear()
-                stack.add(row)
 
-                // Computing the depth that needs the row needs to be pruned until
-                val maxDepth = minOf(
-                    row.prunedDepth + cfind.minDeepeningIncrement,
-                    row.depth + (3 * cfind.originalMinDeepening)
-                )
+                val maxDepth: Int
+                var largerThanMaxDepth = false
 
-                if (row.prunedDepth > maxDepth) {
-                    synchronized(mutex) {
-                        newQueue.add(row)
-                        count++
-                        return@submit
+                // Obtaining the row that should be used and checking if the thread should quit
+                var done = false
+                val temp: Row?
+                synchronized(mutex) {
+                    if (row == null) {
+                        done = true
+                        temp = null
+                    } else {
+                        temp = row!!
+                        row = row!!.next
                     }
                 }
 
-                synchronized(mutex3) { num += maxDepth - row.depth }
+                if (done) break
 
+                val internalRow = temp!!
+                stack.add(internalRow)
+
+                // Computing the depth that needs the row needs to be pruned until
+                maxDepth = minOf(
+                    internalRow.prunedDepth + cfind.minDeepeningIncrement,
+                    internalRow.depth + (2 * cfind.originalMinDeepening)
+                )
+
+                if (internalRow.prunedDepth > maxDepth) largerThanMaxDepth = true
+                if (!largerThanMaxDepth) num += maxDepth - internalRow.depth
+
+                // Beginning the DFS round for that row
+                var currentRow: Row = internalRow
                 do {
-                    if (stack.isEmpty()) break
+                    if (stack.isEmpty()) {
+                        synchronized(mutex) {
+                            if (cfind.head!!.id == internalRow.id) cfind.head = internalRow.next
+                            if (cfind.tail!!.id == internalRow.id) cfind.tail = internalRow.prev
+
+                            internalRow.pop()
+
+                            cfind.queueSize--
+                            prunedCount++
+                        }
+
+                        break
+                    }
 
                     // Get the current row that is going to be analysed
                     currentRow = stack.removeLast()
                     if (currentRow.depth == maxDepth) {
-                        row.prunedDepth = maxDepth
-                        synchronized(mutex) { newQueue.add(row) }
+                        internalRow.prunedDepth = maxDepth
                         break
                     }
 
@@ -92,10 +110,10 @@ actual fun multithreadedDfs(
                             cfind.t.cursor.hide(showOnExit = true)
                         }
 
-                        cfind.println(
+                        println(
                             TextStyles.bold(
                                 "\nChecked ${count - 1} / ${cfind.maxQueueSize} rows, " +
-                                        "pruned ${(10000 - (newQueue.size * 10000 / count)) / 100.0}%"
+                                        "pruned ${(10000 - ((count - prunedCount) * 10000 / count)) / 100.0}%"
                             )
                         )
                         clearLines = cfind.printRLE(grid)
@@ -104,9 +122,11 @@ actual fun multithreadedDfs(
                 }
             }
         }
+        threadLst.add(thread)
+        thread.start()
     }
 
-    executor.shutdown()
-    executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS)
-    return Pair(newQueue, num)
+    // Wait for all threads to be done
+    threadLst.forEach { it.join() }
+    return num
 }
