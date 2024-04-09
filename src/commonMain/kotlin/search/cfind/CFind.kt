@@ -487,8 +487,13 @@ class CFind(
                 val successors = nextRow(currentRow, rows, lookaheadRows, depth = currentRow.depth + 1).first
 
                 // Adding the new rows to the linked list
-                val temp = if (currentRow.deadends != null) {
-                    successors.filter { it.hashCode() !in currentRow.deadends!! }
+                val temp = if (currentRow.successorSequence != null) {
+                    // This optimisation is possible because of the nature of depth-first search
+                    // The successful branch will lie in-between the unknown branches and the deadends
+                    val sequence = currentRow.successorSequence!!
+                    val index = sequence[0]
+                    if (sequence.size > 1) successors[index].successorSequence = sequence.copyOfRange(1, sequence.size)
+                    successors.subList(index, successors.size)
                 } else successors
 
                 queueSize += temp.size
@@ -567,23 +572,31 @@ class CFind(
                         // Get the current row that is going to be analysed
                         currentRow = stack.removeLast()
                         if (currentRow.depth == maxDepth) {
-                            row.prunedDepth = maxDepth
+                            // Adding the successor sequence to the row
+                            val predecessors = currentRow.getAllPredecessors(maxDepth - currentRow.depth, deepCopy = false).reversed()
+                            row.successorSequence = IntArray(maxDepth - currentRow.depth) { predecessors[it].successorNum }
                             break
                         }
 
                         // Get the rows that will need to be used to find the next row
                         val (rows, lookaheadRows) = extractRows(currentRow)
                         val successors = nextRow(currentRow, rows, lookaheadRows, depth = currentRow.depth + 1).first
-                        currentRow.numSuccessors = successors.size
 
-                        if (successors.isEmpty()) currentRow.predecessor!!.addDeadend(currentRow.hashCode())
-                        else {
-                            if (currentRow.deadends != null) {
-                                stack.addAll(successors.filter { it.hashCode() !in currentRow.deadends!! })
-                            } else stack.addAll(successors)
-                        }
+                        // Adding the new rows to the linked list
+                        val temp = if (currentRow.successorSequence != null) {
+                            // This optimisation is possible because of the nature of depth-first search
+                            // The successful branch will lie in-between the unknown branches and the deadends
+                            val sequence = currentRow.successorSequence!!
+                            val index = sequence[0]
+                            if (sequence.size > 1) successors[index].successorSequence = sequence.copyOfRange(1, sequence.size)
+                            successors.subList(index, successors.size)
+                        } else successors
+
+                        // Adding the successors to the stack
+                        stack.addAll(temp)
                     } while (true)
 
+                    // Printing out the partials
                     if ((count++).mod(partialFrequency) == 0) {
                         val grid = currentRow.toGrid(period, symmetry)
                         grid.rule = rule
@@ -1136,6 +1149,8 @@ class CFind(
             if (deadend) deadendNode(node, 0)
         }
 
+        // Add each row's successor num
+        completedRows.forEachIndexed { index, it -> it.successorNum = index }
         return Pair(completedRows, maxDepth)
     }
 

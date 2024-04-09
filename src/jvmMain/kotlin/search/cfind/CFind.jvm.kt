@@ -79,21 +79,28 @@ actual fun multithreadedDfs(cfind: CFind): Int {
                     // Get the current row that is going to be analysed
                     currentRow = stack.removeLast()
                     if (currentRow.depth == maxDepth) {
-                        internalRow.prunedDepth = maxDepth
+                        // Adding the successor sequence to the row
+                        val predecessors = currentRow.getAllPredecessors(maxDepth - internalRow.depth, deepCopy = false).reversed()
+                        internalRow.successorSequence = IntArray(maxDepth - internalRow.depth) { predecessors[it].successorNum }
                         break
                     }
 
                     // Get the rows that will need to be used to find the next row
                     val (rows, lookaheadRows) = cfind.extractRows(currentRow)
                     val successors = cfind.nextRow(currentRow, rows, lookaheadRows, depth = currentRow.depth + 1).first
-                    currentRow.numSuccessors = successors.size
 
-                    if (successors.isEmpty()) currentRow.predecessor!!.addDeadend(currentRow.hashCode())
-                    else {
-                        if (currentRow.deadends != null) {
-                            stack.addAll(successors.filter { it.hashCode() !in currentRow.deadends!! })
-                        } else stack.addAll(successors)
-                    }
+                    // Adding the new rows to the linked list
+                    val temp = if (currentRow.successorSequence != null) {
+                        // This optimisation is possible because of the nature of depth-first search
+                        // The successful branch will lie in-between the unknown branches and the deadends
+                        val sequence = currentRow.successorSequence!!
+                        val index = sequence[0]
+                        if (sequence.size > 1) successors[index].successorSequence = sequence.copyOfRange(1, sequence.size)
+                        successors.subList(index, successors.size)
+                    } else successors
+
+                    // Adding the successors to the stack
+                    stack.addAll(temp)
                 } while (true)
 
                 synchronized(mutex2) {

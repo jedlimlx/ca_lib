@@ -21,7 +21,8 @@ class Row(val predecessor: Row?, val cells: IntArray, var search: CFind? = null)
 
     // information about the row and its position within the larger ship
     var depth = 0
-    var prunedDepth = 0
+    val prunedDepth: Int
+        get() = depth + (successorSequence?.size ?: 0)
 
     val phase: Int
         get() { return depth.mod(search!!.period) }
@@ -29,18 +30,17 @@ class Row(val predecessor: Row?, val cells: IntArray, var search: CFind? = null)
     val offset: Int
         get() { return search!!.offsets[depth.mod(search!!.offsets.size)] }
 
-    var numSuccessors: Int = -1
-    var deadends: HashSet<Int>? = null
+    // information about the row in relation to its siblings in the tree
+    var successorSequence: IntArray? = null
+    var successorNum: Int = -1
 
     // represent the queue as a linked list
     var next: Row? = null
     var prev: Row? = null
 
     init {
-        if (predecessor != null) {
+        if (predecessor != null)
             depth = predecessor.depth + 1
-            prunedDepth = maxOf(depth, predecessor.prunedDepth)
-        }
     }
 
     operator fun get(index: Int): Int {
@@ -56,14 +56,14 @@ class Row(val predecessor: Row?, val cells: IntArray, var search: CFind? = null)
         return predecessor?.getPredecessor(n - this.depth + predecessor.depth)
     }
 
-    fun getAllPredecessors(n: Int): List<Row> {
+    fun getAllPredecessors(n: Int, deepCopy: Boolean = true): List<Row> {
         val list = mutableListOf(this)
         var predecessor: Row? = this.predecessor
 
         while (predecessor != null) {
             if (depth - n == predecessor.depth) break
 
-            list.add(Row(null, predecessor.cells, search!!))
+            list.add(if (deepCopy) Row(null, predecessor.cells, search!!) else predecessor)
             predecessor = predecessor.predecessor
         }
 
@@ -86,15 +86,6 @@ class Row(val predecessor: Row?, val cells: IntArray, var search: CFind? = null)
     }
 
     fun isEmpty(): Boolean = hash == 0
-
-    fun addDeadend(hash: Int) {
-        if (deadends == null) deadends = hashSetOf(hash)
-        else deadends!!.add(hash)
-
-        if (deadends!!.size == numSuccessors) {
-            predecessor!!.addDeadend(hash)
-        }
-    }
 
     fun toGrid(period: Int, symmetry: ShipSymmetry): Grid {
         val grid = DenseGrid()

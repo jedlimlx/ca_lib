@@ -13,11 +13,11 @@ actual fun main() {
 //        println("B${rule.birth.sorted().joinToString("x")}x/S${rule.survival.sorted().joinToString("x")}xV2")
 //    }
 
-//    val minibugsSearch = CFind(
-//        HROT("R2,C2,S6-9,B7-8,NM"), 2, 1, 8,
-//        ShipSymmetry.ASYMMETRIC, verbosity = 1, maxQueueSize = 1 shl 16, numShips = 1
-//    )
-//    minibugsSearch.search()
+    val minibugsSearch = CFind(
+        HROT("R2,C2,S6-9,B7-8,NM"), 3, 1, 8,
+        ShipSymmetry.EVEN, verbosity = 1, maxQueueSize = 1 shl 20, numShips = 1, minDeepeningIncrement = 10
+    )
+    minibugsSearch.search()
 
 //    val pigsSearch = CFind(
 //        HROT("R2,C2,S2,B4,NM"), 3, 4, 12, ShipSymmetry.ODD, verbosity = 1,
@@ -47,36 +47,36 @@ actual fun main() {
 //    )
 //    hashSearch.search()
 
-    val speeds = listOf(
-        Pair(3, 1), Pair(3, 2), Pair(4, 3), Pair(4, 1), Pair(5, 4), Pair(5, 3), Pair(5, 2), Pair(5, 1)
-    )
-    val startingWidth = listOf(8, 10, 6, 7, 6, 6, 5)
-    val symmetries = listOf(ShipSymmetry.ODD, ShipSymmetry.EVEN, ShipSymmetry.ASYMMETRIC, ShipSymmetry.GLIDE)
-
-    for (i in speeds.indices) {
-        val speed = speeds[i]
-        for (symmetry in symmetries) {
-            var width = startingWidth[i]
-            if (speed == Pair(3, 2) && (symmetry == ShipSymmetry.EVEN || symmetry == ShipSymmetry.ODD))
-                width = 10
-
-            if (speed == Pair(3, 2) && (symmetry == ShipSymmetry.GLIDE))
-                continue
-
-            var OOM = false
-            var foundShip = false
-            while (width < 11 && !OOM && !foundShip) {
-                try {
-                    val minibugsSearch = CFind(
-                        HROT("R2,C2,S6-9,B7-8,NM"), speed.first, speed.second, width++, symmetry, verbosity = 1,
-                        maxQueueSize = 1 shl 21, partialFrequency = 10, stdin = true
-                    )
-                    minibugsSearch.search()
-                    if (minibugsSearch.searchResults.size >= 1) foundShip = true
-                } catch (error: Error) { OOM = true }
-            }
-        }
-    }
+//    val speeds = listOf(
+//        Pair(3, 1), Pair(3, 2), Pair(4, 3), Pair(4, 1), Pair(5, 4), Pair(5, 3), Pair(5, 2), Pair(5, 1)
+//    )
+//    val startingWidth = listOf(8, 10, 6, 7, 6, 6, 5)
+//    val symmetries = listOf(ShipSymmetry.ODD, ShipSymmetry.EVEN, ShipSymmetry.ASYMMETRIC, ShipSymmetry.GLIDE)
+//
+//    for (i in speeds.indices) {
+//        val speed = speeds[i]
+//        for (symmetry in symmetries) {
+//            var width = startingWidth[i]
+//            if (speed == Pair(3, 2) && (symmetry == ShipSymmetry.EVEN || symmetry == ShipSymmetry.ODD))
+//                width = 10
+//
+//            if (speed == Pair(3, 2) && (symmetry == ShipSymmetry.GLIDE))
+//                continue
+//
+//            var OOM = false
+//            var foundShip = false
+//            while (width < 11 && !OOM && !foundShip) {
+//                try {
+//                    val minibugsSearch = CFind(
+//                        HROT("R2,C2,S6-9,B7-8,NM"), speed.first, speed.second, width++, symmetry, verbosity = 1,
+//                        maxQueueSize = 1 shl 21, partialFrequency = 10, stdin = true
+//                    )
+//                    minibugsSearch.search()
+//                    if (minibugsSearch.searchResults.size >= 1) foundShip = true
+//                } catch (error: Error) { OOM = true }
+//            }
+//        }
+//    }
 
 //    val hashSearch = CFind(
 //        HROT("R3,C2,S5-9,B7-9,N#"), 4, 1, 5,
