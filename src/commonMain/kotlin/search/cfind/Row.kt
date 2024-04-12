@@ -4,7 +4,7 @@ import simulation.Coordinate
 import simulation.DenseGrid
 import simulation.Grid
 
-class Row(val predecessor: Row?, val cells: IntArray, var search: CFind? = null) {
+class Row(val predecessor: Row?, val cells: IntArray, var search: CFind? = null): Comparable<Row> {
     companion object { var counter: Long = 0L }
 
     // unique id for each row
@@ -58,6 +58,8 @@ class Row(val predecessor: Row?, val cells: IntArray, var search: CFind? = null)
 
     fun getAllPredecessors(n: Int, deepCopy: Boolean = true): List<Row> {
         val list = mutableListOf(this)
+        if (n == 0) return list
+
         var predecessor: Row? = this.predecessor
 
         while (predecessor != null) {
@@ -139,6 +141,7 @@ class Row(val predecessor: Row?, val cells: IntArray, var search: CFind? = null)
     }
 
     override fun hashCode() = hash
+    override fun compareTo(other: Row): Int = this.depth - other.depth
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

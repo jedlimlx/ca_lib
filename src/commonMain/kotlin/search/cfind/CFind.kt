@@ -2,7 +2,9 @@ package search.cfind
 
 import LRUCache
 import PLATFORM
+import PriorityQueue
 import com.github.ajalt.mordant.rendering.TextColors.*
+import com.github.ajalt.mordant.rendering.TextStyle
 import com.github.ajalt.mordant.rendering.TextStyles.bold
 import kotlinx.serialization.json.Json
 import patterns.Pattern
@@ -28,7 +30,7 @@ class CFind(
     val maxQueueSize: Int = 1 shl 20,
     minDeepeningIncrement: Int = -1,
     lookaheadDepth: Int = Int.MAX_VALUE,
-    val dfs: Boolean = false,
+    val searchStrategy: SearchStrategy = SearchStrategy.PRIORITY_QUEUE,
     val numShips: Int = Int.MAX_VALUE,
     val partialFrequency: Int = 1000,
     val numThreads: Int = 8,
@@ -38,7 +40,10 @@ class CFind(
     override val searchResults: MutableList<Pattern> = mutableListOf()
 
     // TODO Handle alternating stuff properly / don't support alternating neighbourhoods
-    var minDeepeningIncrement = if (minDeepeningIncrement == -1) _period else minDeepeningIncrement
+    var minDeepeningIncrement = if (minDeepeningIncrement == -1) {
+        if (searchStrategy == SearchStrategy.HYBRID_BFS) _period
+        else _period * 10  // shallow tree with deep leafs :)
+    } else minDeepeningIncrement
     val originalMinDeepening = this.minDeepeningIncrement
 
     // Rotate the direction of the neighbour so the ship will go north
@@ -369,10 +374,14 @@ class CFind(
         } else null
     }
 
-    // We will represent the queue as a linked list
+    // For hybrid BFS / pure DFS, we will represent the queue / stack as a linked list
     var head: Row? = null
     var tail: Row? = null
     var queueSize = 0
+    var numDFSRounds = 0
+
+    // The priority queue for the ikpx2 search algorithm
+    val priorityQueue = PriorityQueue<Row>(maxQueueSize)
 
     override fun search() {
         println(bold("Beginning search for width ${green("$width")} " +
@@ -430,221 +439,307 @@ class CFind(
             currentRow = nextRow
         }
 
-        // We will represent the queue as a linked list
-        queueSize = 1
-        head = if (!dfs) currentRow else null
-        tail = if (dfs) currentRow else null
-
         // Take note of the starting time
         val timeSource = TimeSource.Monotonic
         val startTime = timeSource.markNow()
 
-        // Take note of number of ships found
+        // Information we will be keeping track of
         var shipsFound = 0
-
-        // Main loop of algorithm
         var count = 0
-        var clearPartial: Boolean
+        var clearPartial = false
         var clearLines = 0
-        while (shipsFound < numShips) {
-            // BFS round runs until the queue size exceeds the maximum queue size
-            clearPartial = false
-            while (queueSize < maxQueueSize) {
-                if (queueSize == 0) {
-                    println(
-                        bold(
-                            "\nSearch terminated in ${green("${(timeSource.markNow() - startTime).inWholeMilliseconds / 1000.0}s")}. " +
-                                    "${green("$shipsFound")} ship${if (shipsFound == 1) "" else "s"} found."
+
+        // Some common functions
+        fun processSuccessors(successors: List<Row>): List<Row> = if (currentRow.successorSequence != null) {
+            // This optimisation is possible because of the nature of depth-first search
+            // The successful branch will lie in-between the unknown branches and the deadends
+            val sequence = currentRow.successorSequence!!
+            val index = sequence[0]
+            if (sequence.size > 1) successors[index].successorSequence = sequence.copyOfRange(1, sequence.size)
+            successors.subList(0, index + 1)
+        } else successors
+
+        fun printPartials(message: Any, numLines: Int = 3, forcePrint: Boolean = false) {
+            if ((count++).mod(partialFrequency) == 0 || forcePrint) {
+                val grid = currentRow.toGrid(period, symmetry)
+                grid.rule = rule
+
+                if (verbosity >= 0 && clearPartial && !stdin) {
+                    t.cursor.move {
+                        up(numLines + clearLines)
+                        startOfLine()
+                        clearScreenAfterCursor()
+                    }
+                    t.cursor.hide(showOnExit = true)
+                }
+
+                println(message)
+                clearLines = printRLE(grid)
+                clearPartial = true
+            }
+        }
+
+        // Hybrid BFS / Pure DFS
+        if (searchStrategy == SearchStrategy.HYBRID_BFS || searchStrategy == SearchStrategy.DFS) {
+            // We will represent the queue as a linked list
+            queueSize = 1
+            head = if (searchStrategy != SearchStrategy.DFS) currentRow else null
+            tail = if (searchStrategy != SearchStrategy.DFS) currentRow else null
+            while (shipsFound < numShips) {
+                // BFS round runs until the queue size exceeds the maximum queue size
+                clearPartial = false
+                while (queueSize < maxQueueSize) {
+                    if (queueSize == 0) {
+                        println(
+                            bold(
+                                "\nSearch terminated in ${green("${(timeSource.markNow() - startTime).inWholeMilliseconds / 1000.0}s")}. " +
+                                        "${green("$shipsFound")} ship${if (shipsFound == 1) "" else "s"} found."
+                            )
                         )
-                    )
-                    return
-                }
-
-                // Get the current row that is going to be analysed
-                if (dfs) {
-                    currentRow = tail!!
-                    tail = currentRow.prev
-                } else {
-                    currentRow = head!!
-                    head = currentRow.next
-                }
-
-                // Removes the row from the linked list
-                currentRow.pop()
-                queueSize--
-
-                // Check if the ship is completed
-                if (checkCompletedShip(currentRow)) {
-                    clearPartial = false
-                    if (++shipsFound == numShips) break
-                }
-
-                // Check the transposition table for looping components
-                if (checkEquivalentState(currentRow)) continue
-
-                // Get the rows that will need to be used to find the next row
-                val (rows, lookaheadRows) = extractRows(currentRow)
-                val successors = nextRow(currentRow, rows, lookaheadRows, depth = currentRow.depth + 1).first
-
-                // Adding the new rows to the linked list
-                val temp = if (currentRow.successorSequence != null) {
-                    // This optimisation is possible because of the nature of depth-first search
-                    // The successful branch will lie in-between the unknown branches and the deadends
-                    val sequence = currentRow.successorSequence!!
-                    val index = sequence[0]
-                    if (sequence.size > 1) successors[index].successorSequence = sequence.copyOfRange(1, sequence.size)
-                    successors.subList(index, successors.size)
-                } else successors
-
-                queueSize += temp.size
-                temp.forEach {
-                    if (head == null) head = it
-
-                    tail?.next = it
-                    it.prev = tail
-                    tail = it
-                }
-
-                // Printing out the partials
-                if ((count++).mod(partialFrequency) == 0) {
-                    val grid = currentRow.toGrid(period, symmetry)
-                    grid.rule = rule
-
-                    if (verbosity >= 0 && clearPartial && !stdin) {
-                        t.cursor.move {
-                            up(3 + clearLines)
-                            startOfLine()
-                            clearScreenAfterCursor()
-                        }
-                        t.cursor.hide(showOnExit = true)
+                        return
                     }
 
-                    println(bold("\nQueue Size: $queueSize / $maxQueueSize"))
-                    clearLines = printRLE(grid)
-                    clearPartial = true
+                    // Get the current row that is going to be analysed
+                    if (searchStrategy == SearchStrategy.DFS) {
+                        currentRow = tail!!
+                        tail = currentRow.prev
+                    } else {
+                        // TODO I thought I fixed this but I didn't
+                        currentRow = head!!
+                        head = currentRow.next
+                    }
+
+                    // Removes the row from the linked list
+                    currentRow.pop()
+                    queueSize--
+
+                    // Check if the ship is completed
+                    if (checkCompletedShip(currentRow)) {
+                        clearPartial = false
+                        if (++shipsFound == numShips) break
+                    }
+
+                    // Check the transposition table for looping components
+                    if (checkEquivalentState(currentRow)) continue
+
+                    // Get the rows that will need to be used to find the next row
+                    val (rows, lookaheadRows) = extractRows(currentRow)
+                    val successors = nextRow(currentRow, rows, lookaheadRows, depth = currentRow.depth + 1).first
+
+                    // Adding the new rows to the linked list
+                    val temp = processSuccessors(successors)
+                    queueSize += temp.size
+                    temp.forEach {
+                        if (head == null) head = it
+
+                        tail?.next = it
+                        it.prev = tail
+                        tail = it
+                    }
+
+                    // Printing out the partials
+                    printPartials(bold("\nQueue Size: $queueSize / $maxQueueSize"))
                 }
+
+                if (shipsFound == numShips) break
+
+                // DFS round runs for a certain deepening increment
+                val message = "Beginning depth-first search round, queue size $queueSize"
+                println(bold("\n$message"))
+
+                count = 0
+                clearPartial = false
+
+                var num = 0
+                numDFSRounds++
+                if (PLATFORM == "JVM" && numThreads > 1) {
+                    val output = multithreadedDfs(this)
+                    num = output
+
+                    clearPartial = true
+                } else {
+                    var row = head
+                    var prunedCount = 0
+                    val stack = arrayListOf<Row>()
+                    while (row != null) {
+                        // Placing row within DFS stack
+                        stack.clear()
+                        stack.add(row)
+
+                        // Computing the depth that needs the row needs to be pruned until
+                        val maxDepth = row.prunedDepth + minDeepeningIncrement
+
+                        if (row.prunedDepth > maxDepth) continue
+
+                        num += maxDepth - row.depth
+
+                        do {
+                            if (stack.isEmpty()) {
+                                if (head!!.id == row.id) head = row.next
+                                if (tail!!.id == row.id) tail = row.prev
+
+                                prunedCount++
+                                break
+                            }
+
+                            // Get the current row that is going to be analysed
+                            currentRow = stack.removeLast()
+                            if (currentRow.depth == maxDepth) {
+                                // Adding the successor sequence to the row
+                                val predecessors = currentRow.getAllPredecessors(
+                                    maxDepth - row.depth, deepCopy = false
+                                ).reversed()
+                                row.successorSequence = IntArray(maxDepth - row.depth) { predecessors[it].successorNum }
+                                break
+                            }
+
+                            // Get the rows that will need to be used to find the next row
+                            val (rows, lookaheadRows) = extractRows(currentRow)
+                            val successors = nextRow(currentRow, rows, lookaheadRows, depth = currentRow.depth + 1).first
+                            val temp = processSuccessors(successors)
+
+                            // Adding the successors to the stack
+                            stack.addAll(temp)
+                        } while (true)
+
+                        // Printing out the partials
+                        printPartials(
+                            bold(
+                                "\nChecked ${count - 1} / $maxQueueSize rows, " +
+                                        "pruned ${(10000 - ((count - prunedCount) * 10000 / (count + 1))) / 100.0}%"
+                            )
+                        )
+
+                        val temp = row.next
+                        if (stack.isEmpty()) {
+                            row.pop()
+                            queueSize--
+                        }
+                        row = temp
+                    }
+                }
+
+                // Clean up the output once the DFS round is done
+                if (verbosity >= 0 && clearPartial && !stdin) {
+                    t.cursor.move {
+                        up(4 + clearLines)
+                        startOfLine()
+                        clearScreenAfterCursor()
+                    }
+                    t.cursor.hide(showOnExit = true)
+                }
+
+                // Print out some status information
+                val averageDeepening = num / maxQueueSize.toDouble()
+                println(bold("$message -> $queueSize, average deepening " +
+                        "${(100 * averageDeepening).toInt() / 100.0}"))
             }
+        } else {
+            priorityQueue.add(currentRow)
 
-            if (shipsFound == numShips) break
-
-            // DFS round runs for a certain deepening increment
-            val message = "Beginning depth-first search round, queue size $queueSize"
-            println(bold("\n$message"))
-
-            count = 0
-            clearPartial = false
-
-            var num = 0
             if (PLATFORM == "JVM" && numThreads > 1) {
-                val output = multithreadedDfs(this)
-                num = output
-
-                clearPartial = true
+                multithreadedPriorityQueue(this)
+                shipsFound = searchResults.size
             } else {
-                var row = head
-                var prunedCount = 0
+                // We just run repeated DFS rounds
+                var first = true
+                var row: Row
+                var pruning = 0.8
+                var longestPartialSoFar = currentRow.depth
                 val stack = arrayListOf<Row>()
-                while (row != null) {
-                    // Placing row within DFS stack
+                while (priorityQueue.isNotEmpty()) {
+                    row = priorityQueue.poll()
+
                     stack.clear()
                     stack.add(row)
 
-                    // Computing the depth that needs the row needs to be pruned until
-                    val maxDepth = minOf(
-                        row.prunedDepth + minDeepeningIncrement,
-                        row.depth + (2 * originalMinDeepening)
-                    )
-
-                    if (row.prunedDepth > maxDepth) continue
-
-                    num += maxDepth - row.depth
+                    // Decide what depth we should reach
+                    val maxDepth = row.prunedDepth + minDeepeningIncrement
 
                     do {
+                        // Check if stack is empty
                         if (stack.isEmpty()) {
-                            if (head!!.id == row.id) head = row.next
-                            if (tail!!.id == row.id) tail = row.prev
-
-                            queueSize--
-                            prunedCount++
+                            pruning = 0.99 * pruning + 0.01
                             break
                         }
 
                         // Get the current row that is going to be analysed
                         currentRow = stack.removeLast()
                         if (currentRow.depth == maxDepth) {
+                            pruning *= 0.99
+
+                            // Compute the predecessors
+                            val predecessors = currentRow.getAllPredecessors(
+                                maxDepth - row.depth, deepCopy = false
+                            ).reversed()
+
+                            // Decide how many rows to add to the priority queue
+                            var rowsAdded = 0
+                            var finalDepth = -1
+                            val maxRowsAdded = (maxQueueSize / ((priorityQueue.size + 0.0001) * (1.0 - pruning))).toInt()
+                            for (depth in row.depth + 1..maxDepth) {
+                                val lst = stack.filter { it.depth == depth }
+                                rowsAdded += lst.size
+
+                                if (rowsAdded < maxRowsAdded || depth == row.depth + 1) {
+                                    lst.forEach {
+                                        // Check the transposition table for looping components
+                                        if (first || !checkEquivalentState(it)) priorityQueue.add(it)
+                                    }
+                                    finalDepth = depth
+                                } else break
+                            }
+
+                            if (finalDepth == -1) finalDepth = maxDepth
+                            val temp = currentRow.getPredecessor(maxDepth - finalDepth)!!
+
                             // Adding the successor sequence to the row
-                            val predecessors = currentRow.getAllPredecessors(maxDepth - currentRow.depth, deepCopy = false).reversed()
-                            row.successorSequence = IntArray(maxDepth - currentRow.depth) { predecessors[it].successorNum }
+                            if (currentRow.depth > temp.depth)
+                                temp.successorSequence = IntArray(currentRow.depth - temp.depth) {
+                                    predecessors[temp.depth - row.depth + it].successorNum
+                                }
+
+                            // Check the transposition table for looping components
+                            if (first || !checkEquivalentState(temp)) priorityQueue.add(temp)
+                            first = false
                             break
                         }
+
+                        // Check if the ship is completed
+                        if (checkCompletedShip(currentRow)) {
+                            clearPartial = false
+                            if (++shipsFound == numShips) break
+                        }
+
+                        // Check the transposition table for looping components
+                        if (first && checkEquivalentState(currentRow)) continue
 
                         // Get the rows that will need to be used to find the next row
                         val (rows, lookaheadRows) = extractRows(currentRow)
                         val successors = nextRow(currentRow, rows, lookaheadRows, depth = currentRow.depth + 1).first
 
-                        // Adding the new rows to the linked list
-                        val temp = if (currentRow.successorSequence != null) {
-                            // This optimisation is possible because of the nature of depth-first search
-                            // The successful branch will lie in-between the unknown branches and the deadends
-                            val sequence = currentRow.successorSequence!!
-                            val index = sequence[0]
-                            if (sequence.size > 1) successors[index].successorSequence = sequence.copyOfRange(1, sequence.size)
-                            successors.subList(index, successors.size)
-                        } else successors
+                        // Adding the new rows to the stack
+                        stack.addAll(processSuccessors(successors))
 
-                        // Adding the successors to the stack
-                        stack.addAll(temp)
+                        // Printing out the partials
+                        if (currentRow.depth > longestPartialSoFar) {
+                            longestPartialSoFar = currentRow.depth
+                            printPartials(bold("\nDepth: ${currentRow.depth}"), numLines = 4, forcePrint = true)
+                            clearPartial = false
+                            clearLines--
+                        } else {
+                            printPartials(
+                                bold(
+                                    "\nPriority Queue Size: ${priorityQueue.size} / $maxQueueSize" +
+                                            "\nStack Size: ${stack.size}, Depth: ${currentRow.depth} / $maxDepth"
+                                ), numLines = 4
+                            )
+                        }
                     } while (true)
 
-                    // Printing out the partials
-                    if ((count++).mod(partialFrequency) == 0) {
-                        val grid = currentRow.toGrid(period, symmetry)
-                        grid.rule = rule
-
-                        if (verbosity >= 0 && clearPartial && !stdin) {
-                            t.cursor.move {
-                                up(3 + clearLines)
-                                startOfLine()
-                                clearScreenAfterCursor()
-                            }
-                            t.cursor.hide(showOnExit = true)
-                        }
-
-                        println(
-                            bold(
-                                "\nChecked ${count - 1} / $maxQueueSize rows, " +
-                                        "pruned ${(10000 - ((count - prunedCount) * 10000 / count)) / 100.0}%"
-                            )
-                        )
-                        clearLines = printRLE(grid)
-                        clearPartial = true
-                    }
-
-                    val temp = row.next
-                    if (stack.isEmpty()) row.pop()
-                    row = temp
+                    // Check if sufficiently many ships have been found
+                    if (shipsFound == numShips) break
                 }
-            }
-
-            // Clean up the output once the DFS round is done
-            if (verbosity >= 0 && clearPartial && !stdin) {
-                t.cursor.move {
-                    up(4 + clearLines)
-                    startOfLine()
-                    clearScreenAfterCursor()
-                }
-                t.cursor.hide(showOnExit = true)
-            }
-
-            // Print out some status information
-            val averageDeepening = num / maxQueueSize.toDouble()
-            println(bold("$message -> $queueSize, average deepening " +
-                    "${(100 * averageDeepening).toInt() / 100.0}"))
-
-            // Increase the minimum deepening increment if it is too small
-            if (averageDeepening > minDeepeningIncrement * 1.5 && originalMinDeepening * 2 > averageDeepening / 1.5) {
-                println(bold("\nIncreasing minimum deepening increment $minDeepeningIncrement -> ${(averageDeepening / 1.5).toInt()}"))
-                minDeepeningIncrement = (averageDeepening / 1.5).toInt()
             }
         }
 
@@ -692,7 +787,7 @@ class CFind(
             grid.rule = rule
 
             println(brightRed(bold("\nShip found!")))
-            println(brightBlue(bold("x = 0, y = 0, rule = ${rule}\n" + grid.toRLE().chunked(70).joinToString("\n"))))
+            printRLE(grid, style=brightBlue + bold)
 
             searchResults.add(Spaceship(0, k, period, grid))
             return true
@@ -704,7 +799,7 @@ class CFind(
     /**
      * Checks if the search has arrived at an equivalent state.
      */
-    fun checkEquivalentState(row: Row): Boolean {
+    fun checkEquivalentState(row: Row, modify: Boolean = true): Boolean {
         val rows = row.getAllPredecessors((height - 1) * period)
         if (rows.hashCode() in equivalentStates.keys) {
             var equivalent = true
@@ -718,7 +813,7 @@ class CFind(
 
             if (!equivalent) return false
         } else {
-            equivalentStates.put(rows.hashCode(), rows.map { it.hashCode() }.toIntArray())
+            if (modify) equivalentStates.put(rows.hashCode(), rows.map { it.hashCode() }.toIntArray())
             return false
         }
 
@@ -1195,16 +1290,34 @@ class CFind(
             t.println(x)
     }
 
-    fun printRLE(grid: Grid, verbosity: Int = 0): Int {
-        val rle = grid.toRLE().chunked(if (stdin) Int.MAX_VALUE else 70)
-        if (verbosity <= this.verbosity)
-            t.println("x = 0, y = 0, rule = ${rule}\n" + rle.joinToString("\n"))
+    fun printRLE(grid: Grid, verbosity: Int = 0, style: TextStyle? = null): Int {
+        var newLines = 1
+        val rle = StringBuilder().apply {
+            var delay = 0
+            val string = grid.toRLE()
+            for (i in string.indices) {
+                append(string[i])
+                if ((i - delay).mod(70) == 0 && i != 0) {
+                    if (string[i].isDigit()) delay++
+                    else {
+                        append("\n")
+                        newLines++
+                    }
+                }
+            }
+        }.toString()
+        if (verbosity <= this.verbosity) {
+            if (style != null) t.println(style("x = 0, y = 0, rule = ${rule}\n$rle"))
+            else t.println("x = 0, y = 0, rule = ${rule}\n$rle")
+        }
 
-        return rle.size
+        return newLines
     }
 }
 
 expect fun multithreadedDfs(cfind: CFind): Int
+
+expect fun multithreadedPriorityQueue(cfind: CFind)
 
 private fun getDigit(number: Int, power: Int, base: Int) = number.floorDiv(power).mod(base)
 

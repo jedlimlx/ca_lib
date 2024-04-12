@@ -1,27 +1,28 @@
 import rules.hrot.HROT
 import search.cfind.CFind
+import search.cfind.SearchStrategy
 import search.cfind.ShipSymmetry
 
 
 actual fun main() {
-//    for (i in 1 .. 2) {
-//        println(shrinkBoundingBox(moore(i)))
-//    }
-
-//    for (rule in HROT("R2,C2,S2,B3,NN") .. HROT("R2,C2,S2,5-12,B3,5-12,NN")) {
-//        rule as HROT
-//        println("B${rule.birth.sorted().joinToString("x")}x/S${rule.survival.sorted().joinToString("x")}xV2")
-//    }
+//    val lifeSearchP4K1 = CFind(
+//        HROT("B3/S23"), 4, 1, 7, ShipSymmetry.ODD, verbosity = 1,
+//        maxQueueSize = 1 shl 14, searchStrategy = SearchStrategy.HYBRID_BFS, partialFrequency = 1000,
+//        numThreads = 8, minDeepeningIncrement = 2
+//    )
+//    lifeSearchP4K1.search()
 
     val minibugsSearch = CFind(
-        HROT("R2,C2,S6-9,B7-8,NM"), 3, 1, 8,
-        ShipSymmetry.EVEN, verbosity = 1, maxQueueSize = 1 shl 20, numShips = 1, minDeepeningIncrement = 10
+        HROT("R2,C2,S6-9,14-20,B7-8,15-24,NM"), 3, 1, 6,
+        ShipSymmetry.ODD, verbosity = 1, maxQueueSize = 1 shl 20,
+        searchStrategy = SearchStrategy.HYBRID_BFS, minDeepeningIncrement = 10, numThreads = 8
     )
     minibugsSearch.search()
 
 //    val pigsSearch = CFind(
-//        HROT("R2,C2,S2,B4,NM"), 3, 4, 12, ShipSymmetry.ODD, verbosity = 1,
-//        maxQueueSize = 1 shl 20
+//        HROT("R2,C2,S4,B4,NM"), 2, 3, 5, ShipSymmetry.EVEN, verbosity = 1,
+//        maxQueueSize = 1 shl 20, partialFrequency = 1, minDeepeningIncrement = 2,
+//        searchStrategy = SearchStrategy.PRIORITY_QUEUE
 //    )
 //    pigsSearch.search()
 
@@ -48,18 +49,15 @@ actual fun main() {
 //    hashSearch.search()
 
 //    val speeds = listOf(
-//        Pair(3, 1), Pair(3, 2), Pair(4, 3), Pair(4, 1), Pair(5, 4), Pair(5, 3), Pair(5, 2), Pair(5, 1)
+//        Pair(3, 2), Pair(3, 1), Pair(4, 3), Pair(4, 1), Pair(5, 4), Pair(5, 3), Pair(5, 2), Pair(5, 1)
 //    )
-//    val startingWidth = listOf(8, 10, 6, 7, 6, 6, 5)
-//    val symmetries = listOf(ShipSymmetry.ODD, ShipSymmetry.EVEN, ShipSymmetry.ASYMMETRIC, ShipSymmetry.GLIDE)
+//    val startingWidth = listOf(10, 8, 6, 7, 6, 6, 5)
+//    val symmetries = listOf(ShipSymmetry.EVEN, ShipSymmetry.ODD, ShipSymmetry.ASYMMETRIC, ShipSymmetry.GLIDE)
 //
 //    for (i in speeds.indices) {
 //        val speed = speeds[i]
 //        for (symmetry in symmetries) {
 //            var width = startingWidth[i]
-//            if (speed == Pair(3, 2) && (symmetry == ShipSymmetry.EVEN || symmetry == ShipSymmetry.ODD))
-//                width = 10
-//
 //            if (speed == Pair(3, 2) && (symmetry == ShipSymmetry.GLIDE))
 //                continue
 //
@@ -68,8 +66,9 @@ actual fun main() {
 //            while (width < 11 && !OOM && !foundShip) {
 //                try {
 //                    val minibugsSearch = CFind(
-//                        HROT("R2,C2,S6-9,B7-8,NM"), speed.first, speed.second, width++, symmetry, verbosity = 1,
-//                        maxQueueSize = 1 shl 21, partialFrequency = 10, stdin = true
+//                        HROT("R2,C2,S6-9,B7-8,NM"), speed.first, speed.second, width++, symmetry,
+//                        verbosity = 1, maxQueueSize = 1 shl 21, partialFrequency = 10, stdin = true,
+//                        searchStrategy = SearchStrategy.HYBRID_BFS
 //                    )
 //                    minibugsSearch.search()
 //                    if (minibugsSearch.searchResults.size >= 1) foundShip = true

@@ -1,9 +1,16 @@
 package search.cfind
 
 import com.github.ajalt.mordant.rendering.TextStyles
-import java.util.concurrent.Executors
-import java.util.concurrent.ThreadPoolExecutor
-import java.util.concurrent.TimeUnit
+
+fun processSuccessors(currentRow: Row, successors: List<Row>): List<Row> = if (currentRow.successorSequence != null) {
+    // This optimisation is possible because of the nature of depth-first search
+    // The successful branch will lie in-between the unknown branches and the deadends
+    val sequence = currentRow.successorSequence!!
+    val index = sequence[0]
+    if (sequence.size > 1) successors[index].successorSequence = sequence.copyOfRange(1, sequence.size)
+    successors.subList(0, index + 1)
+} else successors
+
 
 actual fun multithreadedDfs(cfind: CFind): Int {
     var num = 0
@@ -51,10 +58,7 @@ actual fun multithreadedDfs(cfind: CFind): Int {
                 stack.add(internalRow)
 
                 // Computing the depth that needs the row needs to be pruned until
-                maxDepth = minOf(
-                    internalRow.prunedDepth + cfind.minDeepeningIncrement,
-                    internalRow.depth + (2 * cfind.originalMinDeepening)
-                )
+                maxDepth = internalRow.prunedDepth + cfind.minDeepeningIncrement
 
                 if (internalRow.prunedDepth > maxDepth) largerThanMaxDepth = true
                 if (!largerThanMaxDepth) num += maxDepth - internalRow.depth
@@ -80,7 +84,9 @@ actual fun multithreadedDfs(cfind: CFind): Int {
                     currentRow = stack.removeLast()
                     if (currentRow.depth == maxDepth) {
                         // Adding the successor sequence to the row
-                        val predecessors = currentRow.getAllPredecessors(maxDepth - internalRow.depth, deepCopy = false).reversed()
+                        val predecessors = currentRow.getAllPredecessors(
+                            maxDepth - internalRow.depth, deepCopy = false
+                        ).reversed()
                         internalRow.successorSequence = IntArray(maxDepth - internalRow.depth) { predecessors[it].successorNum }
                         break
                     }
@@ -89,18 +95,8 @@ actual fun multithreadedDfs(cfind: CFind): Int {
                     val (rows, lookaheadRows) = cfind.extractRows(currentRow)
                     val successors = cfind.nextRow(currentRow, rows, lookaheadRows, depth = currentRow.depth + 1).first
 
-                    // Adding the new rows to the linked list
-                    val temp = if (currentRow.successorSequence != null) {
-                        // This optimisation is possible because of the nature of depth-first search
-                        // The successful branch will lie in-between the unknown branches and the deadends
-                        val sequence = currentRow.successorSequence!!
-                        val index = sequence[0]
-                        if (sequence.size > 1) successors[index].successorSequence = sequence.copyOfRange(1, sequence.size)
-                        successors.subList(index, successors.size)
-                    } else successors
-
                     // Adding the successors to the stack
-                    stack.addAll(temp)
+                    stack.addAll(processSuccessors(currentRow, successors))
                 } while (true)
 
                 synchronized(mutex2) {
@@ -136,4 +132,176 @@ actual fun multithreadedDfs(cfind: CFind): Int {
     // Wait for all threads to be done
     threadLst.forEach { it.join() }
     return num
+}
+
+actual fun multithreadedPriorityQueue(cfind: CFind) {
+    // Synchronisation primitives
+    val mutex = Object()
+    val mutex2 = Object()
+    val mutex3 = Object()
+    val mutex4 = Object()
+
+    // Other shared variables
+    var count = 0
+    var pruning = 0.8
+    var shipsFound = 0
+    var longestPartialSoFar = cfind.priorityQueue.peek().depth
+
+    var clearPartial = false
+    var clearLines = 0
+
+    fun printPartials(currentRow: Row, message: Any, numLines: Int = 3, forcePrint: Boolean = false) {
+        if ((count++).mod(cfind.partialFrequency) == 0 || forcePrint) {
+            val grid = currentRow.toGrid(cfind.period, cfind.symmetry)
+            grid.rule = cfind.rule
+
+            if (cfind.verbosity >= 0 && clearPartial && !cfind.stdin) {
+                cfind.t.cursor.move {
+                    up(numLines + clearLines)
+                    startOfLine()
+                    clearScreenAfterCursor()
+                }
+                cfind.t.cursor.hide(showOnExit = true)
+            }
+
+            println(message)
+            clearLines = cfind.printRLE(grid)
+            clearPartial = true
+        }
+    }
+
+    val threads = arrayListOf<Thread>()
+    for (i in 0 ..< cfind.numThreads) {
+        val thread = Thread {
+            // The threads must start staggered to avoid race conditions
+            Thread.sleep((1000 * i).toLong())
+
+            // Begin the search
+            var row: Row
+            var currentRow: Row
+            val stack = arrayListOf<Row>()
+            while (true) {
+                var emptyQueue = false
+                synchronized(mutex) { if (cfind.priorityQueue.isEmpty()) emptyQueue = true }
+                if (emptyQueue) break
+
+                synchronized(mutex) { row = cfind.priorityQueue.poll() }
+
+                stack.clear()
+                stack.add(row)
+
+                // Decide what depth we should reach
+                val maxDepth = row.prunedDepth + cfind.minDeepeningIncrement
+
+                do {
+                    // Check if stack is empty
+                    if (stack.isEmpty()) {
+                        pruning = 0.99 * pruning + 0.01
+                        break
+                    }
+
+                    // Get the current row that is going to be analysed
+                    currentRow = stack.removeLast()
+
+                    // Check if we should exit this round
+                    if (currentRow.depth == maxDepth) {
+                        pruning *= 0.99
+
+                        // Compute the predecessors
+                        val predecessors = currentRow.getAllPredecessors(
+                            currentRow.depth - row.depth, deepCopy = false
+                        ).reversed()
+
+                        // Decide how many rows to add to the priority queue
+                        var rowsAdded = 0
+                        var finalDepth = -1
+                        val maxRowsAdded = (cfind.maxQueueSize / (cfind.priorityQueue.size + 0.0001) * (1.0 - pruning)).toInt()
+                        for (depth in row.depth + 1..currentRow.depth) {
+                            val lst = stack.filter { it.depth == depth }
+                            rowsAdded += lst.size
+
+                            if (rowsAdded < maxRowsAdded || depth == row.depth + 1)
+                                synchronized(mutex) {
+                                    lst.forEach {
+                                        // Check the transposition table for looping components
+                                        if (!cfind.checkEquivalentState(it)) cfind.priorityQueue.add(it)
+                                    }
+                                    finalDepth = depth
+                                }
+                            else break
+                        }
+
+                        if (finalDepth == -1) finalDepth = currentRow.depth
+                        val temp = currentRow.getPredecessor(currentRow.depth - finalDepth)!!
+
+                        // Adding the successor sequence to the row
+                        if (currentRow.depth > temp.depth)
+                            temp.successorSequence = IntArray(currentRow.depth - temp.depth) {
+                                predecessors[temp.depth - row.depth + it].successorNum
+                            }
+
+                        // Check the transposition table for looping components
+                        synchronized(mutex) { if (!cfind.checkEquivalentState(temp)) cfind.priorityQueue.add(temp) }
+                        break
+                    }
+
+                    // Check if the ship is completed
+                    var foundEnoughShips = false
+                    synchronized(mutex2) {
+                        if (cfind.checkCompletedShip(currentRow)) {
+                            clearPartial = false
+                            if (++shipsFound == cfind.numShips) foundEnoughShips = true
+                        }
+                    }
+                    if (foundEnoughShips) break
+
+                    // Check the transposition table for looping components
+                    var equivalentState = false
+                    synchronized(mutex3) {
+                        if (cfind.checkEquivalentState(currentRow, modify = false)) equivalentState = true
+                    }
+                    if (equivalentState) continue
+
+                    // Get the rows that will need to be used to find the next row
+                    val (rows, lookaheadRows) = cfind.extractRows(currentRow)
+                    val successors = cfind.nextRow(currentRow, rows, lookaheadRows, depth = currentRow.depth + 1).first
+
+                    // Adding the new rows to the stack
+                    stack.addAll(processSuccessors(currentRow, successors))
+
+                    // Printing out the partials
+                    synchronized(mutex4) {
+                        if (currentRow.depth > longestPartialSoFar) {
+                            longestPartialSoFar = currentRow.depth
+                            printPartials(
+                                currentRow,
+                                TextStyles.bold("\nDepth: ${currentRow.depth}"),
+                                numLines = 4,
+                                forcePrint = true
+                            )
+                            clearPartial = false
+                            clearLines--
+                        } else {
+                            printPartials(
+                                currentRow,
+                                TextStyles.bold(
+                                    "\nPriority Queue Size: ${cfind.priorityQueue.size} / ${cfind.maxQueueSize}" +
+                                            "\nStack Size: ${stack.size}, Depth: ${currentRow.depth} / $maxDepth"
+                                ), numLines = 4
+                            )
+                        }
+                    }
+                } while (true)
+
+                // Check if sufficiently many ships have been found
+                var foundEnoughShips = false
+                synchronized(mutex2) { if (shipsFound == cfind.numShips) foundEnoughShips = true }
+                if (foundEnoughShips) break
+            }
+        }
+        thread.start()
+        threads.add(thread)
+    }
+
+    threads.forEach { it.join() }
 }
