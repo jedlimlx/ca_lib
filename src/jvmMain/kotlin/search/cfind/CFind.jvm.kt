@@ -1,6 +1,7 @@
 package search.cfind
 
 import com.github.ajalt.mordant.rendering.TextStyles
+import java.util.concurrent.Semaphore
 
 fun processSuccessors(currentRow: Row, successors: List<Row>): List<Row> = if (currentRow.successorSequence != null) {
     // This optimisation is possible because of the nature of depth-first search
@@ -141,6 +142,8 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
     val mutex3 = Object()
     val mutex4 = Object()
 
+    val fullCount = Semaphore(1)
+
     // Other shared variables
     var count = 0
     var pruning = 0.8
@@ -173,14 +176,12 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
     val threads = arrayListOf<Thread>()
     for (i in 0 ..< cfind.numThreads) {
         val thread = Thread {
-            // The threads must start staggered to avoid race conditions
-            Thread.sleep((1000 * i).toLong())
-
             // Begin the search
             var row: Row
             var currentRow: Row
             val stack = arrayListOf<Row>()
             while (true) {
+                fullCount.acquire()
                 var emptyQueue = false
                 synchronized(mutex) { if (cfind.priorityQueue.isEmpty()) emptyQueue = true }
                 if (emptyQueue) break
@@ -220,12 +221,10 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
                             val lst = stack.filter { it.depth == depth }
                             rowsAdded += lst.size
 
-                            if (rowsAdded < maxRowsAdded || depth == row.depth + 1)
-                                synchronized(mutex) {
-                                    lst.forEach { cfind.priorityQueue.add(it) }
-                                    finalDepth = depth
-                                }
-                            else break
+                            if (rowsAdded < maxRowsAdded || depth == row.depth + 1) {
+                                synchronized(mutex) { lst.forEach { cfind.priorityQueue.add(it) } }
+                                finalDepth = depth
+                            } else break
                         }
 
                         if (finalDepth == -1) finalDepth = currentRow.depth
@@ -238,6 +237,7 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
                             }
 
                         synchronized(mutex) { cfind.priorityQueue.add(temp) }
+                        fullCount.release(rowsAdded + 1)
                         break
                     }
 

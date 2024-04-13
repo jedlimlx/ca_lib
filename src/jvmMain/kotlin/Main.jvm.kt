@@ -5,19 +5,19 @@ import search.cfind.ShipSymmetry
 
 
 actual fun main() {
-//    val lifeSearchP4K1 = CFind(
-//        HROT("B3/S23"), 4, 1, 7, ShipSymmetry.ODD, verbosity = 1,
-//        maxQueueSize = 1 shl 14, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 1000,
-//        numThreads = 1, minDeepeningIncrement = 2
-//    )
-//    lifeSearchP4K1.search()
-
-    val minibugsSearch = CFind(
-        HROT("R2,C2,S6-9,14-20,B7-8,15-24,NM"), 3, 2, 8,
-        ShipSymmetry.ODD, verbosity = 1, maxQueueSize = 1 shl 20,
-        searchStrategy = SearchStrategy.PRIORITY_QUEUE, minDeepeningIncrement = 30, numThreads = 8
+    val lifeSearchP4K1 = CFind(
+        HROT("B3/S23"), 4, 1, 7, ShipSymmetry.ODD, verbosity = 1,
+        maxQueueSize = 1 shl 14, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 1000,
+        numThreads = 8, minDeepeningIncrement = 10
     )
-    minibugsSearch.search()
+    lifeSearchP4K1.search()
+
+//    val minibugsSearch = CFind(
+//        HROT("R2,C2,S6-9,14-20,B7-8,15-24,NM"), 3, 2, 7,
+//        ShipSymmetry.ODD, verbosity = 1, maxQueueSize = 1 shl 20,
+//        searchStrategy = SearchStrategy.PRIORITY_QUEUE, minDeepeningIncrement = 30, numThreads = 8
+//    )
+//    minibugsSearch.search()
 
 //    val pigsSearch = CFind(
 //        HROT("R2,C2,S4,B4,NM"), 2, 3, 5, ShipSymmetry.EVEN, verbosity = 1,
