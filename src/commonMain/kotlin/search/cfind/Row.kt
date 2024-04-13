@@ -141,7 +141,7 @@ class Row(val predecessor: Row?, val cells: IntArray, var search: CFind? = null)
     }
 
     override fun hashCode() = hash
-    override fun compareTo(other: Row): Int = this.depth - other.depth
+    override fun compareTo(other: Row): Int = this.prunedDepth - other.prunedDepth
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

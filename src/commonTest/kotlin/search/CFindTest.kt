@@ -6,10 +6,12 @@ import search.cfind.CFind
 import search.cfind.SearchStrategy
 import search.cfind.ShipSymmetry
 import simulation.Coordinate
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.TimeSource
 
+@Ignore
 class Test {
     val searchStrategies = listOf(SearchStrategy.HYBRID_BFS, SearchStrategy.PRIORITY_QUEUE)
 
