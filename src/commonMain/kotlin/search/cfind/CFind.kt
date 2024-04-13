@@ -642,7 +642,6 @@ class CFind(
                 shipsFound = searchResults.size
             } else {
                 // We just run repeated DFS rounds
-                var first = true
                 var row: Row
                 var pruning = 0.8
                 var longestPartialSoFar = currentRow.depth
@@ -682,10 +681,7 @@ class CFind(
                                 rowsAdded += lst.size
 
                                 if (rowsAdded < maxRowsAdded || depth == row.depth + 1) {
-                                    lst.forEach {
-                                        // Check the transposition table for looping components
-                                        if (first || !checkEquivalentState(it)) priorityQueue.add(it)
-                                    }
+                                    lst.forEach { priorityQueue.add(it) }
                                     finalDepth = depth
                                 } else break
                             }
@@ -700,8 +696,7 @@ class CFind(
                                 }
 
                             // Check the transposition table for looping components
-                            if (first || !checkEquivalentState(temp)) priorityQueue.add(temp)
-                            first = false
+                            priorityQueue.add(temp)
                             break
                         }
 
@@ -712,7 +707,7 @@ class CFind(
                         }
 
                         // Check the transposition table for looping components
-                        if (first && checkEquivalentState(currentRow)) continue
+                        if (currentRow.successorSequence == null && checkEquivalentState(currentRow)) continue
 
                         // Get the rows that will need to be used to find the next row
                         val (rows, lookaheadRows) = extractRows(currentRow)
@@ -799,7 +794,7 @@ class CFind(
     /**
      * Checks if the search has arrived at an equivalent state.
      */
-    fun checkEquivalentState(row: Row, modify: Boolean = true): Boolean {
+    fun checkEquivalentState(row: Row): Boolean {
         val rows = row.getAllPredecessors((height - 1) * period)
         if (rows.hashCode() in equivalentStates.keys) {
             var equivalent = true
@@ -813,7 +808,7 @@ class CFind(
 
             if (!equivalent) return false
         } else {
-            if (modify) equivalentStates.put(rows.hashCode(), rows.map { it.hashCode() }.toIntArray())
+            equivalentStates.put(rows.hashCode(), rows.map { it.hashCode() }.toIntArray())
             return false
         }
 

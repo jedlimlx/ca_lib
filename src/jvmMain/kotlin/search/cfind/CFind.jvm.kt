@@ -222,10 +222,7 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
 
                             if (rowsAdded < maxRowsAdded || depth == row.depth + 1)
                                 synchronized(mutex) {
-                                    lst.forEach {
-                                        // Check the transposition table for looping components
-                                        if (!cfind.checkEquivalentState(it)) cfind.priorityQueue.add(it)
-                                    }
+                                    lst.forEach { cfind.priorityQueue.add(it) }
                                     finalDepth = depth
                                 }
                             else break
@@ -240,8 +237,7 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
                                 predecessors[temp.depth - row.depth + it].successorNum
                             }
 
-                        // Check the transposition table for looping components
-                        synchronized(mutex) { if (!cfind.checkEquivalentState(temp)) cfind.priorityQueue.add(temp) }
+                        synchronized(mutex) { cfind.priorityQueue.add(temp) }
                         break
                     }
 
@@ -258,7 +254,8 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
                     // Check the transposition table for looping components
                     var equivalentState = false
                     synchronized(mutex3) {
-                        if (cfind.checkEquivalentState(currentRow, modify = false)) equivalentState = true
+                        if (currentRow.successorSequence == null &&
+                            cfind.checkEquivalentState(currentRow)) equivalentState = true
                     }
                     if (equivalentState) continue
 

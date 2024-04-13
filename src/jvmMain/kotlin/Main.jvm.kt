@@ -7,15 +7,15 @@ import search.cfind.ShipSymmetry
 actual fun main() {
 //    val lifeSearchP4K1 = CFind(
 //        HROT("B3/S23"), 4, 1, 7, ShipSymmetry.ODD, verbosity = 1,
-//        maxQueueSize = 1 shl 14, searchStrategy = SearchStrategy.HYBRID_BFS, partialFrequency = 1000,
-//        numThreads = 8, minDeepeningIncrement = 2
+//        maxQueueSize = 1 shl 14, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 1000,
+//        numThreads = 1, minDeepeningIncrement = 2
 //    )
 //    lifeSearchP4K1.search()
 
     val minibugsSearch = CFind(
-        HROT("R2,C2,S6-9,14-20,B7-8,15-24,NM"), 3, 1, 6,
+        HROT("R2,C2,S6-9,14-20,B7-8,15-24,NM"), 3, 2, 8,
         ShipSymmetry.ODD, verbosity = 1, maxQueueSize = 1 shl 20,
-        searchStrategy = SearchStrategy.HYBRID_BFS, minDeepeningIncrement = 10, numThreads = 8
+        searchStrategy = SearchStrategy.PRIORITY_QUEUE, minDeepeningIncrement = 30, numThreads = 8
     )
     minibugsSearch.search()
 
