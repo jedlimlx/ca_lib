@@ -6,6 +6,10 @@ import PriorityQueue
 import com.github.ajalt.mordant.rendering.TextColors.*
 import com.github.ajalt.mordant.rendering.TextStyle
 import com.github.ajalt.mordant.rendering.TextStyles.bold
+import kotlinx.io.bytestring.ByteString
+import kotlinx.io.bytestring.ByteStringBuilder
+import kotlinx.io.bytestring.decodeToString
+import kotlinx.io.bytestring.encodeToByteString
 import kotlinx.serialization.json.Json
 import patterns.Pattern
 import patterns.Spaceship
@@ -33,6 +37,7 @@ class CFind(
     val searchStrategy: SearchStrategy = SearchStrategy.PRIORITY_QUEUE,
     val numShips: Int = Int.MAX_VALUE,
     val partialFrequency: Int = 1000,
+    val backupFrequency: Int = 10,
     val numThreads: Int = 8,
     val stdin: Boolean = false,
     verbosity: Int = 0
@@ -383,6 +388,9 @@ class CFind(
     // The priority queue for the ikpx2 search algorithm
     val priorityQueue = PriorityQueue<Row>(maxQueueSize)
 
+    // Check if any saved state was loaded into the search
+    var loadedState = false
+
     override fun search() {
         println(bold("Beginning search for width ${green("$width")} " +
                 "spaceship with ${green("$symmetry")} symmetry moving towards ${green("$direction")} at " +
@@ -430,13 +438,19 @@ class CFind(
         )
 
         // Initialising BFS queue with (height - 1) * period empty rows
-        var currentRow = Row(null, IntArray(width) { 0 }, this)
-        for (i in 1 .. period * (height - 1)) {
-            val nextRow = Row(currentRow, IntArray(width) { 0 }, this)
-            currentRow.next = nextRow
-            nextRow.prev = currentRow
+        var currentRow: Row
+        if (!loadedState) {
+            currentRow = Row(null, IntArray(width) { 0 }, this)
+            for (i in 1 .. period * (height - 1)) {
+                val nextRow = Row(currentRow, IntArray(width) { 0 }, this)
+                currentRow.next = nextRow
+                nextRow.prev = currentRow
 
-            currentRow = nextRow
+                currentRow = nextRow
+            }
+        } else {
+            if (searchStrategy == SearchStrategy.PRIORITY_QUEUE) currentRow = priorityQueue.poll()
+            else currentRow = head!!
         }
 
         // Take note of the starting time
@@ -456,6 +470,7 @@ class CFind(
             val sequence = currentRow.successorSequence!!
             val index = sequence[0]
             if (sequence.size > 1) successors[index].successorSequence = sequence.copyOfRange(1, sequence.size)
+            currentRow.successorSequence = null
             successors.subList(0, index + 1)
         } else successors
 
@@ -480,11 +495,14 @@ class CFind(
         }
 
         // Hybrid BFS / Pure DFS
+        var backups = 0
         if (searchStrategy == SearchStrategy.HYBRID_BFS || searchStrategy == SearchStrategy.DFS) {
             // We will represent the queue as a linked list
-            queueSize = 1
-            head = if (searchStrategy != SearchStrategy.DFS) currentRow else null
-            tail = if (searchStrategy != SearchStrategy.DFS) currentRow else null
+            if (!loadedState) {
+                queueSize = 1
+                head = if (searchStrategy != SearchStrategy.DFS) currentRow else null
+                tail = if (searchStrategy != SearchStrategy.DFS) currentRow else null
+            }
             while (shipsFound < numShips) {
                 // BFS round runs until the queue size exceeds the maximum queue size
                 clearPartial = false
@@ -543,9 +561,19 @@ class CFind(
 
                 if (shipsFound == numShips) break
 
+                // Check how much time has past and see if we need to write to a backup
+                if ((timeSource.markNow() - startTime).inWholeMilliseconds > (backups+1)*backupFrequency*1000) {
+                    backupState("dump_${backups++}.txt", saveState())
+                }
+
                 // DFS round runs for a certain deepening increment
                 val message = "Beginning depth-first search round, queue size $queueSize"
                 println(bold("\n$message"))
+
+                // Check how much time has past and see if we need to write to a backup
+                if ((timeSource.markNow() - startTime).inWholeMilliseconds > (backups+1)*backupFrequency*1000) {
+                    backupState("dump_${backups++}.txt", saveState())
+                }
 
                 count = 0
                 clearPartial = false
@@ -734,6 +762,11 @@ class CFind(
 
                     // Check if sufficiently many ships have been found
                     if (shipsFound == numShips) break
+
+                    // Check how much time has past and see if we need to write to a backup
+                    if ((timeSource.markNow() - startTime).inWholeMilliseconds > (backups+1)*backupFrequency*1000) {
+                        backupState("dump_${backups++}.txt", saveState())
+                    }
                 }
             }
         }
@@ -747,28 +780,100 @@ class CFind(
     }
 
     override fun stop() {
-        TODO ("Not yet implemented")
+        TODO("Not yet implemented")
     }
 
     override fun saveToFile(filename: String) {
-//        println(bold("Saving results to file..."))
-//
-//        val added = HashSet<Long>(queue.size)
-//        for (row in queue) {
-//            println("${row.id} ${row.predecessor?.id ?: -1} ${row.depth} ${row.prunedDepth} ${row.hashCode()}")
-//            added.add(row.id)
-//        }
-//
-//        println("-")
-//
-//        for (row in queue) {
-//            row.applyOnPredecessor {
-//                if (it.id !in added) {
-//                    println("${row.id} ${row.predecessor?.id ?: -1} ${row.depth} ${row.prunedDepth} ${row.hashCode()}")
-//                    added.add(row.id)
-//                }
-//            }
-//        }
+        TODO("Not yet implemented")
+    }
+
+    override fun saveState(): String = StringBuilder().apply {
+        val inQueue = HashSet<Long>(if (searchStrategy == SearchStrategy.PRIORITY_QUEUE) priorityQueue.size else queueSize)
+        if (searchStrategy == SearchStrategy.PRIORITY_QUEUE)
+            priorityQueue.forEach { inQueue.add(it.id) }
+        else {
+            var row = head
+            while (row != null) {
+                inQueue.add(row.id)
+                row = row.next
+            }
+        }
+
+        val added = HashSet<Long>(if (searchStrategy == SearchStrategy.PRIORITY_QUEUE) priorityQueue.size else queueSize)
+        val queue = PriorityQueue<Row>(if (searchStrategy == SearchStrategy.PRIORITY_QUEUE) priorityQueue.size else queueSize)
+        if (searchStrategy == SearchStrategy.PRIORITY_QUEUE) {
+            for (row in priorityQueue) {
+                row.successorSequence = null
+                queue.add(row)
+                added.add(row.id)
+                row.applyOnPredecessor {
+                    it.successorSequence = null
+                    if (it.id !in added) {
+                        queue.add(it)
+                        added.add(it.id)
+                    }
+                }
+            }
+        } else {
+            var row = head
+            while (row != null) {
+                queue.add(row)
+                added.add(row.id)
+                row.applyOnPredecessor {
+                    it.successorSequence = null
+                    if (it.id !in added) {
+                        queue.add(it)
+                        added.add(it.id)
+                    }
+                }
+
+                row = row.next
+            }
+        }
+
+        append("${queue.size}\n")
+        while (queue.isNotEmpty()) {
+            val row = queue.poll()
+            append("${row.id} ${row.predecessor?.id ?: -1} ${row.hashCode()}")
+            if (row.id in inQueue) append(" *")
+            append("\n")
+        }
+    }.toString()
+
+    override fun loadState(string: String) {
+        loadedState = true
+
+        val lines = string.split("\n")
+
+        val rows = HashMap<Long, Row>(lines[0].toInt())
+        queueSize = 0
+        for (i in 1 ..< lines.size) {
+            val tokens = lines[i].split(" ")
+            if (tokens.size < 3) continue
+
+            val row = Row(
+                rows[tokens[1].toLong()],
+                tokens[2].toInt().toString(rule.numStates).padStart(width, '0').map { it.digitToInt() }.reversed().toIntArray(),
+                this
+            )
+            rows[tokens[0].toLong()] = row
+
+            if (tokens.size == 4) {
+                if (searchStrategy == SearchStrategy.PRIORITY_QUEUE) priorityQueue.add(row)
+                else {
+                    if (head == null) {
+                        head = row
+                        tail = row
+                    } else {
+                        tail!!.next = row
+                        row.prev = tail
+                        tail = row
+                    }
+
+                    queueSize++
+                }
+            }
+        }
     }
 
     /**
@@ -1313,6 +1418,8 @@ class CFind(
 expect fun multithreadedDfs(cfind: CFind): Int
 
 expect fun multithreadedPriorityQueue(cfind: CFind)
+
+expect fun backupState(filename: String, backup: String)
 
 private fun getDigit(number: Int, power: Int, base: Int) = number.floorDiv(power).mod(base)
 

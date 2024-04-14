@@ -54,12 +54,14 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.3.2")
                 implementation("com.github.ajalt.mordant:mordant:2.3.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
             }
         }
         val commonTest by getting {
             dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.3.2")
                 implementation(kotlin("test"))
                 implementation("com.github.ajalt.mordant:mordant:2.3.0")
             }

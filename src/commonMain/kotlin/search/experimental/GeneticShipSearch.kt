@@ -1,5 +1,6 @@
 package search.experimental
 
+import kotlinx.io.bytestring.ByteString
 import patterns.Pattern
 import rules.Rule
 import search.SearchProgram
@@ -261,6 +262,14 @@ class GeneticShipSearch(
     }
 
     override fun saveToFile(filename: String) {
+        TODO("Not yet implemented")
+    }
+
+    override fun saveState(): String {
+        TODO("Not yet implemented")
+    }
+
+    override fun loadState(string: String) {
         TODO("Not yet implemented")
     }
 }

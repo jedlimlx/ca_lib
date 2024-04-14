@@ -1,7 +1,9 @@
 package search.cfind
 
 import com.github.ajalt.mordant.rendering.TextStyles
+import java.io.File
 import java.util.concurrent.Semaphore
+import kotlin.time.TimeSource
 
 fun processSuccessors(currentRow: Row, successors: List<Row>): List<Row> = if (currentRow.successorSequence != null) {
     // This optimisation is possible because of the nature of depth-first search
@@ -9,6 +11,7 @@ fun processSuccessors(currentRow: Row, successors: List<Row>): List<Row> = if (c
     val sequence = currentRow.successorSequence!!
     val index = sequence[0]
     if (sequence.size > 1) successors[index].successorSequence = sequence.copyOfRange(1, sequence.size)
+    currentRow.successorSequence = null
     successors.subList(0, index + 1)
 } else successors
 
@@ -136,18 +139,27 @@ actual fun multithreadedDfs(cfind: CFind): Int {
 }
 
 actual fun multithreadedPriorityQueue(cfind: CFind) {
+    // Take note of the starting time
+    val timeSource = TimeSource.Monotonic
+    val startTime = timeSource.markNow()
+
     // Synchronisation primitives
     val mutex = Object()
     val mutex2 = Object()
     val mutex3 = Object()
     val mutex4 = Object()
+    val mutex5 = Object()
+    val mutex6 = Object()
 
     val fullCount = Semaphore(1)
+    val savingState = Semaphore(cfind.numThreads)
 
     // Other shared variables
     var count = 0
+    var backups = 0
     var pruning = 0.8
     var shipsFound = 0
+    var numProcessing = 0
     var longestPartialSoFar = cfind.priorityQueue.peek().depth
 
     var clearPartial = false
@@ -174,7 +186,7 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
     }
 
     val threads = arrayListOf<Thread>()
-    for (i in 0 ..< cfind.numThreads) {
+    for (i in 0 ..< 1) { //cfind.numThreads) {
         val thread = Thread {
             // Begin the search
             var row: Row
@@ -182,9 +194,13 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
             val stack = arrayListOf<Row>()
             while (true) {
                 fullCount.acquire()
+                savingState.acquire()
+
                 var emptyQueue = false
                 synchronized(mutex) { if (cfind.priorityQueue.isEmpty()) emptyQueue = true }
                 if (emptyQueue) break
+
+                numProcessing++
 
                 synchronized(mutex) { row = cfind.priorityQueue.poll() }
 
@@ -197,7 +213,7 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
                 do {
                     // Check if stack is empty
                     if (stack.isEmpty()) {
-                        pruning = 0.99 * pruning + 0.01
+                        synchronized(mutex6) { pruning = 0.99 * pruning + 0.01 }
                         break
                     }
 
@@ -206,18 +222,20 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
 
                     // Check if we should exit this round
                     if (currentRow.depth == maxDepth) {
-                        pruning *= 0.99
+                        synchronized(mutex6) { pruning *= 0.99 }
 
                         // Compute the predecessors
                         val predecessors = currentRow.getAllPredecessors(
-                            currentRow.depth - row.depth, deepCopy = false
+                            maxDepth - row.depth, deepCopy = false
                         ).reversed()
 
                         // Decide how many rows to add to the priority queue
                         var rowsAdded = 0
                         var finalDepth = -1
-                        val maxRowsAdded = (cfind.maxQueueSize / (cfind.priorityQueue.size + 0.0001) * (1.0 - pruning)).toInt()
-                        for (depth in row.depth + 1..currentRow.depth) {
+                        val maxRowsAdded = synchronized(mutex6) {
+                            (cfind.maxQueueSize / (cfind.priorityQueue.size + 0.0001) * (1.0 - pruning)).toInt()
+                        }
+                        for (depth in row.depth + 1..maxDepth) {
                             val lst = stack.filter { it.depth == depth }
                             rowsAdded += lst.size
 
@@ -227,8 +245,8 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
                             } else break
                         }
 
-                        if (finalDepth == -1) finalDepth = currentRow.depth
-                        val temp = currentRow.getPredecessor(currentRow.depth - finalDepth)!!
+                        if (finalDepth == -1) finalDepth = maxDepth
+                        val temp = currentRow.getPredecessor(maxDepth - finalDepth)!!
 
                         // Adding the successor sequence to the row
                         if (currentRow.depth > temp.depth)
@@ -294,6 +312,17 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
                 var foundEnoughShips = false
                 synchronized(mutex2) { if (shipsFound == cfind.numShips) foundEnoughShips = true }
                 if (foundEnoughShips) break
+
+                savingState.release()
+
+                // Check how much time has past and see if we need to write to a backup
+                synchronized(mutex5) {
+                    if ((timeSource.markNow() - startTime).inWholeMilliseconds > (backups+1)*cfind.backupFrequency*1000) {
+                        savingState.acquire(cfind.numThreads)
+                        backupState("dump_${backups++}.txt", cfind.saveState())
+                        savingState.release(cfind.numThreads)
+                    }
+                }
             }
         }
         thread.start()
@@ -301,4 +330,9 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
     }
 
     threads.forEach { it.join() }
+}
+
+actual fun backupState(filename: String, backup: String) {
+    val file = File(filename)
+    file.writeText(backup)
 }

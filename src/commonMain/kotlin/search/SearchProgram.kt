@@ -2,6 +2,7 @@ package search
 
 import com.github.ajalt.mordant.rendering.AnsiLevel
 import com.github.ajalt.mordant.terminal.Terminal
+import kotlinx.io.bytestring.ByteString
 import patterns.Pattern
 
 /**
@@ -27,6 +28,16 @@ abstract class SearchProgram(val verbosity: Int = -1) {
      * Saves the search results to a file
      */
     abstract fun saveToFile(filename: String)
+
+    /**
+     * Saves the state of the search
+     */
+    abstract fun saveState(): String
+
+    /**
+     * Loads the state of the search
+     */
+    abstract fun loadState(string: String)
 
     /**
      * The Mordant terminal used for all the pretty-printing

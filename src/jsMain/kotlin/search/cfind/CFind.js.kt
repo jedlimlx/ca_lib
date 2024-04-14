@@ -7,3 +7,6 @@ actual fun multithreadedDfs(cfind: CFind): Int {
 actual fun multithreadedPriorityQueue(cfind: CFind) {
     TODO("Not yet implemented")
 }
+
+actual fun backupState(filename: String, backup: String) {
+}
