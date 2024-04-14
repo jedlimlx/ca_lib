@@ -788,7 +788,8 @@ class CFind(
     }
 
     override fun saveState(): String = StringBuilder().apply {
-        val inQueue = HashSet<Long>(if (searchStrategy == SearchStrategy.PRIORITY_QUEUE) priorityQueue.size else queueSize)
+        val queueSize = if (searchStrategy == SearchStrategy.PRIORITY_QUEUE) priorityQueue.size else queueSize
+        val inQueue = HashSet<Long>(queueSize)
         if (searchStrategy == SearchStrategy.PRIORITY_QUEUE)
             priorityQueue.forEach { inQueue.add(it.id) }
         else {
@@ -799,15 +800,13 @@ class CFind(
             }
         }
 
-        val added = HashSet<Long>(if (searchStrategy == SearchStrategy.PRIORITY_QUEUE) priorityQueue.size else queueSize)
-        val queue = PriorityQueue<Row>(if (searchStrategy == SearchStrategy.PRIORITY_QUEUE) priorityQueue.size else queueSize)
+        val added = HashSet<Long>(queueSize)
+        val queue = PriorityQueue<Row>(queueSize) { row, other -> row.depth - other.depth }
         if (searchStrategy == SearchStrategy.PRIORITY_QUEUE) {
             for (row in priorityQueue) {
-                row.successorSequence = null
                 queue.add(row)
                 added.add(row.id)
                 row.applyOnPredecessor {
-                    it.successorSequence = null
                     if (it.id !in added) {
                         queue.add(it)
                         added.add(it.id)
@@ -820,7 +819,6 @@ class CFind(
                 queue.add(row)
                 added.add(row.id)
                 row.applyOnPredecessor {
-                    it.successorSequence = null
                     if (it.id !in added) {
                         queue.add(it)
                         added.add(it.id)

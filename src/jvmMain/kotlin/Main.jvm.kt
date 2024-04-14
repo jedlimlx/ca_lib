@@ -6,20 +6,19 @@ import java.io.File
 
 
 actual fun main() {
-    val search = CFind(
-        HROT("R2,C2,S6-9,14-20,B7-8,15-24,NM"), 2, 1, 9,
-        ShipSymmetry.EVEN, verbosity = 1, maxQueueSize = 1 shl 18,
-        searchStrategy = SearchStrategy.HYBRID_BFS, minDeepeningIncrement = 10, numThreads = 8
-    )
-    search.loadState(File("test_dump.txt").readText())
-    search.search()
-
-//    val lifeSearchP4K1 = CFind(
-//        HROT("B3/S23"), 4, 1, 7, ShipSymmetry.ODD, verbosity = 1,
-//        maxQueueSize = 1 shl 14, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 1000,
-//        numThreads = 8, minDeepeningIncrement = 10
+//    val search = CFind(
+//        HROT("R2,C2,S6-9,14-20,B7-8,15-24,NM"), 2, 1, 8,
+//        ShipSymmetry.EVEN, verbosity = 1, maxQueueSize = 1 shl 28,
+//        searchStrategy = SearchStrategy.PRIORITY_QUEUE, minDeepeningIncrement = 10, numThreads = 8
 //    )
-//    lifeSearchP4K1.search()
+//    search.search()
+
+    val lifeSearchP4K1 = CFind(
+        HROT("B3/S23"), 4, 1, 7, ShipSymmetry.ODD, verbosity = 1,
+        maxQueueSize = 1 shl 14, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 1000,
+        numThreads = 8, minDeepeningIncrement = 10
+    )
+    lifeSearchP4K1.search()
 
 //    val pigsSearch = CFind(
 //        HROT("R2,C2,S4,B4,NM"), 2, 3, 5, ShipSymmetry.EVEN, verbosity = 1,
