@@ -78,6 +78,12 @@ open class Spaceship(val dx: Int, val dy: Int, val period: Int, val phases: Arra
 
         result
     }
+    
+    /**
+     * Computes the smallest phase of the spaceship by population
+     * TODO figure out the correct way of finding the canonical phase for gliderdb
+     */
+    open val smallestPhase by lazy { phases.minBy { it.population } }
 
     /**
      * The population of the spaceship in each generation
