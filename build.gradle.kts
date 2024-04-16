@@ -55,7 +55,6 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation("com.github.ajalt.mordant:mordant:2.3.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
             }
         }
         val commonTest by getting {
@@ -64,8 +63,16 @@ kotlin {
                 implementation("com.github.ajalt.mordant:mordant:2.3.0")
             }
         }
-        val jvmMain by getting
-        val jvmTest by getting
+        val jvmMain by getting {
+            dependencies {
+                implementation("it.skrape:skrapeit:1.1.5")
+            }
+        }
+        val jvmTest by getting {
+            dependencies {
+                implementation("it.skrape:skrapeit:1.1.5")
+            }
+        }
         val jsMain by getting
         val jsTest by getting
         val nativeMain by getting

@@ -6,7 +6,6 @@ import PriorityQueue
 import com.github.ajalt.mordant.rendering.TextColors.*
 import com.github.ajalt.mordant.rendering.TextStyle
 import com.github.ajalt.mordant.rendering.TextStyles.bold
-import kotlinx.serialization.json.Json
 import patterns.Pattern
 import patterns.Spaceship
 import rules.Rule

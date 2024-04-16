@@ -4,6 +4,7 @@ import rules.Rule
 import rules.ruleRange
 import simulation.Coordinate
 import simulation.Grid
+import simulation.Rotation
 import kotlin.math.abs
 
 /**
@@ -95,14 +96,32 @@ open class Spaceship(val dx: Int, val dy: Int, val period: Int, val phases: Arra
      */
     open val populationListByState by lazy { phases.map { it.populationByState } }
 
+    /**
+     * Outputs the GliderDB entry for this ship. The format is <name>:<discoverer>, <year>:<minRule>:<maxRule>:<x>:<y>:<dx>:<dy>:
+     */
+    open val gliderdbEntry by lazy {
+        var canonPhase = smallestPhase
+        if (dy < dx) canonPhase = smallestPhase.rotate(Rotation.CLOCKWISE)
+        
+        smallestPhase.updateBounds()
+        val size = smallestPhase.bounds.endInclusive - smallestPhase.bounds.start
+        "$name:$discoverer:${ruleRange!!.first}:${ruleRange!!.second}:$period:${size.x}:${size.y}:$dx:$dy:$smallestPhase"
+    }
+
     override val information: Map<String, String> by lazy {
-        mapOf(
+        val map = hashMapOf(
             "rule" to rule.toString(),
             "speed" to speed,
             "direction" to direction,
             "heat_stats" to "${heat.minOrNull()!!} | ${heat.maxOrNull()!!} | ${heat.average()}",
             "pop_stats" to "${populationList.minOrNull()!!} | ${populationList.maxOrNull()!!} | ${populationList.average()}"
         )
+
+        // Optional outputs
+        if (name != "") map["name"] = name
+        if (discoverer != "") map["discoverer"] = discoverer
+
+        map
     }
 
     override val ruleRange: Pair<Rule, Rule>? by lazy {
