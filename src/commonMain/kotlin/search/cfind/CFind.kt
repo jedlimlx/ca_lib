@@ -179,9 +179,8 @@ class CFind(
         var count = 0
         val BCs = arrayListOf<Coordinate>()
         for (x in minX.x .. maxX.x-1) {
+            if (minimums.size > count+1 && minimums[count+1].x == x) count++
             BCs.add(Coordinate(x, minimums[count].y))
-            if (minimums.size > count+1 && minimums[count+1].x == x)
-                count++
         }
 
         BCs
@@ -206,9 +205,8 @@ class CFind(
         var count = 0
         val BCs = arrayListOf<Coordinate>()
         for (x in (minX.x+1 .. maxX.x).reversed()) {
+            if (minimums.size > count+1 && minimums[count+1].x == x) count++
             BCs.add(Coordinate(x, minimums[count].y))
-            if (minimums.size > count+1 && minimums[count+1].x == x)
-                count++
         }
 
         BCs.reversed()

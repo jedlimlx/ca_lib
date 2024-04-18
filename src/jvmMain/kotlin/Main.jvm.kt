@@ -68,9 +68,9 @@ actual fun main() {
     // }.joinToString("\n\n"))
 
     val search = CFind(
-        HROT("R2,C2,S2,B3,NA"), 2, 1, 9, verbosity = 1, maxQueueSize = 1 shl 19,
-        searchStrategy = SearchStrategy.HYBRID_BFS, symmetry = ShipSymmetry.ASYMMETRIC,
-        minDeepeningIncrement = 5, numThreads = 2, partialFrequency = 1000, lookaheadDepth = 1
+        HROT("B3/S23"), 4, 1, 7, verbosity = 1, maxQueueSize = 1 shl 13,
+        searchStrategy = SearchStrategy.HYBRID_BFS, symmetry = ShipSymmetry.ODD,
+        minDeepeningIncrement = 5, numThreads = 2, partialFrequency = 1000
     )
     search.search()
 }

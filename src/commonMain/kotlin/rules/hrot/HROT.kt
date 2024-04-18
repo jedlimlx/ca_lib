@@ -290,24 +290,54 @@ class HROT : BaseHROT {
     }
 
     override fun transitionFuncWithUnknowns(cells: IntArray, cellState: Int, generation: Int, coordinate: Coordinate): Int {
-        var unknowns = 0
-        var live = 0
-        cells.forEachIndexed { index, it ->
-            if (it == -1) unknowns += (weights?.get(index) ?: 1)
-            else if (it == 1) live += (weights?.get(index) ?: 1)
+        if (weights == null) {
+            var unknowns = 0
+            var live = 0
+            cells.forEachIndexed { index, it ->
+                if (it == -1) unknowns += (weights?.get(index) ?: 1)
+                else if (it == 1) live += (weights?.get(index) ?: 1)
+            }
+
+            var count = 0
+            for (i in live..(live+unknowns)) {
+                if (if (cellState == 1) i in survival else i in birth)
+                    count++
+            }
+
+            var state = 0b00
+            if (count != 0) state += 0b10
+            if (count < unknowns + 1) state += 0b01
+
+            return state
+        } else {
+            return 0b11
+            
+            var live = 0
+            val unknowns = HashMap<Int, Int>()
+            cells.forEachIndexed { index, it ->
+                if (it == -1) {
+                    if (weights[index] !in unknowns) unknowns[weights[index]] = 1
+                    else unknowns[weights[index]] = unknowns[weights[index]]!! + 1
+                } else if (it == 1) live += weights[index]
+            }
+
+            var count = 0
+            var dead = false
+            val array = getAllSubsetSums(unknowns)
+            for (i in array.indices) {
+                if (array[i] == 1) {
+                    if (if (cellState == 1) (live + array[i]) in survival else (live + array[i]) in birth) {
+                        count++
+                    } else dead = true
+                }
+            }
+
+            var state = 0b00
+            if (count != 0) state += 0b10
+            if (dead) state += 0b01
+
+            return state
         }
-
-        var count = 0
-        for (i in live..(live+unknowns)) {
-            if (if (cellState == 1) i in survival else i in birth)
-                count++
-        }
-
-        var state = 0b00
-        if (count != 0) state += 0b10
-        if (count < unknowns + 1) state += 0b01
-
-        return state
     }
 
     private fun newRuleWithTransitions(birth: Iterable<Int>, survival: Iterable<Int>): HROT =
