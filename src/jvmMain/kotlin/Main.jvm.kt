@@ -10,6 +10,7 @@ import it.skrape.fetcher.*
 import it.skrape.selects.*
 import it.skrape.selects.html5.*
 
+import simulation.Coordinate
 import simulation.DenseGrid
 import patterns.Spaceship
 import patterns.gliderdb.GliderDB
@@ -52,17 +53,24 @@ actual fun main() {
     // val gliderdb = GliderDB(output)
     // println(gliderdb.searchByRule(HROT("R2,C2,S6-9,B7-8,NM")..HROT("R2,C2,S6-9,14-24,B7-8,NM")))
 
-    val output = skrape(HttpFetcher) {
-        request {
-            url = "https://raw.githubusercontent.com/jedlimlx/gliderdb-reader/main/src/assets/R1-C3-NM-gliders.db.txt"
-        }
-        response {
-            htmlDocument { body { findFirst { text } } }
-        }
-    }
+    // val output = skrape(HttpFetcher) {
+    //     request {
+    //         url = "https://raw.githubusercontent.com/jedlimlx/gliderdb-reader/main/src/assets/R1-C3-NM-gliders.db.txt"
+    //     }
+    //     response {
+    //         htmlDocument { body { findFirst { text } } }
+    //     }
+    // }
     
-    val gliderdb = GliderDB(output)
-    println(gliderdb.searchByRule(HROTGenerations("/2/3")..HROTGenerations("012345678/2345678/3")).map {
-        "x = 0, y = 0, rule = ${it.ruleRange!!.first}\n${it.canonPhase}"
-    }.joinToString("\n\n"))
+    // val gliderdb = GliderDB(output)
+    // println(gliderdb.searchByRule(HROTGenerations("/2/3")..HROTGenerations("012345678/2345678/3")).map {
+    //     "x = 0, y = 0, rule = ${it.ruleRange!!.first}\n${it.canonPhase}"
+    // }.joinToString("\n\n"))
+
+    val search = CFind(
+        HROT("R2,C2,S2,B3,NA"), 2, 1, 9, verbosity = 1, maxQueueSize = 1 shl 19,
+        searchStrategy = SearchStrategy.HYBRID_BFS, symmetry = ShipSymmetry.ASYMMETRIC,
+        minDeepeningIncrement = 5, numThreads = 2, partialFrequency = 1000, lookaheadDepth = 1
+    )
+    search.search()
 }

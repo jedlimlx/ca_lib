@@ -135,34 +135,85 @@ class CFind(
         } else -1
     }
 
-    private val temp: Map<Int, Coordinate> = neighbourhood[0].map { it.x }.toSet().sorted().map { index ->
-        Pair(index, neighbourhood[0].filter { it.x == index }.minBy { it.y })
-    }.toMap()
-    val combinedBC: List<Coordinate> = (temp.keys.min() .. temp.keys.max() step spacing).map {
-        if (it in temp) {
-            if (it > temp.keys.min() && it < temp.keys.max()) {
-                if (it < baseCoordinates.last().x) {
-                    var i = 0
-                    while((it - ++i) !in temp) continue
-                    if (temp[it - i]!!.y < temp[it]!!.y) return@map Coordinate(it, temp[it - i]!!.y)
-                    else return@map temp[it]!!
-                } else {
-                    var i = 0
-                    while((it + ++i) !in temp) continue
-                    if (temp[it + i]!!.y < temp[it]!!.y) return@map Coordinate(it, temp[it + i]!!.y)
-                    else return@map temp[it]!!
-                }
+    // private val temp: Map<Int, Coordinate> = neighbourhood[0].map { it.x }.toSet().sorted().map { index ->
+    //     Pair(index, neighbourhood[0].filter { it.x == index }.minBy { it.y })
+    // }.toMap()
+    // val combinedBC: List<Coordinate> = (temp.keys.min() .. temp.keys.max() step spacing).map {
+    //     if (it in temp) {
+    //         if (it > temp.keys.min() && it < temp.keys.max()) {
+    //             if (it < baseCoordinates.last().x) {
+    //                 var i = 0
+    //                 while((it - ++i) !in temp) continue
+    //                 if (temp[it - i]!!.y < temp[it]!!.y) return@map Coordinate(it, temp[it - i]!!.y)
+    //                 else return@map temp[it]!!
+    //             } else {
+    //                 var i = 0
+    //                 while((it + ++i) !in temp) continue
+    //                 if (temp[it + i]!!.y < temp[it]!!.y) return@map Coordinate(it, temp[it + i]!!.y)
+    //                 else return@map temp[it]!!
+    //             }
+    //         }
+    //     } else {  // TODO properly handle cases where temp[it + 1] or temp[it - 1] doesn't exist
+    //         if (it < baseCoordinates.last().x) return@map Coordinate(it, temp[it - 1]!!.y)
+    //         else return@map Coordinate(it, temp[it + 1]!!.y)
+    //     }
+
+    //     temp[it]!!
+    // }
+    val leftBC: List<Coordinate> = run {
+        val minX = neighbourhood[0].minBy { it.x }
+        val maxX = baseCoordinates.last()
+
+        // Compute all of the successive minimums in the neighbourhood
+        var minY = Int.MAX_VALUE
+        val minimums = arrayListOf<Coordinate>()
+        for (x in minX.x .. maxX.x) {
+            val coordinate = neighbourhood[0].filter { it.x == x }.minBy { it.y }
+            if (coordinate.y <= minY) {
+                minimums.add(coordinate)
+                minY = coordinate.y
             }
-        } else {  // TODO properly handle cases where temp[it + 1] or temp[it - 1] doesn't exist
-            if (it < baseCoordinates.last().x) return@map Coordinate(it, temp[it - 1]!!.y)
-            else return@map Coordinate(it, temp[it + 1]!!.y)
         }
 
-        temp[it]!!
-    }
-    val leftBC: List<Coordinate> = combinedBC.filter { it.x < baseCoordinates.last().x }.reversed()
-    val rightBC: List<Coordinate> = combinedBC.filter { it.x > baseCoordinates.last().x }.reversed()
+        // Pad everything else out
+        var count = 0
+        val BCs = arrayListOf<Coordinate>()
+        for (x in minX.x .. maxX.x-1) {
+            BCs.add(Coordinate(x, minimums[count].y))
+            if (minimums.size > count+1 && minimums[count+1].x == x)
+                count++
+        }
 
+        BCs
+    }
+
+    val rightBC: List<Coordinate> = run {
+        val minX = baseCoordinates.last()
+        val maxX = neighbourhood[0].maxBy { it.x }
+
+        // Compute all of the successive minimums in the neighbourhood
+        var minY = Int.MAX_VALUE
+        val minimums = arrayListOf<Coordinate>()
+        for (x in (minX.x .. maxX.x).reversed()) {
+            val coordinate = neighbourhood[0].filter { it.x == x }.minBy { it.y }
+            if (coordinate.y <= minY) {
+                minimums.add(coordinate)
+                minY = coordinate.y
+            }
+        }
+
+        // Pad everything else out
+        var count = 0
+        val BCs = arrayListOf<Coordinate>()
+        for (x in (minX.x+1 .. maxX.x).reversed()) {
+            BCs.add(Coordinate(x, minimums[count].y))
+            if (minimums.size > count+1 && minimums[count+1].x == x)
+                count++
+        }
+
+        BCs.reversed()
+    }
+    
     val bcDepth: Int = if (rightBC.isNotEmpty()) rightBC.groupBy { it.y }.map { (_, lst) -> lst.size }.max() else -1
 
     // Pre-computing the respective powers of the different coordinates in the neighbour
@@ -255,7 +306,7 @@ class CFind(
 
     val additionalDepth: Int = when (indices[0].indexOf(indices[0].min())) {
         0 -> neighbourhood[0].filter { it.y == baseCoordinates[0].y + 1 }.maxOf{ it.x } + 1 - baseCoordinates.last().x
-        indices[0].size - 1 -> baseCoordinates.last().x - 1
+        indices[0].size - 1 -> neighbourhood[0].filter { it.y == 0 }.maxOf{ it.x } + 1 - baseCoordinates.last().x
         else -> -1
     }
     val maxWidth: Int = widthsByHeight.slice(0 .. this.lookaheadDepth).maxOf { it }
@@ -396,7 +447,6 @@ class CFind(
         println((bold("Base Coordinates: ") + "$baseCoordinates"), verbosity = 1)
         println((bold("Base Coordinate Map: ") + "${baseCoordinateMap.toList()}"), verbosity = 1)
         println((bold("Continuous Base Coordinates: ") + "${reversedBaseCoordinate.toList()}"), verbosity = 1)
-        println((bold("Additional Depth (for lookahead): ") + "$additionalDepth"), verbosity = 1)
 
         println(brightRed(bold("\nLattice\n----------------")), verbosity = 1)
         println((bold("Basis Vectors: ") + "${basisVectors.first} / ${basisVectors.second}"), verbosity = 1)
@@ -410,6 +460,7 @@ class CFind(
         println((bold("Maximum Lookahead Depth: ") + "$maxLookaheadDepth"), verbosity = 1)
         println((bold("Successor Lookahead: ") + "$successorLookaheadDepth / $successorLookahead"), verbosity = 1)
         println((bold("Approximate Lookahead: ") + "$approximateLookahead"), verbosity = 1)
+        println((bold("Additional Depth (for lookahead): ") + "$additionalDepth"), verbosity = 1)
         println((bold("Lookahead Depth: ") + "$lookaheadDepth"), verbosity = 1)
         println(
             (
@@ -887,7 +938,6 @@ class CFind(
             power *= rule.numStates
 
             key += rows[coordinate, 1, row, depth] * power
-
             return key
         }
 
@@ -1139,7 +1189,7 @@ class CFind(
         )
 
         var maxDepth = 0  // Keeping track of maximum depth
-        var depthToCheck = width  // Ignore all depths beyond this depth
+        var depthToCheck = Int.MAX_VALUE - 1000  // Ignore all depths beyond this depth
         while (stack.isNotEmpty()) {
             val node = stack.removeLast()
             maxDepth = maxOf(maxDepth, node.depth)
@@ -1150,7 +1200,7 @@ class CFind(
                 (period.mod(2) == 0 && rows.last().phase.mod(period) == 1)
             ) {
                 if (depthToCheck + additionalDepth < node.depth) continue
-                else depthToCheck = width
+                else depthToCheck = Int.MAX_VALUE - 1000
 
                 // Run the approximate lookahead
                 if (
