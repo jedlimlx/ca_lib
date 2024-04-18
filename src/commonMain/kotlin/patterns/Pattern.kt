@@ -3,7 +3,7 @@ package patterns
 import rules.Rule
 
 /**
- * Represent a special pattern in cellular automaton (also it is meant to be immutable)
+ * Represents a special pattern in cellular automaton
  */
 abstract class Pattern {
     /**

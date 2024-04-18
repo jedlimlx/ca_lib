@@ -3,6 +3,7 @@ package rules.hrot
 import hexagonal
 import moore
 import rules.RuleFamily
+import rules.RuleRange
 import rules.ruleloader.builders.ruletable
 import simulation.Coordinate
 import vonNeumann
@@ -71,7 +72,7 @@ class HROT : BaseHROT {
      * Constructs a HROT rule with the provided rulestring
      * @param rulestring The rulestring of the HROT rule
      */
-    constructor(rulestring: String = "B3/S23") {
+    constructor(rulestring: String = "R2,C2,S6-9,B7-8,NM") {
         when {
             rulestring.matches(regex[0]) -> {
                 val range = rulestring.split(",")[0].substring(1).toInt()
@@ -226,6 +227,31 @@ class HROT : BaseHROT {
                 randomTransition(minRule.survival, maxRule.survival, random.nextInt())
             )
         }
+    }
+
+    override fun intersect(ruleRange1: RuleRange, ruleRange2: RuleRange): RuleRange? {
+        require(
+            ruleRange1.minRule is HROT &&
+            ruleRange1.maxRule is HROT &&
+            ruleRange2.minRule is HROT &&
+            ruleRange2.maxRule is HROT
+        ) { "minRule and maxRule must be an instances of HROT" }
+
+        val (newMinBirth, newMaxBirth) = intersectTransitionRange(
+            ruleRange1.minRule.birth,
+            ruleRange1.maxRule.birth,
+            ruleRange2.minRule.birth,
+            ruleRange2.maxRule.birth
+        ) ?: return null
+        val (newMinSurvival, newMaxSurvival) = intersectTransitionRange(
+            ruleRange1.minRule.survival,
+            ruleRange1.maxRule.survival,
+            ruleRange2.minRule.survival,
+            ruleRange2.maxRule.survival
+        )?: return null
+
+        return HROT(newMinBirth, newMinSurvival, neighbourhood[0], weights) .. 
+            HROT(newMaxBirth, newMaxSurvival, neighbourhood[0], weights)
     }
 
     override fun generateRuletable() = ruletable {

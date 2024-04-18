@@ -1,6 +1,7 @@
 package rules.nontotalistic.rules
 
 import rules.RuleFamily
+import rules.RuleRange
 import rules.nontotalistic.transitions.DoubleLetterTransitions
 import rules.nontotalistic.transitions.INTTransitions
 import rules.nontotalistic.transitions.SingleLetterTransitions
@@ -34,7 +35,7 @@ class INT : BaseINT {
         neighbourhood = arrayOf(INT_NEIGHBOURHOODS[neighbourhoodString]!!.neighbourhood)
     }
 
-    constructor(rulestring: String) {
+    constructor(rulestring: String = "B2n3/S23-q") {
         // Get the neighbourhood string
         neighbourhoodString = Regex("/?[Nn]?(${INT_NEIGHBOURHOODS.keys.map {
             listOf(it.lowercase(), it.uppercase())
@@ -145,6 +146,10 @@ class INT : BaseINT {
         }
     }
 
+    override fun intersect(ruleRange1: RuleRange, ruleRange2: RuleRange): RuleRange? {
+        TODO("Not yet implemented")
+    }
+    
     override fun generateRuletable() = ruletable {
         name = rulestring.replace("/", "_")
         table(neighbourhood = neighbourhood[0], background = background) {
