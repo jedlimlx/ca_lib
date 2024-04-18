@@ -310,8 +310,6 @@ class HROT : BaseHROT {
 
             return state
         } else {
-            return 0b11
-            
             var live = 0
             val unknowns = HashMap<Int, Int>()
             cells.forEachIndexed { index, it ->

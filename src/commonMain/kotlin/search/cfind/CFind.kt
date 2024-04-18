@@ -183,7 +183,7 @@ class CFind(
             BCs.add(Coordinate(x, minimums[count].y))
         }
 
-        BCs
+        BCs.reversed()
     }
 
     val rightBC: List<Coordinate> = run {
