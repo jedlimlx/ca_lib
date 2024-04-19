@@ -3,6 +3,7 @@ package rules.hrot
 import hexagonal
 import moore
 import rules.RuleFamily
+import rules.RuleRange
 import rules.ruleloader.builders.ruletable
 import simulation.Coordinate
 import vonNeumann
@@ -71,7 +72,7 @@ class HROT : BaseHROT {
      * Constructs a HROT rule with the provided rulestring
      * @param rulestring The rulestring of the HROT rule
      */
-    constructor(rulestring: String = "B3/S23") {
+    constructor(rulestring: String = "R2,C2,S6-9,B7-8,NM") {
         when {
             rulestring.matches(regex[0]) -> {
                 val range = rulestring.split(",")[0].substring(1).toInt()
@@ -228,6 +229,31 @@ class HROT : BaseHROT {
         }
     }
 
+    override fun intersect(ruleRange1: RuleRange, ruleRange2: RuleRange): RuleRange? {
+        require(
+            ruleRange1.minRule is HROT &&
+            ruleRange1.maxRule is HROT &&
+            ruleRange2.minRule is HROT &&
+            ruleRange2.maxRule is HROT
+        ) { "minRule and maxRule must be an instances of HROT" }
+
+        val (newMinBirth, newMaxBirth) = intersectTransitionRange(
+            ruleRange1.minRule.birth,
+            ruleRange1.maxRule.birth,
+            ruleRange2.minRule.birth,
+            ruleRange2.maxRule.birth
+        ) ?: return null
+        val (newMinSurvival, newMaxSurvival) = intersectTransitionRange(
+            ruleRange1.minRule.survival,
+            ruleRange1.maxRule.survival,
+            ruleRange2.minRule.survival,
+            ruleRange2.maxRule.survival
+        )?: return null
+
+        return HROT(newMinBirth, newMinSurvival, neighbourhood[0], weights) .. 
+            HROT(newMaxBirth, newMaxSurvival, neighbourhood[0], weights)
+    }
+
     override fun generateRuletable() = ruletable {
         name = rulestring.replace(Regex("[,@/]"), "_")
         table(neighbourhood = neighbourhood[0], background = background) {
@@ -264,24 +290,52 @@ class HROT : BaseHROT {
     }
 
     override fun transitionFuncWithUnknowns(cells: IntArray, cellState: Int, generation: Int, coordinate: Coordinate): Int {
-        var unknowns = 0
-        var live = 0
-        cells.forEachIndexed { index, it ->
-            if (it == -1) unknowns += (weights?.get(index) ?: 1)
-            else if (it == 1) live += (weights?.get(index) ?: 1)
+        if (weights == null) {
+            var unknowns = 0
+            var live = 0
+            cells.forEachIndexed { index, it ->
+                if (it == -1) unknowns += (weights?.get(index) ?: 1)
+                else if (it == 1) live += (weights?.get(index) ?: 1)
+            }
+
+            var count = 0
+            for (i in live..(live+unknowns)) {
+                if (if (cellState == 1) i in survival else i in birth)
+                    count++
+            }
+
+            var state = 0b00
+            if (count != 0) state += 0b10
+            if (count < unknowns + 1) state += 0b01
+
+            return state
+        } else {
+            var live = 0
+            val unknowns = HashMap<Int, Int>()
+            cells.forEachIndexed { index, it ->
+                if (it == -1) {
+                    if (weights[index] !in unknowns) unknowns[weights[index]] = 1
+                    else unknowns[weights[index]] = unknowns[weights[index]]!! + 1
+                } else if (it == 1) live += weights[index]
+            }
+
+            var count = 0
+            var dead = false
+            val array = getAllSubsetSums(unknowns)
+            for (i in array.indices) {
+                if (array[i] == 1) {
+                    if (if (cellState == 1) (live + array[i]) in survival else (live + array[i]) in birth) {
+                        count++
+                    } else dead = true
+                }
+            }
+
+            var state = 0b00
+            if (count != 0) state += 0b10
+            if (dead) state += 0b01
+
+            return state
         }
-
-        var count = 0
-        for (i in live..(live+unknowns)) {
-            if (if (cellState == 1) i in survival else i in birth)
-                count++
-        }
-
-        var state = 0b00
-        if (count != 0) state += 0b10
-        if (count < unknowns + 1) state += 0b01
-
-        return state
     }
 
     private fun newRuleWithTransitions(birth: Iterable<Int>, survival: Iterable<Int>): HROT =

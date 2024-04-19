@@ -78,6 +78,11 @@ class Oscillator(period: Int, phases: Array<Grid>) : Spaceship(0, 0, period, pha
     override val heat by lazy { super.heat }
 
     /**
+     * Computes the smallest phase of the spaceship by population
+     */
+    override val smallestPhase by lazy { super.smallestPhase }
+
+    /**
      * The population of the oscillator in each generation
      */
     override val populationList by lazy { super.populationList }

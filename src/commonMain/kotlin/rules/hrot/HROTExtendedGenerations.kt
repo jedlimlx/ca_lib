@@ -3,6 +3,7 @@ package rules.hrot
 import hexagonal
 import moore
 import rules.RuleFamily
+import rules.RuleRange
 import rules.canoniseExtendedGenerations
 import rules.readExtendedGenerations
 import rules.ruleloader.builders.ruletable
@@ -283,6 +284,31 @@ class HROTExtendedGenerations : BaseHROT {
         }
     }
 
+    override fun intersect(ruleRange1: RuleRange, ruleRange2: RuleRange): RuleRange? {
+        require(
+            ruleRange1.minRule is HROTExtendedGenerations &&
+            ruleRange1.maxRule is HROTExtendedGenerations &&
+            ruleRange2.minRule is HROTExtendedGenerations &&
+            ruleRange2.maxRule is HROTExtendedGenerations
+        ) { "minRule and maxRule must be an instances of HROTExtendedGenerations" }
+
+        val (newMinBirth, newMaxBirth) = intersectTransitionRange(
+            ruleRange1.minRule.birth,
+            ruleRange1.maxRule.birth,
+            ruleRange2.minRule.birth,
+            ruleRange2.maxRule.birth
+        ) ?: return null
+        val (newMinSurvival, newMaxSurvival) = intersectTransitionRange(
+            ruleRange1.minRule.survival,
+            ruleRange1.maxRule.survival,
+            ruleRange2.minRule.survival,
+            ruleRange2.maxRule.survival
+        )?: return null
+
+        return newRuleWithTransitions(newMinBirth, newMinSurvival) .. 
+            newRuleWithTransitions(newMaxBirth, newMaxSurvival)
+    }
+
     override fun generateRuletable() = ruletable {
         name = rulestring.replace(Regex("[,@/]"), "_")
         table(numStates, neighbourhood[0], background) {
@@ -327,7 +353,27 @@ class HROTExtendedGenerations : BaseHROT {
     }
 
     override fun transitionFuncWithUnknowns(cells: IntArray, cellState: Int, generation: Int, coordinate: Coordinate): Int {
-        TODO("Not implemented yet")
+        var unknowns = 0
+        var live = 0
+        cells.forEachIndexed { index, it ->
+            if (it == -1) unknowns += (weights?.get(index) ?: 1)
+            else if (it in activeStates) live += (weights?.get(index) ?: 1)
+        }
+
+        var count = 0
+        for (i in live..(live+unknowns)) {
+            if (if (cellState in activeStates) i in survival else i in birth)
+                count++
+        }
+
+        var state = 0b00
+        if (count != 0) {
+            if (state == 0) state += 0b10
+            else state += 1 shl cellState
+        }
+        if (count < unknowns + 1) state += 1 shl ((cellState + 1).mod(numStates))
+
+        return state
     }
 
     private fun newRuleWithTransitions(birth: Iterable<Int>, survival: Iterable<Int>): HROTExtendedGenerations =

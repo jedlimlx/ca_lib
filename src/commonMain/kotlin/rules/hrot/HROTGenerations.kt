@@ -3,6 +3,7 @@ package rules.hrot
 import hexagonal
 import moore
 import rules.RuleFamily
+import rules.RuleRange
 import rules.ruleloader.builders.ruletable
 import simulation.Coordinate
 import vonNeumann
@@ -290,6 +291,31 @@ class HROTGenerations : BaseHROT {
                 randomTransition(minRule.survival, maxRule.survival, random.nextInt())
             )
         }
+    }
+
+    override fun intersect(ruleRange1: RuleRange, ruleRange2: RuleRange): RuleRange? {
+        require(
+            ruleRange1.minRule is HROTGenerations &&
+            ruleRange1.maxRule is HROTGenerations &&
+            ruleRange2.minRule is HROTGenerations &&
+            ruleRange2.maxRule is HROTGenerations
+        ) { "minRule and maxRule must be an instances of HROTGenerations" }
+
+        val (newMinBirth, newMaxBirth) = intersectTransitionRange(
+            ruleRange1.minRule.birth,
+            ruleRange1.maxRule.birth,
+            ruleRange2.minRule.birth,
+            ruleRange2.maxRule.birth
+        ) ?: return null
+        val (newMinSurvival, newMaxSurvival) = intersectTransitionRange(
+            ruleRange1.minRule.survival,
+            ruleRange1.maxRule.survival,
+            ruleRange2.minRule.survival,
+            ruleRange2.maxRule.survival
+        )?: return null
+
+        return HROTGenerations(newMinBirth, newMinSurvival, numStates, neighbourhood[0], weights) .. 
+            HROTGenerations(newMaxBirth, newMaxSurvival, numStates, neighbourhood[0], weights)
     }
 
     override fun generateRuletable() = ruletable {

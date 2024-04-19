@@ -27,5 +27,12 @@ class RuleRange(val minRule: RuleFamily, val maxRule: RuleFamily): Sequence<Rule
      */
     operator fun contains(ruleFamily: RuleFamily): Boolean = ruleFamily.between(minRule, maxRule)
 
+    /**
+     * Computes the intersection between 2 rule ranges
+     * @param ruleRange The other rule range to compute the intersection with
+     * @return Returns the intersection between the 2 rule ranges
+     */
+    infix fun intersect(ruleRange: RuleRange): RuleRange? = minRule.intersect(this, ruleRange)
+
     override fun iterator(): Iterator<RuleFamily> = enumerationIterator
 }

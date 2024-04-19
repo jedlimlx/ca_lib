@@ -2,9 +2,11 @@ package rules
 
 import rules.hrot.HROT
 import rules.hrot.HROTGenerations
+import rules.hrot.HROTExtendedGenerations
+import rules.nontotalistic.rules.INT
 import simulation.Grid
 
-private val RULE_FAMILIES = listOf(HROT(), HROTGenerations())
+private val RULE_FAMILIES = listOf(HROT(), HROTGenerations(), HROTExtendedGenerations(), INT())
 
 /**
  * Creates a rule given its rulestring

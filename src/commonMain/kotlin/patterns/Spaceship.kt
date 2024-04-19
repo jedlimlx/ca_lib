@@ -1,10 +1,43 @@
 package patterns
 
 import rules.Rule
+import rules.RuleFamily
+import rules.fromRulestring
 import rules.ruleRange
 import simulation.Coordinate
 import simulation.Grid
+import simulation.DenseGrid
+import simulation.SparseGrid
+import simulation.Rotation
+import simulation.Flip
 import kotlin.math.abs
+
+/**
+ * Constructs a spaceship based on the GliderDB entry
+ */
+fun fromGliderDBEntry(entry: String): Spaceship {
+    val tokens = entry.split(":")
+    
+    val period = tokens[4].toInt()
+    val dx = tokens[5].toInt()
+    val dy = tokens[6].toInt()
+
+    val grid = SparseGrid(tokens.last(), rule=fromRulestring(tokens[2]))
+    val phases = Array(period+1) { grid.step(1).deepCopy() }
+
+    val spaceship = Spaceship(period, dx, dy, phases)
+    // TODO fix this
+    // require((spaceship.ruleRange!!.first as RuleFamily).rulestring == tokens[2]) { 
+    //     "Incorrect minimum rule! Got ${tokens[2]} instead of ${(spaceship.ruleRange!!.first as RuleFamily).rulestring} for ${tokens.last()}" 
+    // }
+    // require((spaceship.ruleRange!!.second as RuleFamily).rulestring == tokens[3]) { 
+    //     "Incorrect maximum rule! Got ${tokens[3]} instead of ${(spaceship.ruleRange!!.second as RuleFamily).rulestring} for ${tokens.last()}" 
+    // }
+
+    spaceship.name = tokens[0]
+    spaceship.discoverer = tokens[1]
+    return spaceship
+}
 
 /**
  * Represents a spaceship in a cellular automaton
@@ -78,6 +111,37 @@ open class Spaceship(val dx: Int, val dy: Int, val period: Int, val phases: Arra
 
         result
     }
+    
+    /**
+     * Computes the smallest phase of the spaceship by population
+     * TODO figure out the correct way of finding the canonical phase for gliderdb
+     */
+    open val smallestPhase by lazy { phases.minBy { it.population } }
+
+    /**
+     * Computes the canonical phase of the spaceship, defined as when the spaceship is moving to the north-west.
+     * (only works if the spaceship operates in an isotropic rule)
+     */
+    open val canonPhase by lazy {
+        var output = smallestPhase.deepCopy()
+
+        // Orienting the spaceship to go in the north-west direction
+        var dx = dx
+        var dy = dy
+
+        if (dy < 0) {
+            dy = -dy
+            output.flip(Flip.VERTICAL)
+        }
+
+        if (dx < 0) {
+            dx = -dx
+            output.flip(Flip.HORIZONTAL)
+        }
+        if (dy < dx) output.rotate(Rotation.CLOCKWISE)
+        
+        output
+    }
 
     /**
      * The population of the spaceship in each generation
@@ -89,14 +153,29 @@ open class Spaceship(val dx: Int, val dy: Int, val period: Int, val phases: Arra
      */
     open val populationListByState by lazy { phases.map { it.populationByState } }
 
+    /**
+     * Outputs the GliderDB entry for this ship. The format is <name>:<discoverer>, <year>:<minRule>:<maxRule>:<x>:<y>:<dx>:<dy>:
+     */
+    open val gliderdbEntry by lazy {
+        canonPhase.updateBounds()
+        val size = canonPhase.bounds.endInclusive - canonPhase.bounds.start
+        "$name:$discoverer:${ruleRange!!.first}:${ruleRange!!.second}:$period:${size.x}:${size.y}:${minOf(abs(dx),abs(dy))}:${maxOf(abs(dx),abs(dy))}:$canonPhase"
+    }
+
     override val information: Map<String, String> by lazy {
-        mapOf(
+        val map = hashMapOf(
             "rule" to rule.toString(),
             "speed" to speed,
             "direction" to direction,
             "heat_stats" to "${heat.minOrNull()!!} | ${heat.maxOrNull()!!} | ${heat.average()}",
             "pop_stats" to "${populationList.minOrNull()!!} | ${populationList.maxOrNull()!!} | ${populationList.average()}"
         )
+
+        // Optional outputs
+        if (name != "") map["name"] = name
+        if (discoverer != "") map["discoverer"] = discoverer
+
+        map
     }
 
     override val ruleRange: Pair<Rule, Rule>? by lazy {
@@ -114,7 +193,7 @@ open class Spaceship(val dx: Int, val dy: Int, val period: Int, val phases: Arra
 
     /**
      * Checks if 2 spaceships are the same
-     * @param
+     * @param The other spaceship
      * @return Returns true if the spaceships are the same, false otherwise
      */
     override fun equals(other: Any?): Boolean {

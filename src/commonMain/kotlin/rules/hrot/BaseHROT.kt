@@ -105,6 +105,76 @@ abstract class BaseHROT : RuleFamily() {
         return new
     }
 
+    /**
+     * Generates a range of possible transitions that is the intersection of the 2 transition ranges.
+     * Returns null if there is no intersection.
+     */
+    protected fun intersectTransitionRange(
+        min: Iterable<Int>, max: Iterable<Int>, 
+        min2: Iterable<Int>, max2: Iterable<Int>
+    ): Pair<Iterable<Int>, Iterable<Int>>? {
+        // Initialise the 2 arrays that will store the transitions
+        val transitionArray1 = IntArray((weights?.sum() ?: neighbourhood[0].size) + 1) { 0 }
+        min.forEach { transitionArray1[it] = 1 }
+        max.forEach { if (transitionArray1[it] == 0) transitionArray1[it] = -1 }
+        
+        val transitionArray2 = IntArray((weights?.sum() ?: neighbourhood[0].size) + 1) { 0 }
+        min2.forEach { transitionArray2[it] = 1 }
+        max2.forEach { if (transitionArray2[it] == 0) transitionArray2[it] = -1 }
+
+        // Compute their intersection
+        var quit = false
+        val newTransitionArray = IntArray((weights?.sum() ?: neighbourhood[0].size) + 1) {
+            if (
+                transitionArray1[it] != transitionArray2[it] && 
+                transitionArray1[it] != -1 && transitionArray2[it] != -1
+            ) quit = true
+
+            maxOf(transitionArray1[it], transitionArray2[it])
+         }
+
+         // Check if the transitions outputted are actually valid
+         if (!quit) {
+            // Decode the array back into transitions
+            val newMin = hashSetOf<Int>()
+            val newMax = hashSetOf<Int>()
+            newTransitionArray.forEachIndexed { index, it -> 
+                if (it == 1) {
+                    newMin.add(index)
+                    newMax.add(index)
+                } else if (it == -1) {
+                    newMax.add(index)
+                }
+            }
+
+            return Pair(newMin, newMax)
+         } 
+         
+         return null
+    }
+
+    fun getAllSubsetSums(weights: MutableMap<Int, Int>): IntArray {
+        if (weights.isEmpty()) return intArrayOf()
+
+        val maxCount = weights.map { (key, value) -> key * value }.count()
+
+        val weight = weights.keys.max()
+        val numWeights = weights[weight]!!
+        weights.remove(weight)
+        
+        val old = getAllSubsetSums(weights)
+        val newArray = IntArray(maxCount) { 0 }
+
+        for (j in 1 .. numWeights) old[j*weight] = 1
+        for (i in old.indices) {
+            if (old[i] == 1) {
+                for (j in 1 .. numWeights) old[i + j*weight] = 1
+            }
+        }
+
+        return newArray
+    }
+
     companion object {
         const val transitionRegex = "(((\\d,(?=\\d))|(\\d-(?=\\d))|\\d)+)?"
         const val neighbourhoodRegex = "(,N(@([A-Fa-f0-9]+)?[HL]?|W[A-Fa-f0-9]+[HL]?|[$NEIGHBOURHOOD_SYMBOLS]))?"

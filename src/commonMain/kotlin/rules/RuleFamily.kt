@@ -40,6 +40,7 @@ abstract class RuleFamily : Rule() {
 
     /**
      * The range of rules in which the provided transitions will occur
+     * TODO why does this return a pair instead of a RuleRange object
      * @return Returns a pair of rules, the first is the minimum rule and the second is the maximum rule
      */
     internal abstract fun ruleRange(transitionsToSatisfy: Iterable<List<Int>>): Pair<RuleFamily, RuleFamily>
@@ -59,6 +60,14 @@ abstract class RuleFamily : Rule() {
      * @return Returns an infinite sequence of random rules
      */
     internal abstract fun random(minRule: RuleFamily, maxRule: RuleFamily, seed: Int? = null): Sequence<RuleFamily>
+
+    /**
+     * Computes the intersection between [ruleRange1] and [ruleRange2]
+     * @param ruleRange1 One rule range to use in the intersection
+     * @param ruleRange2 The other rule range to use in the intersection
+     * @return A new rule range containining the rules in both [ruleRange1] and [ruleRange2]. Returns null if no intersection.
+     */
+    internal abstract fun intersect(ruleRange1: RuleRange, ruleRange2: RuleRange): RuleRange?
 
     /**
      * Outputs a sequence containing all rules within the specified rule range
