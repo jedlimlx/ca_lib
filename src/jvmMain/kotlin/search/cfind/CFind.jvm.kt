@@ -330,7 +330,7 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
                 if ((timeSource.markNow() - startTime).inWholeMilliseconds > (backups+1)*cfind.backupFrequency*1000) {
                     anyProcessing.acquire()
                     if ((timeSource.markNow() - startTime).inWholeMilliseconds > (backups+1)*cfind.backupFrequency*1000)
-                        backupState("dump_${backups++}.txt", cfind.saveState())
+                        backupState("${cfind.backupName}_${backups++}.txt", cfind.saveState())
                     anyProcessing.release()
                 }
             }

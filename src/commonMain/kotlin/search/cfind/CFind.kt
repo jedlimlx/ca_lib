@@ -32,7 +32,9 @@ class CFind(
     val searchStrategy: SearchStrategy = SearchStrategy.PRIORITY_QUEUE,
     val numShips: Int = Int.MAX_VALUE,
     val partialFrequency: Int = 1000,
-    val backupFrequency: Int = 10,
+    val backupFrequency: Int = 60*15,
+    val backupName: String = "dump",
+    val transpositionTableSize: Int = 1 shl 20,
     val numThreads: Int = 8,
     val stdin: Boolean = false,
     verbosity: Int = 0
@@ -231,7 +233,8 @@ class CFind(
     val neighbourhoodWithoutBg: HashMap<Coordinate, List<Pair<Coordinate, Int>>> = hashMapOf()
 
     // Initialising the transposition table
-    val equivalentStates: LRUCache<Int, IntArray> = LRUCache(1 shl 25)
+    @OptIn(ExperimentalUnsignedTypes::class)
+    val equivalentStates: LRUCache<UShort, UShortArray> = LRUCache(transpositionTableSize)
 
     // Computing the rows that should be used in computing the next state
     val indices = Array(period) { phase ->
@@ -607,17 +610,12 @@ class CFind(
 
                 // Check how much time has past and see if we need to write to a backup
                 if ((timeSource.markNow() - startTime).inWholeMilliseconds > (backups+1)*backupFrequency*1000) {
-                    backupState("dump_${backups++}.txt", saveState())
+                    backupState("${backupName}_${backups++}.txt", saveState())
                 }
 
                 // DFS round runs for a certain deepening increment
                 val message = "Beginning depth-first search round, queue size $queueSize"
                 println(bold("\n$message"))
-
-                // Check how much time has past and see if we need to write to a backup
-                if ((timeSource.markNow() - startTime).inWholeMilliseconds > (backups+1)*backupFrequency*1000) {
-                    backupState("dump_${backups++}.txt", saveState())
-                }
 
                 count = 0
                 clearPartial = false
@@ -705,6 +703,11 @@ class CFind(
                 val averageDeepening = num / maxQueueSize.toDouble()
                 println(bold("$message -> $queueSize, average deepening " +
                         "${(100 * averageDeepening).toInt() / 100.0}"))
+
+                // Check how much time has past and see if we need to write to a backup
+                if ((timeSource.markNow() - startTime).inWholeMilliseconds > (backups+1)*backupFrequency*1000) {
+                    backupState("${backupName}_${backups++}.txt", saveState())
+                }
             }
         } else {
             priorityQueue.add(currentRow)
@@ -809,7 +812,7 @@ class CFind(
 
                     // Check how much time has past and see if we need to write to a backup
                     if ((timeSource.markNow() - startTime).inWholeMilliseconds > (backups+1)*backupFrequency*1000) {
-                        backupState("dump_${backups++}.txt", saveState())
+                        backupState("${backupName}_${backups++}.txt", saveState())
                     }
                 }
             }
@@ -941,13 +944,14 @@ class CFind(
     /**
      * Checks if the search has arrived at an equivalent state.
      */
+    @OptIn(ExperimentalUnsignedTypes::class)
     fun checkEquivalentState(row: Row): Boolean {
         val rows = row.getAllPredecessors((height - 1) * period)
-        if (rows.hashCode() in equivalentStates.keys) {
+        if (rows.hashCode().toUShort() in equivalentStates.keys) {
             var equivalent = true
-            val state = equivalentStates.get(rows.hashCode())!!
+            val state = equivalentStates.get(rows.hashCode().toUShort())!!
             for (i in state.indices) {
-                if (state[i] != rows[i].hashCode()) {
+                if (state[i] != rows[i].hashCode().toUShort()) {
                     equivalent = false
                     break
                 }
@@ -955,7 +959,7 @@ class CFind(
 
             if (!equivalent) return false
         } else {
-            equivalentStates.put(rows.hashCode(), rows.map { it.hashCode() }.toIntArray())
+            equivalentStates.put(rows.hashCode().toUShort(), rows.map { it.hashCode().toUShort() }.toUShortArray())
             return false
         }
 

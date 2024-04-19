@@ -13,7 +13,7 @@ import kotlin.time.TimeSource
 
 @Ignore
 class Test {
-    val searchStrategies = listOf(SearchStrategy.HYBRID_BFS, SearchStrategy.PRIORITY_QUEUE)
+    private val searchStrategies = listOf(SearchStrategy.HYBRID_BFS, SearchStrategy.PRIORITY_QUEUE)
 
     @Test
     fun factorioTest() {

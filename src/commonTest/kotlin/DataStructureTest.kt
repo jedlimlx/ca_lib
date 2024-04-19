@@ -1,6 +1,7 @@
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class DataStructureTest {
     @Test
@@ -37,5 +38,6 @@ class DataStructureTest {
         }
 
         lruCache.forEach { (key, value) -> assertEquals(key.toString(), value) }
+        assertTrue { lruCache.size <= lruCache.maxSize }
     }
 }

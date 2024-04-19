@@ -45,8 +45,10 @@ class LRUCache<K, V>(
             node.next!!.prev = node.prev
         } else if (node.prev != null && node.next == null) {
             tail = node.prev
+            node.prev?.next = null
         } else if (node.prev == null && node.next != null) {
             head = node.next
+            node.next?.prev = null
         }
 
         return node.value.second
