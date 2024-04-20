@@ -3,6 +3,7 @@ package search.cfind
 import com.github.ajalt.mordant.rendering.TextStyles
 import java.io.File
 import java.util.concurrent.Semaphore
+import kotlin.random.Random
 import kotlin.time.TimeSource
 
 fun processSuccessors(currentRow: Row, successors: List<Row>): List<Row> = if (currentRow.successorSequence != null) {
@@ -217,6 +218,7 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
 
                 // Decide what depth we should reach
                 val maxDepth = row.prunedDepth + cfind.minDeepeningIncrement
+                val roundStartTime = timeSource.markNow()
 
                 do {
                     // Check if stack is empty
@@ -229,12 +231,12 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
                     currentRow = stack.removeLast()
 
                     // Check if we should exit this round
-                    if (currentRow.depth == maxDepth) {
+                    if (currentRow.depth == maxDepth || (timeSource.markNow() - roundStartTime).inWholeSeconds > 60) {
                         synchronized(mutex6) { pruning *= 0.99 }
 
                         // Compute the predecessors
                         val predecessors = currentRow.getAllPredecessors(
-                            maxDepth - row.depth, deepCopy = false
+                            currentRow.depth - row.depth, deepCopy = false
                         ).reversed()
 
                         // Decide how many rows to add to the priority queue
@@ -243,7 +245,7 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
                         val maxRowsAdded = synchronized(mutex6) {
                             (cfind.maxQueueSize / (cfind.priorityQueue.size + 0.0001) * (1.0 - pruning)).toInt()
                         }
-                        for (depth in row.depth + 1..maxDepth) {
+                        for (depth in row.depth + 1..currentRow.depth) {
                             val lst = stack.filter { it.depth == depth }
                             rowsAdded += lst.size
 
@@ -253,8 +255,8 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
                             } else break
                         }
 
-                        if (finalDepth == -1) finalDepth = maxDepth
-                        val temp = currentRow.getPredecessor(maxDepth - finalDepth)!!
+                        if (finalDepth == -1) finalDepth = currentRow.depth
+                        val temp = currentRow.getPredecessor(currentRow.depth - finalDepth)!!
 
                         // Adding the successor sequence to the row
                         if (currentRow.depth > temp.depth)
@@ -293,7 +295,8 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
 
                     // Printing out the partials
                     synchronized(mutex4) {
-                        if (currentRow.depth > longestPartialSoFar) {
+                        // Insert some randomness in order to increase variety of partials shown to user
+                        if (currentRow.depth > longestPartialSoFar && Random.nextInt(1, 5) == 1) {
                             longestPartialSoFar = currentRow.depth
                             printPartials(
                                 currentRow,

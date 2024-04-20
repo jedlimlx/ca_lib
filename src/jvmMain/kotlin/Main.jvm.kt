@@ -71,8 +71,8 @@ actual fun main() {
     val search = CFind(
         HROT("R2,C2,S6-9,B7-8,NM"), 3, 2, 11, symmetry = ShipSymmetry.ODD,
         verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 1000,
-        backupName = "minibugs", backupFrequency = 600
+        backupName = "minibugs_2c3o", backupFrequency = 600
     )
-    search.loadState(File("minibugs_2c3_odd_9.txt").readText())
+    search.loadState(File("minibugs_9.txt").readText())
     search.search()
 }

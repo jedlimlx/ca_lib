@@ -138,31 +138,6 @@ class CFind(
         } else -1
     }
 
-    // private val temp: Map<Int, Coordinate> = neighbourhood[0].map { it.x }.toSet().sorted().map { index ->
-    //     Pair(index, neighbourhood[0].filter { it.x == index }.minBy { it.y })
-    // }.toMap()
-    // val combinedBC: List<Coordinate> = (temp.keys.min() .. temp.keys.max() step spacing).map {
-    //     if (it in temp) {
-    //         if (it > temp.keys.min() && it < temp.keys.max()) {
-    //             if (it < baseCoordinates.last().x) {
-    //                 var i = 0
-    //                 while((it - ++i) !in temp) continue
-    //                 if (temp[it - i]!!.y < temp[it]!!.y) return@map Coordinate(it, temp[it - i]!!.y)
-    //                 else return@map temp[it]!!
-    //             } else {
-    //                 var i = 0
-    //                 while((it + ++i) !in temp) continue
-    //                 if (temp[it + i]!!.y < temp[it]!!.y) return@map Coordinate(it, temp[it + i]!!.y)
-    //                 else return@map temp[it]!!
-    //             }
-    //         }
-    //     } else {  // TODO properly handle cases where temp[it + 1] or temp[it - 1] doesn't exist
-    //         if (it < baseCoordinates.last().x) return@map Coordinate(it, temp[it - 1]!!.y)
-    //         else return@map Coordinate(it, temp[it + 1]!!.y)
-    //     }
-
-    //     temp[it]!!
-    // }
     val leftBC: List<Coordinate> = run {
         val minX = neighbourhood[0].minBy { it.x }
         val maxX = baseCoordinates.last()
@@ -344,43 +319,74 @@ class CFind(
         pow(numEquivalentStates, widthsByHeight[it] - (if (it == 0) 1 else 0))
     }
 
-    val successorTable: Array<IntArray> = Array(
-        pow(rule.numStates, neighbourhood[0].size - baseCoordinates.size + 2)
-    ) {
-        val lst = IntArray(neighbourhood[0].size) { 0 }
+    val successorTable: Array<IntArray> = run {
+        println("Generating successor lookup table...", verbosity = 0)
 
-        // Populating the list
-        var power = 1
-        for (i in lst.indices) {
-            if (i !in baseCoordinateMap) {
-                lst[i] = getDigit(it, power, rule.numStates)
-                power *= rule.numStates
+        Array(
+            pow(rule.numStates, neighbourhood[0].size - baseCoordinates.size + 2)
+        ) {
+            val lst = IntArray(neighbourhood[0].size) { 0 }
+
+            // Populating the list
+            var power = 1
+            for (i in lst.indices) {
+                if (i !in baseCoordinateMap) {
+                    lst[i] = getDigit(it, power, rule.numStates)
+                    power *= rule.numStates
+                }
+            }
+
+            // Getting the current and new states of the cells
+            val currentState = getDigit(it, power, rule.numStates)
+            power *= rule.numStates
+
+            val newState = getDigit(it, power, rule.numStates)
+            power *= rule.numStates
+
+            // Building the inner lookup table
+            IntArray(pow(numEquivalentStates, reversedBaseCoordinate.size)) {
+                var power = 1
+                for (c in reversedBaseCoordinate) {
+                    if (c in baseCoordinates)
+                        lst[baseCoordinateMap[baseCoordinates.indexOf(c)]] = getDigit(it, power, numEquivalentStates)
+
+                    power *= numEquivalentStates
+                }
+
+                // Output will be represented in binary with the ith digit representing if state i can be used
+                var output = 0
+                for (i in 0 ..< rule.numStates) {
+                    lst[baseCoordinateMap.last()] = i
+                    if (newState == rule.transitionFunc(lst, currentState, 0, Coordinate(0, 0))) {
+                        output += pow(2, i)
+                    }
+                }
+
+                output
             }
         }
+    }
 
-        // Getting the current and new states of the cells
-        val currentState = getDigit(it, power, rule.numStates)
-        power *= rule.numStates
-
-        val newState = getDigit(it, power, rule.numStates)
-        power *= rule.numStates
-
-        // Building the inner lookup table
-        IntArray(pow(numEquivalentStates, reversedBaseCoordinate.size)) {
-            var power = 1
-            for (c in reversedBaseCoordinate) {
-                if (c in baseCoordinates)
-                    lst[baseCoordinateMap[baseCoordinates.indexOf(c)]] = getDigit(it, power, numEquivalentStates)
-
-                power *= numEquivalentStates
+    val combinedSuccessorArray: BooleanArray = run {
+        if (verbosity >= 0 && !stdin) {
+            t.cursor.move {
+                up(1)
+                startOfLine()
+                clearScreenAfterCursor()
             }
+            t.cursor.hide(showOnExit = true)
+        }
+        println("Generating approximate lookahead lookup table...", verbosity = 0)
 
-            // Output will be represented in binary with the ith digit representing if state i can be used
-            var output = 0
-            for (i in 0 ..< rule.numStates) {
-                lst[baseCoordinateMap.last()] = i
-                if (newState == rule.transitionFunc(lst, currentState, 0, Coordinate(0, 0))) {
-                    output += pow(2, i)
+        BooleanArray(
+            pow(rule.numStates, neighbourhood[0].size - baseCoordinates.size + 2)
+        ) {
+
+            var output = false
+            for (i in successorTable[it].indices) {
+                if (successorTable[it][i] != 0) {
+                    output = true
+                    break
                 }
             }
 
@@ -388,18 +394,70 @@ class CFind(
         }
     }
 
-    val combinedSuccessorArray: BooleanArray = BooleanArray(
-        pow(rule.numStates, neighbourhood[0].size - baseCoordinates.size + 2)
+    val memorisedBCs = leftBC.filter { it.y != -centralHeight } + rightBC.filter { it.y != -centralHeight }
+    val memorisedBCsMap = memorisedBCs.mapIndexed { index, it -> it to index }.toMap()
+    val bcNeighbourhood: ArrayList<List<Coordinate>> = arrayListOf()
+    val inverseBcNeighbourhood: ArrayList<List<Coordinate>> = arrayListOf()
+
+    val boundaryConditionTable: Array<Array<BooleanArray>> = Array(
+        leftBC.count { it.y != -centralHeight } + rightBC.count { it.y != -centralHeight }
     ) {
-        var output = false
-        for (i in successorTable[it].indices) {
-            if (successorTable[it][i] != 0) {
-                output = true
-                break
+        if (verbosity >= 0 && !stdin) {
+            t.cursor.move {
+                up(1)
+                startOfLine()
+                clearScreenAfterCursor()
             }
+            t.cursor.hide(showOnExit = true)
         }
 
-        output
+        // Compute which coordinates to be removed
+        val coordinate = memorisedBCs[it]
+        println("Generating boundary condition lookup table for $coordinate...")
+
+        val newNeighbourhood = neighbourhood[0].map { it - coordinate }
+        val bcNeighbourhood = newNeighbourhood.filter {
+            it.y != 0 || (if (coordinate.x < baseCoordinates.last().x) it.x > 0 else it.x < 0)
+        }
+        val inverseBcNeighbourhood = newNeighbourhood.filter {
+            it.y == 0 && (if (coordinate.x < baseCoordinates.last().x) it.x <= 0 else it.x >= 0)
+        }
+        this.bcNeighbourhood.add(bcNeighbourhood)
+        this.inverseBcNeighbourhood.add(inverseBcNeighbourhood)
+
+        val removedCoordinateIndexes = inverseBcNeighbourhood.map { newNeighbourhood.indexOf(it) }.toSet()
+
+        // Running the computation
+        Array(pow(rule.numStates, bcNeighbourhood.size + 2)) {
+            val lst = IntArray(neighbourhood[0].size) { 0 }
+
+            // Populating the list
+            var power = 1
+            for (i in lst.indices) {
+                if (i !in removedCoordinateIndexes) {
+                    lst[i] = getDigit(it, power, rule.numStates)
+                    power *= rule.numStates
+                }
+            }
+
+            // Getting the current and new states of the cells
+            val currentState = getDigit(it, power, rule.numStates)
+            power *= rule.numStates
+
+            val newState = getDigit(it, power, rule.numStates)
+            power *= rule.numStates
+
+            // Building the inner lookup table
+            BooleanArray(pow(numEquivalentStates, removedCoordinateIndexes.size)) {
+                var power = 1
+                for (i in removedCoordinateIndexes) {
+                    lst[i] = getDigit(it, power, numEquivalentStates)
+                    power *= numEquivalentStates
+                }
+
+                newState == rule.transitionFunc(lst, currentState, 0, Coordinate(0, 0))
+            }
+        }
     }
 
     val approximateLookaheadTable: IntArray? = run {
@@ -439,6 +497,17 @@ class CFind(
     var loadedState = false
 
     override fun search() {
+        // Clear the lookup table outputs
+        if (verbosity >= 0 && !stdin) {
+            t.cursor.move {
+                up(1)
+                startOfLine()
+                clearScreenAfterCursor()
+            }
+            t.cursor.hide(showOnExit = true)
+        }
+
+        // Print a message that indicates the search is beginning
         println(bold("Beginning search for width ${green("$width")} " +
                 "spaceship with ${green("$symmetry")} symmetry moving towards ${green("$direction")} at " +
                 "${green("${_k}c/$_period")}${if (rule is RuleFamily) " in ${green(rule.rulestring)}" else ""}..."))
@@ -989,64 +1058,68 @@ class CFind(
         lookaheadMemo: IntArray? = null,
         depth: Int = 0
     ): Pair<List<Row>, Int> {
-        val rows2 = rows  // hacky workaround
-
         // Encodes the neighbourhood with the central cell located at coordinate
         fun encodeNeighbourhood(
             coordinate: Coordinate,
             row: IntArray? = null,
             index: Int = -1,
             partialKey: Int = -1,
-            rows: List<Row?> = rows2
+            bcCoordinate: Coordinate? = null
         ): Int {
             var key = 0
-            var power = pow(rule.numStates, mainNeighbourhood.size)
 
-            // Ignore cells that we know are background cells
-            if (coordinate !in neighbourhoodWithoutBg) {
-                neighbourhoodWithoutBg[coordinate] = mainNeighbourhood.filter { (it, _) ->
-                    if (symmetry == ShipSymmetry.ASYMMETRIC || symmetry == ShipSymmetry.GLIDE)
-                        (it + coordinate).x in 0..<width * spacing
-                    else (it + coordinate).x >= 0
-                }.map { (it, p) -> Pair(it + coordinate, p) }.toList()
-            }
+            if (bcCoordinate == null) {
+                var power = pow(rule.numStates, mainNeighbourhood.size)
 
-            // Optimisations to compute the neighbourhood for lookahead faster
-            if (partialKey == -1) {
-                if (lookaheadDepth != 0) {
-                    for ((it, p) in memorisedlookaheadNeighbourhood[lookaheadDepth - 1])
-                        key += rows[it + coordinate, 0, row, depth] * p
+                // Ignore cells that we know are background cells
+                if (coordinate !in neighbourhoodWithoutBg) {
+                    neighbourhoodWithoutBg[coordinate] = mainNeighbourhood.filter { (it, _) ->
+                        if (symmetry == ShipSymmetry.ASYMMETRIC || symmetry == ShipSymmetry.GLIDE)
+                            (it + coordinate).x in 0..<width * spacing
+                        else (it + coordinate).x >= 0
+                    }.map { (it, p) -> Pair(it + coordinate, p) }.toList()
+                }
 
-                    if (approximateLookahead) {
-                        for ((it, p) in lookaheadNeighbourhood[lookaheadDepth - 1])
+                // Optimisations to compute the neighbourhood for lookahead faster
+                if (partialKey == -1) {
+                    if (lookaheadDepth != 0) {
+                        for ((it, p) in memorisedlookaheadNeighbourhood[lookaheadDepth - 1])
                             key += rows[it + coordinate, 0, row, depth] * p
 
-                        if (index != -1) lookaheadMemo!![index] = key
-                    } else {
-                        if (index != -1) lookaheadMemo!![index] = key
+                        if (approximateLookahead) {
+                            for ((it, p) in lookaheadNeighbourhood[lookaheadDepth - 1])
+                                key += rows[it + coordinate, 0, row, depth] * p
 
+                            if (index != -1) lookaheadMemo!![index] = key
+                        } else {
+                            if (index != -1) lookaheadMemo!![index] = key
+
+                            for ((it, p) in lookaheadNeighbourhood[lookaheadDepth - 1])
+                                key += rows[it + coordinate, 0, row, depth] * p
+                        }
+                    } else neighbourhoodWithoutBg[coordinate]!!.forEach { (it, p) -> key += rows[it, 0, row, depth] * p }
+                } else {
+                    key = partialKey
+                    if (!approximateLookahead) {
                         for ((it, p) in lookaheadNeighbourhood[lookaheadDepth - 1])
                             key += rows[it + coordinate, 0, row, depth] * p
                     }
-                } else neighbourhoodWithoutBg[coordinate]!!.forEach { (it, p) -> key += rows[it, 0, row, depth] * p }
-            } else {
-                key = partialKey
-                if (!approximateLookahead) {
-                    for ((it, p) in lookaheadNeighbourhood[lookaheadDepth - 1])
-                        key += rows[it + coordinate, 0, row, depth] * p
                 }
+
+                // Adding current cell state & next cell state
+                key += rows[coordinate, 0, row, depth] * power
+                power *= rule.numStates
+
+                key += rows[coordinate, 1, row, depth] * power
+            } else bcNeighbourhood[memorisedBCsMap[bcCoordinate]!!].forEachIndexed { index, it ->
+                key += rows[it + bcCoordinate + coordinate, 0, row, depth] * pow(rule.numStates, index)
             }
 
-            // Adding current cell state & next cell state
-            key += rows[coordinate, 0, row, depth] * power
-            power *= rule.numStates
-
-            key += rows[coordinate, 1, row, depth] * power
             return key
         }
 
         // Encodes the key used to query the inner lookup table
-        fun encodeKey(coordinate: Coordinate, row: IntArray? = null, rows: List<Row?> = rows2): Int {
+        fun encodeKey(coordinate: Coordinate, row: IntArray? = null): Int {
             var key = 0
             var power = 1
             for (it in reversedBaseCoordinate) {
@@ -1199,6 +1272,7 @@ class CFind(
 
         // Checks boundary conditions
         // TODO memorisation for boundary conditions
+        val bcMemo: HashMap<Coordinate, BooleanArray> = hashMapOf()
         fun checkBoundaryCondition(node: Node, bcList: List<Coordinate>, offset: Coordinate = Coordinate()): Boolean {
             if ((offset.x - offsets[(depth - offset.y * period).mod(offsets.size)]).mod(spacing) != 0) return true
 
@@ -1206,6 +1280,7 @@ class CFind(
             val cells = node.completeRow
 
             bcList.forEach {
+                if (!satisfyBC) return false
                 val coordinate = -it + offset
 
                 // Do not consider boundary conditions if they do not check valid cells (for diagonal / oblique searches)
@@ -1220,12 +1295,27 @@ class CFind(
 
                 // Getting the boundary state
                 val boundaryState = rows[tempCoordinate, 0, cells]
-                val lookupTable = if (it in baseCoordinates) lookup(index)
-                else successorTable[encodeNeighbourhood(coordinate, cells)]
+                if (it.y == -centralHeight) {
+                    val lookupTable = lookup(index)
 
-                // Finally checking the boundary condition
-                if (((lookupTable[encodeKey(coordinate, cells)] shr boundaryState) and 0b1) != 1) {
-                    satisfyBC = false
+                    // Finally checking the boundary condition
+                    if (((lookupTable[encodeKey(coordinate, cells)] shr boundaryState) and 0b1) != 1) {
+                        satisfyBC = false
+                        return@forEach
+                    }
+                } else {
+                    if (it !in bcMemo)
+                        bcMemo[it] = boundaryConditionTable[memorisedBCsMap[it]!!][
+                            encodeNeighbourhood(coordinate, cells, bcCoordinate = it)
+                        ]
+
+                    satisfyBC = bcMemo[it]!![
+                        inverseBcNeighbourhood[memorisedBCsMap[it]!!].mapIndexed { index, it ->
+                            rule.equivalentStates[
+                                rows[it + offset, 0, node.completeRow, depth]
+                            ] * pow(numEquivalentStates, index)
+                        }.sum()
+                    ]
                     return@forEach
                 }
             }
