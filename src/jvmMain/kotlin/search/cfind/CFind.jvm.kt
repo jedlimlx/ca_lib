@@ -151,6 +151,7 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
     val mutex4 = Object()
     val mutex5 = Object()
     val mutex6 = Object()
+    val mutex7 = Object()
 
     val anyProcessing = Semaphore(1)
 
@@ -218,7 +219,7 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
 
                 // Decide what depth we should reach
                 val maxDepth = row.prunedDepth + cfind.minDeepeningIncrement
-                val roundStartTime = timeSource.markNow()
+                val roundStartTime = synchronized (mutex7) { timeSource.markNow() }
 
                 do {
                     // Check if stack is empty

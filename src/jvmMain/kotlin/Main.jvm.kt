@@ -69,7 +69,7 @@ actual fun main() {
     // }.joinToString("\n\n"))
 
     val search = CFind(
-        HROT("R2,C2,S6-9,B7-8,NM"), 3, 2, 11, symmetry = ShipSymmetry.ODD,
+        HROT("R3,C2,S2-3,B3,N@1000a4250008"), 3, 2, 11, symmetry = ShipSymmetry.ODD,
         verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 1000,
         backupName = "minibugs_2c3o", backupFrequency = 600
     )

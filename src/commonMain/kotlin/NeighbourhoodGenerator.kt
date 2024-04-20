@@ -14,7 +14,7 @@ fun parseCoordCA(range: Int, string: String): Array<Coordinate> {
     require(string.matches(Regex("[A-Fa-f0-9]+"))) { "Invalid character in CoordCA neighbourhood specification." }
 
     // Convert to binary
-    var flattenedNeighbourhood: String = string.toInt(16).toString(2)
+    var flattenedNeighbourhood: String = string.toLong(16).toString(2)
     flattenedNeighbourhood = "0".repeat(
         max(0, (2 * range + 1) * (2 * range + 1) - 1 - flattenedNeighbourhood.length)
     ) + flattenedNeighbourhood // Replace it with the corrected one
