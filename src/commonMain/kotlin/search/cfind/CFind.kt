@@ -876,7 +876,7 @@ class CFind(
             }
         }
 
-        append("${queue.size}\n")
+        append("${queue.size} $width\n")
         while (queue.isNotEmpty()) {
             val row = queue.poll()
             append("${row.id} ${row.predecessor?.id ?: -1} ${row.hashCode()}")
@@ -889,8 +889,9 @@ class CFind(
         loadedState = true
 
         val lines = string.split("\n")
+        val params = lines[0].split(" ")
 
-        val rows = HashMap<Long, Row>(lines[0].toInt())
+        val rows = HashMap<Long, Row>(params[0].toInt())
         queueSize = 0
         for (i in 1 ..< lines.size) {
             val tokens = lines[i].split(" ")
@@ -898,7 +899,9 @@ class CFind(
 
             val row = Row(
                 rows[tokens[1].toLong()],
-                tokens[2].toInt().toString(rule.numStates).padStart(width, '0').map { it.digitToInt() }.reversed().toIntArray(),
+                IntArray(width - params[1].toInt()) { 0 } + tokens[2].toInt().toString(rule.numStates).padStart(
+                    params[1].toInt(), '0'
+                ).map { it.digitToInt() }.reversed().toIntArray(),
                 this
             )
             rows[tokens[0].toLong()] = row

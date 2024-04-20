@@ -14,6 +14,7 @@ import simulation.Coordinate
 import simulation.DenseGrid
 import patterns.Spaceship
 import patterns.gliderdb.GliderDB
+import java.io.File
 
 actual fun main() {
     // val rule = HROT("R2,C2,S6-9,14-20,B7-8,15-24,NM")
@@ -68,9 +69,10 @@ actual fun main() {
     // }.joinToString("\n\n"))
 
     val search = CFind(
-        HROT("R2,C2,S6-9,14-20,B7-8,15-24,NM"), 2, 1, 8, symmetry = ShipSymmetry.EVEN,
+        HROT("R2,C2,S6-9,B7-8,NM"), 3, 2, 11, symmetry = ShipSymmetry.ODD,
         verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 1000,
-        backupName = "minibugs_variant", backupFrequency = 60
+        backupName = "minibugs", backupFrequency = 600
     )
+    search.loadState(File("minibugs_2c3_odd_9.txt").readText())
     search.search()
 }

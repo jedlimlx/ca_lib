@@ -150,7 +150,6 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
     val mutex4 = Object()
     val mutex5 = Object()
     val mutex6 = Object()
-    val savingStateMutex = Object()
 
     val anyProcessing = Semaphore(1)
 
@@ -309,7 +308,7 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
                                 currentRow,
                                 TextStyles.bold(
                                     "\nPriority Queue Size: ${cfind.priorityQueue.size} / ${cfind.maxQueueSize}" +
-                                            "\nStack Size: ${stack.size}, Depth: ${currentRow.depth} / $maxDepth"
+                                            "\nThread Num: $i, Stack Size: ${stack.size}, Depth: ${currentRow.depth} / $maxDepth"
                                 ), numLines = 4
                             )
                         }
