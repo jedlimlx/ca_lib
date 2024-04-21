@@ -68,21 +68,42 @@ actual fun main() {
     //     "x = 0, y = 0, rule = ${it.ruleRange!!.first}\n${it.canonPhase}"
     // }.joinToString("\n\n"))
 
+//    val search = CFind(
+//        HROT("R2,C2,S6-9,14-20,B7-8,15-24,NM"), 4, 3, 8, symmetry = ShipSymmetry.ODD,
+//        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 1000,
+//        backupName = "backups/minibugs_2c3o_w11_even", maxQueueSize = 1 shl 22, //stdin = true,
+//        backupFrequency = 10
+//    )
+//    search.loadState(File("/mnt/c/users/jedli/Documents/CA/cfind_dumps/minibugs_variant_3c4o_w8_odd.txt").readText())
+//    search.displayPartials()
+    //search.search()
+
     val search = CFind(
-        HROT("R2,C2,S6-9,14-20,B7-8,15-24,NM"), 2, 1, 8, symmetry = ShipSymmetry.ODD,
-        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 1000,
-        //backupName = "minibugs_2c3o_w11_even"
+        HROT("R2,C2,S6-9,B7-8,NM"), 3, 2, 11, symmetry = ShipSymmetry.EVEN,
+        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 10,
+        backupName = "backups/minibugs_2c3o_w11_even", maxQueueSize = 1 shl 22, stdin = true
     )
-//    search.loadState(File(
-//        "C:\\Users\\jedli\\Documents\\CA\\cfind_dumps\\minibugs_c3o\\minibugs_3c8o_even_w8_6.txt"
-//    ).readText())
-//    search.displayPartials(minDepth = 19)
+    search.loadState(File("backups/minibugs_2c3o_w11_even_36.txt").readText())
     search.search()
 
-//    val search = CFind(
-//        HROT("R2,C2,S6-11,B4,9-11,NW0020003330230320333000200"),
-//        3, 2, 8, symmetry = ShipSymmetry.ODD,
-//        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 1000
-//    )
-//    search.search()
+    val search2 = CFind(
+        HROT("R2,C2,S6-9,B7-8,NM"), 3, 2, 11, symmetry = ShipSymmetry.ODD,
+        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 10,
+        backupName = "backups/minibugs_2c3o_w11_odd", maxQueueSize = 1 shl 22, stdin = true
+    )
+    search2.search()
+
+    val search3 = CFind(
+        HROT("R2,C2,S6-9,B7-8,NM"), 4, 3, 10, symmetry = ShipSymmetry.EVEN,
+        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 10,
+        backupName = "backups/minibugs_3c4o_w10_even", maxQueueSize = 1 shl 22, stdin = true
+    )
+    search3.search()
+
+    val search4 = CFind(
+        HROT("R2,C2,S6-9,B7-8,NM"), 4, 3, 10, symmetry = ShipSymmetry.ODD,
+        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 10,
+        backupName = "backups/minibugs_3c4o_w10_odd", maxQueueSize = 1 shl 22, stdin = true
+    )
+    search4.search()
 }

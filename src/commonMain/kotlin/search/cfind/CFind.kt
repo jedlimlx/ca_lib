@@ -952,11 +952,14 @@ class CFind(
             }
         }
 
-        append("${queue.size} $width\n")
+        append("${queue.size} $width $rule $symmetry $period $k $direction\n")
         while (queue.isNotEmpty()) {
             val row = queue.poll()
             append("${row.id} ${row.predecessor?.id ?: -1} ${row.hashCode()}")
-            if (row.id in inQueue) append(" *")
+
+            val output = row.successorSequence?.toList()?.joinToString(",")
+            append(if (output == null) " " else " $output ")
+            if (row.id in inQueue) append("*")
             append("\n")
         }
     }.toString()
@@ -973,6 +976,7 @@ class CFind(
             val tokens = lines[i].split(" ")
             if (tokens.size < 3) continue
 
+            // Loading in the normal row
             val row = Row(
                 rows[tokens[1].toLong()],
                 IntArray(width - params[1].toInt()) { 0 } + tokens[2].toInt().toString(rule.numStates).padStart(
@@ -982,7 +986,13 @@ class CFind(
             )
             rows[tokens[0].toLong()] = row
 
-            if (tokens.size == 4) {
+            // We can only load the successor sequence if the width is the same
+            val sequence = tokens.last().split(",")
+            if (tokens.size > 3 && sequence[0].toIntOrNull() != null && width == params[1].toInt())
+                row.successorSequence = sequence.map { it.toInt() }.toIntArray()
+
+            // Adding stuff to the queue
+            if (tokens.last() == "*") {
                 if (searchStrategy == SearchStrategy.PRIORITY_QUEUE) priorityQueue.add(row)
                 else {
                     if (head == null) {
