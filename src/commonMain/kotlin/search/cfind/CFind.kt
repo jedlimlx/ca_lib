@@ -35,6 +35,7 @@ class CFind(
     val backupFrequency: Int = 60*15,
     val backupName: String = "dump",
     val transpositionTableSize: Int = 1 shl 20,
+    val maxTimePerRound: Int = 5*60,
     val numThreads: Int = 8,
     val stdin: Boolean = false,
     verbosity: Int = 0
@@ -996,6 +997,48 @@ class CFind(
                     queueSize++
                 }
             }
+        }
+    }
+
+    fun displayPartials(minDepth: Int = 0) {
+        val depthMap = hashMapOf<Int, Int>()
+        if (searchStrategy == SearchStrategy.PRIORITY_QUEUE) {
+            for (row in priorityQueue) {
+                if (row.depth >= minDepth) {
+                    val grid = row.toGrid(period, symmetry)
+                    grid.rule = rule
+
+                    printRLE(grid)
+                    println()
+                }
+
+                if (row.depth in depthMap) depthMap[row.depth] = depthMap[row.depth]!! + 1
+                else depthMap[row.depth] = 1
+            }
+        } else {
+            var row = head
+            while (row != null) {
+                if (row.depth >= minDepth) {
+                    val grid = row.toGrid(period, symmetry)
+                    grid.rule = rule
+
+                    printRLE(grid)
+                    println()
+                }
+
+                if (row.depth in depthMap) depthMap[row.depth] = depthMap[row.depth]!! + 1
+                else depthMap[row.depth] = 1
+
+                row = row.next
+            }
+        }
+
+        // Printing some statistics
+        val total = depthMap.map { (_, v) -> v }.sum()
+        println(bold(brightRed("Depths of Partials\n----------------")))
+        println("${bold("Total Partials:")} $total")
+        for (depth in depthMap.keys.sorted()) {
+            println("${bold(depth.toString())}: ${depthMap[depth]}, ${(depthMap[depth]!!*10000L/total)/100.0}%")
         }
     }
 

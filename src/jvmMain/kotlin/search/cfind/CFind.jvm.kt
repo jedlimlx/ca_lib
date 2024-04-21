@@ -232,7 +232,7 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
                     currentRow = stack.removeLast()
 
                     // Check if we should exit this round
-                    if (currentRow.depth == maxDepth || (timeSource.markNow() - roundStartTime).inWholeSeconds > 60) {
+                    if (currentRow.depth == maxDepth || (timeSource.markNow() - roundStartTime).inWholeSeconds > cfind.maxTimePerRound) {
                         synchronized(mutex6) { pruning *= 0.99 }
 
                         // Compute the predecessors
@@ -269,22 +269,20 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
                         break
                     }
 
-                    // Check if the ship is completed
                     var foundEnoughShips = false
+                    var equivalentState = false
                     synchronized(mutex2) {
+                        // Check if the ship is completed
                         if (cfind.checkCompletedShip(currentRow)) {
                             clearPartial = false
                             if (++shipsFound == cfind.numShips) foundEnoughShips = true
                         }
-                    }
-                    if (foundEnoughShips) break
 
-                    // Check the transposition table for looping components
-                    var equivalentState = false
-                    synchronized(mutex3) {
+                        // Check the transposition table for looping components
                         if (currentRow.successorSequence == null &&
                             cfind.checkEquivalentState(currentRow)) equivalentState = true
                     }
+                    if (foundEnoughShips) break
                     if (equivalentState) continue
 
                     // Get the rows that will need to be used to find the next row
