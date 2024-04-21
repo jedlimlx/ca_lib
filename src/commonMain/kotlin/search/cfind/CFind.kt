@@ -399,7 +399,7 @@ class CFind(
     val bcNeighbourhood: ArrayList<List<Coordinate>> = arrayListOf()
     val inverseBcNeighbourhood: ArrayList<List<Coordinate>> = arrayListOf()
 
-    val boundaryConditionTable: Array<Array<BooleanArray>> = Array(
+    val boundaryConditionTable: Array<Array<BooleanArray?>> = Array(
         leftBC.count { it.y != -centralHeight } + rightBC.count { it.y != -centralHeight }
     ) {
         if (verbosity >= 0 && !stdin) {
@@ -448,15 +448,21 @@ class CFind(
             power *= rule.numStates
 
             // Building the inner lookup table
-            BooleanArray(pow(numEquivalentStates, removedCoordinateIndexes.size)) {
+            var useful = false
+            val output = BooleanArray(pow(numEquivalentStates, removedCoordinateIndexes.size)) {
                 var power = 1
                 for (i in removedCoordinateIndexes) {
                     lst[i] = getDigit(it, power, numEquivalentStates)
                     power *= numEquivalentStates
                 }
 
-                newState == rule.transitionFunc(lst, currentState, 0, Coordinate(0, 0))
+                val output = newState == rule.transitionFunc(lst, currentState, 0, Coordinate(0, 0))
+                if (output) useful = true
+
+                output
             }
+
+            if (useful) output else null
         }
     }
 
@@ -1272,7 +1278,7 @@ class CFind(
 
         // Checks boundary conditions
         // TODO memorisation for boundary conditions
-        val bcMemo: HashMap<Coordinate, BooleanArray> = hashMapOf()
+        val bcMemo: HashMap<Coordinate, BooleanArray?> = hashMapOf()
         fun checkBoundaryCondition(node: Node, bcList: List<Coordinate>, offset: Coordinate = Coordinate()): Boolean {
             if ((offset.x - offsets[(depth - offset.y * period).mod(offsets.size)]).mod(spacing) != 0) return true
 
@@ -1309,13 +1315,13 @@ class CFind(
                             encodeNeighbourhood(coordinate, cells, bcCoordinate = it)
                         ]
 
-                    satisfyBC = bcMemo[it]!![
+                    satisfyBC = bcMemo[it]?.get(
                         inverseBcNeighbourhood[memorisedBCsMap[it]!!].mapIndexed { index, it ->
                             rule.equivalentStates[
                                 rows[it + offset, 0, node.completeRow, depth]
                             ] * pow(numEquivalentStates, index)
                         }.sum()
-                    ]
+                    ) ?: true
                     return@forEach
                 }
             }

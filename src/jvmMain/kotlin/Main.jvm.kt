@@ -68,11 +68,18 @@ actual fun main() {
     //     "x = 0, y = 0, rule = ${it.ruleRange!!.first}\n${it.canonPhase}"
     // }.joinToString("\n\n"))
 
+//    val search = CFind(
+//        HROT("R2,C2,S6-9,B7-8,NM"),
+//        3, 2, 11, symmetry = ShipSymmetry.EVEN,
+//        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 1000,
+//        backupName = "minibugs_2c3o_w11_even", backupFrequency = 600
+//    )
+//    search.search()
+
     val search = CFind(
-        HROT("R3,C2,S2-3,B3,N@1000a4250008"), 3, 2, 11, symmetry = ShipSymmetry.ODD,
-        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 1000,
-        backupName = "minibugs_2c3o", backupFrequency = 600
+        HROT("R2,C2,S6-11,B4,9-11,NW0020003330230320333000200"),
+        5, 3, 8, symmetry = ShipSymmetry.EVEN,
+        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 1000
     )
-    search.loadState(File("minibugs_9.txt").readText())
     search.search()
 }
