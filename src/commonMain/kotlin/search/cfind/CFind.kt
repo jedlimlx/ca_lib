@@ -468,7 +468,18 @@ class CFind(
     }
 
     val approximateLookaheadTable: IntArray? = run {
-        if (pow(rule.numStates + 1, neighbourhood[0].size + 1) < (1 shl 32)) {
+        if (verbosity >= 0 && !stdin) {
+            t.cursor.move {
+                up(1)
+                startOfLine()
+                clearScreenAfterCursor()
+            }
+            t.cursor.hide(showOnExit = true)
+        }
+        
+        println("Generating approximate lookahead table...")
+
+        if (pow(rule.numStates + 1, neighbourhood[0].size + 1) < (1 shl 31) - 1) {
             IntArray(
                 pow(rule.numStates + 1, neighbourhood[0].size + 1)
             ) {

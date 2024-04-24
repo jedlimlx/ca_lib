@@ -324,7 +324,7 @@ class HROT : BaseHROT {
             val array = getAllSubsetSums(unknowns)
             for (i in array.indices) {
                 if (array[i] == 1) {
-                    if (if (cellState == 1) (live + array[i]) in survival else (live + array[i]) in birth) {
+                    if (if (cellState == 1) (live + i) in survival else (live + i) in birth) {
                         count++
                     } else dead = true
                 }

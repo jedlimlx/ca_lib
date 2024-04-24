@@ -76,8 +76,7 @@ class INT : BaseINT {
         }.joinToString())
         val maxBirth = maxTransition.transitionStrings.toHashSet()
         val maxSurvival = maxTransition.transitionStrings.toHashSet()
-        println(maxTransition.transitionStrings)
-
+        
         transitionsToSatisfy.forEach {
             val transition = it.subList(2, it.size)
             val string = birth.stringFromTransition(transition)

@@ -154,21 +154,21 @@ abstract class BaseHROT : RuleFamily() {
     }
 
     fun getAllSubsetSums(weights: MutableMap<Int, Int>): IntArray {
-        if (weights.isEmpty()) return intArrayOf()
+        if (weights.isEmpty()) return intArrayOf(1)
 
-        val maxCount = weights.map { (key, value) -> key * value }.count()
+        val maxCount = weights.map { (key, value) -> key * value }.sum()
 
         val weight = weights.keys.max()
         val numWeights = weights[weight]!!
         weights.remove(weight)
         
         val old = getAllSubsetSums(weights)
-        val newArray = IntArray(maxCount) { 0 }
+        val newArray = IntArray(maxCount+1) { if (it < old.size) old[it] else 0 }
 
-        for (j in 1 .. numWeights) old[j*weight] = 1
         for (i in old.indices) {
             if (old[i] == 1) {
-                for (j in 1 .. numWeights) old[i + j*weight] = 1
+                for (j in 1 .. numWeights) 
+                    newArray[i + j*weight] = 1
             }
         }
 
