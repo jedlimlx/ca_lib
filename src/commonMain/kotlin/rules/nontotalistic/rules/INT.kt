@@ -186,6 +186,30 @@ class INT : BaseINT {
     }
 
     override fun transitionFuncWithUnknowns(cells: IntArray, cellState: Int, generation: Int, coordinate: Coordinate): Int {
-        TODO("Not implemented yet")
+        val output = IntArray(2) { 0 }
+
+        // Enumerate all possible configurations of the unknown cells
+        val unknownNum = cells.count { it == -1 }
+        val cellsCopy = cells.toList().toIntArray()
+        for (i in 0 .. (1 shl unknownNum)) {
+            var count = 0
+            var string = i.toString(2).padStart(unknownNum, '0')
+
+            // Replacing the '-1's with the respective cells
+            for (j in cellsCopy.indices) {
+                if (cells[j] == -1)
+                    cellsCopy[j] = string[count++].digitToInt()
+            }
+
+            // Ask the transition function what the output state will be
+            output[transitionFunc(cellsCopy, cellState, generation, coordinate)] = 1
+            if (output.sum() == 2) break  // Quit if all possible output states have been reached
+        }
+        
+        var num = 0
+        for (state in output)
+            num += 1 shl state
+
+        return num
     }
 }

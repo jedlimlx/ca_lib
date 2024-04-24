@@ -1,5 +1,6 @@
 import rules.hrot.HROT
 import rules.hrot.HROTGenerations
+import rules.hrot.HROTExtendedGenerations
 import rules.nontotalistic.rules.INT
 import search.cfind.CFind
 import search.cfind.SearchStrategy
@@ -79,31 +80,9 @@ actual fun main() {
     //search.search()
 
     val search = CFind(
-        HROT("R2,C2,S6-9,B7-8,NM"), 3, 2, 11, symmetry = ShipSymmetry.EVEN,
-        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 10,
-        backupName = "backups/minibugs_2c3o_w11_even", maxQueueSize = 1 shl 22, stdin = true
+        INT("B2n3/S23-q"), 3, 1, 15, symmetry = ShipSymmetry.GLIDE,
+        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 1000,
+        backupName = "dump", maxQueueSize = 1 shl 22, numThreads = 2
     )
-    search.loadState(File("backups/minibugs_2c3o_w11_even_36.txt").readText())
     search.search()
-
-    val search2 = CFind(
-        HROT("R2,C2,S6-9,B7-8,NM"), 3, 2, 11, symmetry = ShipSymmetry.ODD,
-        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 10,
-        backupName = "backups/minibugs_2c3o_w11_odd", maxQueueSize = 1 shl 22, stdin = true
-    )
-    search2.search()
-
-    val search3 = CFind(
-        HROT("R2,C2,S6-9,B7-8,NM"), 4, 3, 10, symmetry = ShipSymmetry.EVEN,
-        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 10,
-        backupName = "backups/minibugs_3c4o_w10_even", maxQueueSize = 1 shl 22, stdin = true
-    )
-    search3.search()
-
-    val search4 = CFind(
-        HROT("R2,C2,S6-9,B7-8,NM"), 4, 3, 10, symmetry = ShipSymmetry.ODD,
-        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 10,
-        backupName = "backups/minibugs_3c4o_w10_odd", maxQueueSize = 1 shl 22, stdin = true
-    )
-    search4.search()
 }
