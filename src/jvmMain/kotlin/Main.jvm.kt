@@ -80,10 +80,10 @@ actual fun main() {
     //search.search()
 
     val search = CFind(
-        HROT("R2,C2,S6-11,B4,9-11,NW0020003330230320333000200"), 5, 2, 8, 
-        symmetry = ShipSymmetry.EVEN,
+        HROT("R2,C2,S9-14,B9-14,16,NW0010003330130310333000100"), 3, 1, 4, symmetry = ShipSymmetry.ODD,
         verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 1000,
-        backupName = "dump", maxQueueSize = 1 shl 22, numThreads = 8
+        backupName = "dump", maxQueueSize = 1 shl 22, numThreads = 1, direction = Coordinate(1, 1),
+        backupFrequency = 600, lookaheadDepth = 0
     )
     search.search()
 }

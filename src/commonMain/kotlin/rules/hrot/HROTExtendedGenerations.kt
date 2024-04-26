@@ -353,6 +353,8 @@ class HROTExtendedGenerations : BaseHROT {
     }
 
     override fun transitionFuncWithUnknowns(cells: IntArray, cellState: Int, generation: Int, coordinate: Coordinate): Int {
+        return (1 shl numStates) - 1
+        
         var unknowns = 0
         var live = 0
         cells.forEachIndexed { index, it ->

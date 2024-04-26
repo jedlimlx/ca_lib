@@ -44,9 +44,12 @@ class Row(val predecessor: Row?, val cells: IntArray, var search: CFind? = null)
     }
 
     operator fun get(index: Int): Int {
-        if (search!!.spacing != 1 && (index - offset).mod(search!!.spacing) != 0) return 0
+        if (search!!.spacing != 1 && (index - offset).mod(search!!.spacing) != 0) {
+            println("crap $depth $index $offset")
+            return 0
+        }
         if (search!!.spacing == 1) return cells[index]
-        else return cells[(index - offset) / search!!.spacing]
+        else return cells[index / search!!.spacing]
     }
 
     fun getPredecessor(n: Int): Row? {  // TODO take width into account when getting the predecessor

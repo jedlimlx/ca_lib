@@ -289,7 +289,7 @@ class CFind(
     }
     val maxWidth: Int = widthsByHeight.slice(0 .. this.lookaheadDepth).maxOf { it }
 
-    val approximateLookahead = lookaheadIndices[0][0].last() != 0
+    val approximateLookahead = false //lookaheadIndices[0][0].last() != 0
 
     // Computing neighbourhoods to be memorised for lookahead
     val memorisedlookaheadNeighbourhood: List<List<Pair<Coordinate, Int>>> = lookaheadIndices.indices.map {
@@ -317,7 +317,7 @@ class CFind(
     }
 
     val cacheWidths: IntArray = IntArray(height) {
-        pow(numEquivalentStates, widthsByHeight[it] - (if (it == 0) 1 else 0))
+        pow(numEquivalentStates, (widthsByHeight[it] - (if (it == 0) 1 else 0) + spacing - 1) / spacing)
     }
 
     val successorTable: Array<IntArray> = run {
@@ -539,7 +539,7 @@ class CFind(
         println((bold("Base Coordinates: ") + "$baseCoordinates"), verbosity = 1)
         println((bold("Base Coordinate Map: ") + "${baseCoordinateMap.toList()}"), verbosity = 1)
         println((bold("Continuous Base Coordinates: ") + "${reversedBaseCoordinate.toList()}"), verbosity = 1)
-        println((bold("Additional Depth (for lookahead): ") + "$additionalDepth"), verbosity = 1)
+        println((bold("Cache Widths: ") + "${cacheWidths.toList()}"), verbosity = 1)
 
         println(brightRed(bold("\nLattice\n----------------")), verbosity = 1)
         println((bold("Basis Vectors: ") + "${basisVectors.first} / ${basisVectors.second}"), verbosity = 1)
@@ -1145,7 +1145,7 @@ class CFind(
                 if (coordinate !in neighbourhoodWithoutBg) {
                     neighbourhoodWithoutBg[coordinate] = mainNeighbourhood.filter { (it, _) ->
                         if (symmetry == ShipSymmetry.ASYMMETRIC || symmetry == ShipSymmetry.GLIDE)
-                            (it + coordinate).x in 0..<width * spacing
+                            (it + coordinate).x in 0 ..< (width * spacing)
                         else (it + coordinate).x >= 0
                     }.map { (it, p) -> Pair(it + coordinate, p) }.toList()
                 }
@@ -1302,14 +1302,15 @@ class CFind(
             minX = 0
         }
 
-        val lookaheadDepthDiff = if (lookaheadDepth < this.lookaheadDepth)
-            lookaheadIndices[lookaheadDepth][depth.mod(period)].min()
-        else 0
+        val lookaheadDepthDiff = if (lookaheadDepth < this.lookaheadDepth) {
+            if (lookaheadDepth - 1 >= 0) lookaheadIndices[lookaheadDepth - 1][depth.mod(period)].min()
+            else indices[depth.mod(period)].min()
+        } else -1
         fun approximateLookahead(index: Int, row: Int): Boolean {
             val index = index - additionalDepth
             if (index < 0) return true
 
-            val depth = depth - lookaheadDepthDiff
+            val depth = depth + lookaheadDepthDiff
             val coordinate = translate(Coordinate(index, 0) - lastBaseCoordinate, depth)
 
             // Computing the lookahead neighbourhood
@@ -1341,30 +1342,26 @@ class CFind(
         }
 
         // Checks boundary conditions
-        // TODO memorisation for boundary conditions
         val bcMemo: HashMap<Coordinate, BooleanArray?> = hashMapOf()
         fun checkBoundaryCondition(node: Node, bcList: List<Coordinate>, offset: Coordinate = Coordinate()): Boolean {
-            if ((offset.x - offsets[(depth - offset.y * period).mod(offsets.size)]).mod(spacing) != 0) return true
-
             var satisfyBC = true
             val cells = node.completeRow
 
             bcList.forEach {
-                if (!satisfyBC) return false
                 val coordinate = -it + offset
 
                 // Do not consider boundary conditions if they do not check valid cells (for diagonal / oblique searches)
                 val index: Int
                 val tempCoordinate = coordinate + lastBaseCoordinate
                 if (spacing != 1) {
-                    val temp = tempCoordinate.x - offsets[(depth - tempCoordinate.y * period).mod(offsets.size)]
+                    val temp = coordinate.x - offsets[(depth - coordinate.y * period).mod(offsets.size)]
                     if (temp.mod(spacing) != 0) return@forEach
 
                     index = temp / spacing
                 } else index = tempCoordinate.x
 
                 // Getting the boundary state
-                val boundaryState = rows[tempCoordinate, 0, cells]
+                val boundaryState = rows[tempCoordinate, 0, cells, depth]
                 if (it.y == -centralHeight) {
                     val lookupTable = lookup(index)
 
@@ -1402,6 +1399,7 @@ class CFind(
 
         // Prunes nodes that will reach a deadend
         fun pruneNodes(node: Node, newKey: Int): Boolean {
+            return false
             var pruned = false
             for (i in 0..if (approximateLookahead) this.lookaheadDepth - lookaheadDepth else 0) {
                 if (table[i][node.depth + 1][newKey.mod(cacheWidths[i])] == 0) {
@@ -1463,8 +1461,8 @@ class CFind(
                 symmetry != ShipSymmetry.GLIDE ||
                 (period.mod(2) == 0 && rows.last().phase.mod(period) == 1)
             ) {
-                if (depthToCheck + additionalDepth < node.depth) continue
-                else depthToCheck = Int.MAX_VALUE - 1000
+                //if (depthToCheck + additionalDepth < node.depth) continue
+                //else depthToCheck = Int.MAX_VALUE - 1000
 
                 // Run the approximate lookahead
                 if (
@@ -1473,7 +1471,7 @@ class CFind(
                     !approximateLookahead(node.depth, node.cells.mod(cacheWidths[1]))
                 ) {
                     deadendNode(node, 1)
-                    continue
+                    //continue
                 }
             }
 
@@ -1485,9 +1483,12 @@ class CFind(
                 // Telling algorithm which branches can be pruned and which branches can jump to the end
                 completedNode(node.predecessor!!)
 
-                if (bcDepth != 1 && rightBC.isNotEmpty() && !checkBoundaryCondition(node, rightBC)) continue
+                if (
+                    bcDepth != 1 && rightBC.isNotEmpty() && 
+                    !checkBoundaryCondition(node, rightBC)
+                ) continue
 
-                if (checkBoundaryCondition(node, bcList, offset=Coordinate(width * spacing - 1, 0))) {
+                if (checkBoundaryCondition(node, bcList, offset=Coordinate(width * spacing, 0))) {
                     // Running the lookahead
                     val row = Row(currentRow, node.completeRow, this)
                     if (lookaheadDepth < this.lookaheadDepth) {
@@ -1503,7 +1504,7 @@ class CFind(
                             newRows.subList(1, newRows.size),
                             lookaheadDepth + 1,
                             if (approximateLookahead) _lookaheadMemo2 else _lookaheadMemo,
-                            depth - lookaheadDepthDiff
+                            depth + lookaheadDepthDiff
                         )
 
                         if (approximateLookahead) {
@@ -1558,7 +1559,7 @@ class CFind(
     }
 
     /**
-     * Translates the [coordinate] from the internal representation to the actual coordinate on the integer lattice
+     * Translates the [coordinate] at [depth] from the internal representation to the actual coordinate on the integer lattice
      */
     private fun translate(coordinate: Coordinate, depth: Int): Coordinate {
         if (spacing == 1) return coordinate
@@ -1571,14 +1572,17 @@ class CFind(
             return when (symmetry) {
                 ShipSymmetry.ASYMMETRIC -> 0
                 ShipSymmetry.GLIDE -> 0
-                ShipSymmetry.EVEN -> this[Coordinate(2 * width * spacing - coordinate.x - 1, coordinate.y), generation, currentRow]
-                ShipSymmetry.ODD -> this[Coordinate(2 * width * spacing - coordinate.x - 2, coordinate.y), generation, currentRow]
+                ShipSymmetry.EVEN -> this[Coordinate(2 * width * spacing - coordinate.x - 1, coordinate.y), generation, currentRow, depth]
+                ShipSymmetry.ODD -> this[Coordinate(2 * width * spacing - coordinate.x - 2, coordinate.y), generation, currentRow, depth]
             }
         }
 
         if (coordinate.y == 0 && currentRow != null) {
-            if (spacing != 1 && (coordinate.x - offsets[depth.mod(offsets.size)]).mod(spacing) != 0) return 0
-            return currentRow[(coordinate.x - offsets[depth.mod(offsets.size)]) / spacing]
+            if (spacing != 1 && coordinate.x.mod(spacing) != offsets[depth.mod(offsets.size)]) {
+                println("crap $depth")
+                return 0
+            }
+            return currentRow[coordinate.x / spacing]
         }
         return if (coordinate.y > 0 && coordinate.y < this.size) {
             if (generation == 0) this[coordinate.y - 1]?.get(coordinate.x) ?: -1
