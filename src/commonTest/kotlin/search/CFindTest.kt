@@ -1,7 +1,9 @@
 package search
 
 import rules.hrot.HROT
+import rules.hrot.HROTExtendedGenerations
 import rules.hrot.HROTGenerations
+import rules.nontotalistic.rules.INT
 import search.cfind.CFind
 import search.cfind.SearchStrategy
 import search.cfind.ShipSymmetry
@@ -11,10 +13,10 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.TimeSource
 
-@Ignore
 class Test {
     private val searchStrategies = listOf(SearchStrategy.HYBRID_BFS, SearchStrategy.PRIORITY_QUEUE)
 
+    // Test different neighbourhoods
     @Test
     fun factorioTest() {
         for (strategy in searchStrategies) {
@@ -44,20 +46,6 @@ class Test {
     }
 
     @Test
-    fun generationsTest() {
-        for (strategy in searchStrategies) {
-            // Checking it works for generations rules
-            val generationsSearch = CFind(
-                HROTGenerations("23/34/3"), 2, 1, 6, ShipSymmetry.ODD, verbosity = 1,
-                searchStrategy = strategy
-            )
-            generationsSearch.search()
-
-            assertEquals(generationsSearch.searchResults.size, 3)
-        }
-    }
-
-    @Test
     fun lifeTest() {
         for (strategy in searchStrategies) {
             // Finding the c/3o turtle
@@ -80,6 +68,82 @@ class Test {
         }
     }
 
+    @Test
+    fun hashTest() {
+        for (strategy in searchStrategies) {
+            val hashSearch = CFind(
+                HROT("R2,C2,S4-6,B5-6,N#"), 2, 1, 7, ShipSymmetry.EVEN,
+                verbosity = 1, numShips = 1, searchStrategy = strategy
+            )
+            hashSearch.search()
+
+            assertEquals(hashSearch.searchResults.size, 1)
+        }
+    }
+
+    @Test
+    fun farCornersTest() {
+        for (strategy in searchStrategies) {
+            val farCorners = CFind(
+                HROT("R2,C2,S2-3,B3,N@891891"), 3, 1, 4, ShipSymmetry.EVEN,
+                verbosity = 1, searchStrategy = strategy, numShips = 2
+            )
+            farCorners.search()
+
+            assertEquals(farCorners.searchResults.size, 2)
+        }
+    }
+
+    // Test different rulespaces
+    @Test
+    fun generationsTest() {
+        for (strategy in searchStrategies) {
+            // Checking it works for generations rules
+            val generationsSearch = CFind(
+                HROTGenerations("23/34/3"), 2, 1, 6, ShipSymmetry.ODD, verbosity = 1,
+                searchStrategy = strategy
+            )
+            generationsSearch.search()
+
+            assertEquals(generationsSearch.searchResults.size, 3)
+        }
+    }
+
+    @Test
+    fun intTest() {
+        for (strategy in searchStrategies) {
+            // Checking it works for isotropic non-totalistic rules
+            val search = CFind(
+                INT("B2n3/S23-q"), 3, 1, 11, symmetry = ShipSymmetry.ASYMMETRIC,
+                verbosity = 1, searchStrategy = strategy, numShips = 1
+            )
+            search.search()
+
+            assertEquals(search.searchResults.size, 1)
+
+            val search2 = CFind(
+                INT("B2-ik3ak4-eir5-y678/S2-ce3-jry4-ackwy5-i6-a78"), 5, 4, 4,
+                symmetry = ShipSymmetry.ODD, verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS
+            )
+            search2.search()
+
+            assertEquals(search2.searchResults.size, 1)
+        }
+    }
+
+    @Test
+    fun extendedGenerationsTest() {
+        for (strategy in searchStrategies) {
+            // Checking it works for extended generations rules
+            val search = CFind(
+                HROTExtendedGenerations("1/3/2-1"), 6, 1, 5, symmetry = ShipSymmetry.ODD,
+                verbosity = 1, searchStrategy = strategy
+            )
+            search.search()
+        }
+    }
+
+    // Miscellaneous tests
     @Test
     fun dfsTest() {
         for (strategy in searchStrategies) {
@@ -114,18 +178,6 @@ class Test {
         }
     }
 
-    @Test
-    fun hashTest() {
-        for (strategy in searchStrategies) {
-            val hashSearch = CFind(
-                HROT("R2,C2,S4-6,B5-6,N#"), 2, 1, 7, ShipSymmetry.EVEN,
-                verbosity = 1, numShips = 1, searchStrategy = strategy
-            )
-            hashSearch.search()
-
-            assertEquals(hashSearch.searchResults.size, 1)
-        }
-    }
 
     @Test
     fun superluminalTest() {

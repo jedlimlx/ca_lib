@@ -1,6 +1,5 @@
 import rules.hrot.HROT
 import rules.hrot.HROTGenerations
-import rules.hrot.HROTExtendedGenerations
 import rules.nontotalistic.rules.INT
 import search.cfind.CFind
 import search.cfind.SearchStrategy
@@ -15,6 +14,7 @@ import simulation.Coordinate
 import simulation.DenseGrid
 import patterns.Spaceship
 import patterns.gliderdb.GliderDB
+import rules.hrot.HROTExtendedGenerations
 import java.io.File
 
 actual fun main() {
@@ -79,6 +79,12 @@ actual fun main() {
 //    search.displayPartials()
     //search.search()
 
+//    val lifeSearchP4K2 = CFind(
+//        HROT("B3/S23"), 2, 1, 7, ShipSymmetry.GLIDE, verbosity = 1,
+//        searchStrategy = SearchStrategy.HYBRID_BFS
+//    )
+//    lifeSearchP4K2.search()
+
     val search = CFind(
         HROT("R2,C2,S9-14,B9-14,16,NW0010003330130310333000100"), 3, 1, 4, symmetry = ShipSymmetry.ODD,
         verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 1000,
@@ -86,4 +92,13 @@ actual fun main() {
         backupFrequency = 600, lookaheadDepth = 0
     )
     search.search()
+
+//    val search = CFind(
+//        HROT("R2,C2,S6-9,B7-8,NM"), 3, 2, 11, symmetry = ShipSymmetry.EVEN,
+//        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 10,
+//        backupName = "backups/minibugs_2c3o_w11_even", maxQueueSize = 1 shl 22, stdin = true,
+//        backupFrequency = 60*60
+//    )
+//    search.loadState(File("backups/minibugs_2c3o_w11_even_2.txt").readText())
+//    search.search()
 }

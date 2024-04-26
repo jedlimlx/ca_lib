@@ -13,6 +13,7 @@ import rules.RuleFamily
 import search.SearchProgram
 import simulation.Coordinate
 import simulation.Grid
+import kotlin.math.pow
 import kotlin.time.TimeSource
 
 /**
@@ -34,7 +35,7 @@ class CFind(
     val partialFrequency: Int = 1000,
     val backupFrequency: Int = 60*15,
     val backupName: String = "dump",
-    val transpositionTableSize: Int = 1 shl 20,
+    transpositionTableSize: Int = 1 shl 20,
     val maxTimePerRound: Int = 5*60,
     val numThreads: Int = 8,
     val stdin: Boolean = false,
@@ -276,7 +277,7 @@ class CFind(
     val lookaheadDepth = minOf(lookaheadDepth, maxLookaheadDepth)
 
     val successorLookaheadDepth = tempIndices.map { it[0].last() }.indexOf(0) + 1
-    val successorLookahead = (successorLookaheadDepth == this.lookaheadDepth + 1)
+    val successorLookahead = successorLookaheadDepth == this.lookaheadDepth + 1 && lookaheadDepth > 0
 
     val lookaheadIndices = if (this.lookaheadDepth == 0) listOf() else tempIndices.subList(
         0, if (successorLookahead) successorLookaheadDepth else this.lookaheadDepth
@@ -289,7 +290,7 @@ class CFind(
     }
     val maxWidth: Int = widthsByHeight.slice(0 .. this.lookaheadDepth).maxOf { it }
 
-    val approximateLookahead = false //lookaheadIndices[0][0].last() != 0
+    val approximateLookahead = spacing == 1 && lookaheadDepth > 0 && lookaheadIndices[0][0].last() != 0
 
     // Computing neighbourhoods to be memorised for lookahead
     val memorisedlookaheadNeighbourhood: List<List<Pair<Coordinate, Int>>> = lookaheadIndices.indices.map {
@@ -479,7 +480,7 @@ class CFind(
         
         println("Generating approximate lookahead table...")
 
-        if (pow(rule.numStates + 1, neighbourhood[0].size + 1) < (1 shl 31) - 1) {
+        if ((rule.numStates + 1.0).pow(neighbourhood[0].size + 1) < 1.0.pow(31)) {
             IntArray(
                 pow(rule.numStates + 1, neighbourhood[0].size + 1)
             ) {
@@ -1121,7 +1122,7 @@ class CFind(
      * Searches for a possible next row given the previous rows provided. Returns null if row cannot be found.
      */
     fun nextRow(
-        currentRow: Row?,
+        currentRow: Row,
         rows: List<Row>,
         lookaheadRows: List<List<Row?>>,
         lookaheadDepth: Int = 0,
@@ -1268,8 +1269,8 @@ class CFind(
                     }
                 } else {
                     // Remember the row that evolved into this one
-                    val prevRow = currentRow?.getPredecessor(fwdOff[depth.mod(period)] - 1)
-                    if (prevRow != null && lookaheadDepth == 0) {
+                    val prevRow = currentRow.getPredecessor(fwdOff[depth.mod(period)] - (depth - currentRow.depth))
+                    if (prevRow != null) {
                         var output = 0
                         val array = rule.possibleSuccessors[0][prevRow.cells[it]]
                         for (i in array) output += pow(2, i)
@@ -1303,9 +1304,9 @@ class CFind(
         }
 
         val lookaheadDepthDiff = if (lookaheadDepth < this.lookaheadDepth) {
-            if (lookaheadDepth - 1 >= 0) lookaheadIndices[lookaheadDepth - 1][depth.mod(period)].min()
+            if (lookaheadDepth - 1 >= 0) lookaheadIndices[lookaheadDepth - 1][depth.mod(period)].filter { it > 0 }.min()
             else indices[depth.mod(period)].min()
-        } else -1
+        } else 0
         fun approximateLookahead(index: Int, row: Int): Boolean {
             val index = index - additionalDepth
             if (index < 0) return true
@@ -1348,6 +1349,7 @@ class CFind(
             val cells = node.completeRow
 
             bcList.forEach {
+                if (!satisfyBC) return@forEach
                 val coordinate = -it + offset
 
                 // Do not consider boundary conditions if they do not check valid cells (for diagonal / oblique searches)
@@ -1399,7 +1401,6 @@ class CFind(
 
         // Prunes nodes that will reach a deadend
         fun pruneNodes(node: Node, newKey: Int): Boolean {
-            return false
             var pruned = false
             for (i in 0..if (approximateLookahead) this.lookaheadDepth - lookaheadDepth else 0) {
                 if (table[i][node.depth + 1][newKey.mod(cacheWidths[i])] == 0) {
@@ -1461,8 +1462,8 @@ class CFind(
                 symmetry != ShipSymmetry.GLIDE ||
                 (period.mod(2) == 0 && rows.last().phase.mod(period) == 1)
             ) {
-                //if (depthToCheck + additionalDepth < node.depth) continue
-                //else depthToCheck = Int.MAX_VALUE - 1000
+                if (depthToCheck + additionalDepth < node.depth) continue
+                else depthToCheck = Int.MAX_VALUE - 1000
 
                 // Run the approximate lookahead
                 if (
@@ -1471,7 +1472,7 @@ class CFind(
                     !approximateLookahead(node.depth, node.cells.mod(cacheWidths[1]))
                 ) {
                     deadendNode(node, 1)
-                    //continue
+                    continue
                 }
             }
 
@@ -1488,7 +1489,7 @@ class CFind(
                     !checkBoundaryCondition(node, rightBC)
                 ) continue
 
-                if (checkBoundaryCondition(node, bcList, offset=Coordinate(width * spacing, 0))) {
+                if (checkBoundaryCondition(node, bcList, offset=Coordinate(width * spacing - 1, 0))) {
                     // Running the lookahead
                     val row = Row(currentRow, node.completeRow, this)
                     if (lookaheadDepth < this.lookaheadDepth) {

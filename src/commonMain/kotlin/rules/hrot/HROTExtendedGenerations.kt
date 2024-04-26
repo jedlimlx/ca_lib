@@ -79,12 +79,12 @@ class HROTExtendedGenerations : BaseHROT {
         possibleSuccessors = arrayOf(Array(numStates) {
             when (it) {
                 0 -> intArrayOf(0, 1)
-                !in activeStates -> if (this.survival.isEmpty()) intArrayOf(2) else intArrayOf((it + 1) % numStates)
-                else -> intArrayOf(it, (it + 1) % numStates)
+                in activeStates -> if (this.survival.isNotEmpty()) intArrayOf(it, (it + 1) % numStates) else intArrayOf((it + 1) % numStates)
+                else -> intArrayOf((it + 1) % numStates)
             }
         })
 
-        equivalentStates = (0..<numStates).toList().toIntArray()
+        equivalentStates = (0..<numStates).map { if (it in activeStates) 1 else 0 }.toIntArray()
     }
 
     /**
@@ -171,14 +171,15 @@ class HROTExtendedGenerations : BaseHROT {
 
         // Setting the possible successors of each state
         possibleSuccessors = arrayOf(Array(numStates) {
+            //(0..<numStates).toList().toIntArray()
             when (it) {
                 0 -> intArrayOf(0, 1)
-                !in activeStates -> if (this.survival.isEmpty()) intArrayOf(2) else intArrayOf((it + 1) % numStates)
-                else -> intArrayOf(it, (it + 1) % numStates)
+                in activeStates -> if (this.survival.isNotEmpty()) intArrayOf(it, (it + 1) % numStates) else intArrayOf((it + 1) % numStates)
+                else -> intArrayOf((it + 1) % numStates)
             }
         })
 
-        equivalentStates = (0..<numStates).toList().toIntArray()
+        equivalentStates = (0..<numStates).map { if (it in activeStates) 1 else 0 }.toIntArray()
     }
 
     override fun canoniseRulestring(): String {
@@ -354,8 +355,6 @@ class HROTExtendedGenerations : BaseHROT {
     }
 
     override fun transitionFuncWithUnknowns(cells: IntArray, cellState: Int, generation: Int, coordinate: Coordinate): Int {
-        return (1 shl numStates) - 1
-        
         var unknowns = 0
         var live = 0
         cells.forEachIndexed { index, it ->
