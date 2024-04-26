@@ -47,8 +47,9 @@ class HROTExtendedGenerations : BaseHROT {
     val extendedGenerations = "(0-)?[1-9][0-9]*(-[1-9][0-9]*)*"
     override val regex: List<Regex> = listOf(
         Regex("R[0-9]+,B$transitionRegex,S$transitionRegex,G$extendedGenerations$neighbourhoodRegex"),
-        Regex("[BbSs]?[0-8]*/[BbSs]?[0-8]*/[Cc]?$extendedGenerations[VH]?"),
-        Regex("[CcGg]$extendedGenerations[BbSs][0-8]*[BbSs][0-8]*[VH]?")
+        Regex("[BbSs]?[0-8]*/[BbSs]?[0-8]*/[CcDd]?$extendedGenerations[VH]?"),
+        Regex("[CcGg]$extendedGenerations[BbSs][0-8]*[BbSs][0-8]*[VH]?"),
+        Regex("[BbSs][0-8]*[BbSs][0-8]*[CcGgDd]$extendedGenerations[VH]?")
     )
 
     /**
@@ -116,7 +117,7 @@ class HROTExtendedGenerations : BaseHROT {
             }
             rulestring.matches(regex[1]) -> {
                 val tokens = rulestring.replace(Regex("[VH]"), "").split("/")
-                val tokensStripped = rulestring.replace(Regex("[BbSsCcGgVH]"), "").split("/")
+                val tokensStripped = rulestring.replace(Regex("[BbSsCcGgDdVH]"), "").split("/")
 
                 // Reading birth and survival conditions
                 birth =
@@ -125,7 +126,7 @@ class HROTExtendedGenerations : BaseHROT {
                     readTransition(if ("s" in tokens[1].lowercase()) tokensStripped[1] else tokensStripped[0], false)
 
                 // Reading number of states
-                val pair = readExtendedGenerations(tokens[2].replace(Regex("[CcGg]"), ""))
+                val pair = readExtendedGenerations(tokens[2].replace(Regex("[CcDdGg]"), ""))
                 numStates = pair.first
                 activeStates = pair.second
 
@@ -150,7 +151,7 @@ class HROTExtendedGenerations : BaseHROT {
 
                 // Reading number of states
                 val pair = readExtendedGenerations(
-                    Regex("[CcGg]($extendedGenerations)").findAll(rulestring).map { it.groupValues[1] }.toList()[0]
+                    Regex("[DdCcGg]($extendedGenerations)").findAll(rulestring).map { it.groupValues[1] }.toList()[0]
                 )
                 numStates = pair.first
                 activeStates = pair.second
@@ -341,12 +342,12 @@ class HROTExtendedGenerations : BaseHROT {
 
     override fun transitionFunc(cells: IntArray, cellState: Int, generation: Int, coordinate: Coordinate): Int {
         val sum = cells.foldIndexed(0) { index, acc, value ->
-            acc + (weights?.get(index) ?: 1) * (if (value == 1) 1 else 0)
+            acc + (weights?.get(index) ?: 1) * (if (value in activeStates) 1 else 0)
         }
 
         return when {
             cellState == 0 && sum in birth -> 1  // Birth
-            cellState in activeStates && sum in survival -> 1  // Survival
+            cellState in activeStates && sum in survival -> cellState  // Survival
             cellState == 0 -> 0  // 0 stays as 0
             else -> (cellState + 1) % numStates  // Decay
         }

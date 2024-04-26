@@ -70,10 +70,11 @@ class HROTExtendedGenerationsTest {
     }
 
     @Test
-    @Ignore  // todo rewrite test for extended generations
     fun simulate_rule_correctly() {
         // Loading test cases
-        val testCases = readResource("rules/hrot/hrotGenerationsSimulationTest.txt").split("\n").map { it.trim() }
+        val testCases = readResource(
+            "rules/hrot/hrotExtendedGenerationsSimulationTest.txt"
+        ).split("\n").map { it.trim() }
 
         var rulestring = ""
         var generations = 0
@@ -93,7 +94,7 @@ class HROTExtendedGenerationsTest {
 
                 // Running the test case
                 !line.startsWith("#") -> {
-                    val grid = SparseGrid(initial, HROTGenerations(rulestring))
+                    val grid = SparseGrid(initial, HROTExtendedGenerations(rulestring))
                     grid.step(generations)
                     assertEquals(final, grid.toRLE())
                 }
