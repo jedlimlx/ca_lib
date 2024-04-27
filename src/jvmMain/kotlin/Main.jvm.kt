@@ -79,19 +79,19 @@ actual fun main() {
 //    search.displayPartials()
     //search.search()
 
-//    val lifeSearchP4K2 = CFind(
-//        HROT("B3/S23"), 2, 1, 7, ShipSymmetry.GLIDE, verbosity = 1,
-//        searchStrategy = SearchStrategy.HYBRID_BFS
-//    )
-//    lifeSearchP4K2.search()
-
     val search = CFind(
-        HROT("R2,C2,S9-14,B9-14,16,NW0010003330130310333000100"), 3, 1, 4, symmetry = ShipSymmetry.ODD,
-        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 1000,
-        backupName = "dump", maxQueueSize = 1 shl 22, numThreads = 1, direction = Coordinate(1, 1),
-        backupFrequency = 600, lookaheadDepth = 0
+        HROT("R2,C2,S6-9,B7-8,NM"), 2, 1, 8,
+        ShipSymmetry.ASYMMETRIC, verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS
     )
     search.search()
+
+//    val search = CFind(
+//        HROT("R2,C2,S9-14,B9-14,16,NW0010003330130310333000100"), 3, 1, 4, symmetry = ShipSymmetry.ODD,
+//        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 1000,
+//        backupName = "dump", maxQueueSize = 1 shl 22, numThreads = 1, direction = Coordinate(1, 1),
+//        backupFrequency = 600, lookaheadDepth = 0
+//    )
+//    search.search()
 
 //    val search = CFind(
 //        HROT("R2,C2,S6-9,B7-8,NM"), 3, 2, 11, symmetry = ShipSymmetry.EVEN,

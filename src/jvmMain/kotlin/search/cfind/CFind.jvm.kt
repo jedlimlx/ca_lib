@@ -308,7 +308,8 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
                                 currentRow,
                                 TextStyles.bold(
                                     "\nPriority Queue Size: ${cfind.priorityQueue.size} / ${cfind.maxQueueSize}" +
-                                            "\nThread $i / $numProcessing, Stack Size: ${stack.size}, Depth: ${currentRow.depth} / $maxDepth"
+                                            "\nThread $i / ${synchronized(mutex5) { numProcessing }}, " +
+                                            "Stack Size: ${stack.size}, Depth: ${currentRow.depth} / $maxDepth"
                                 ), numLines = 4
                             )
                         }

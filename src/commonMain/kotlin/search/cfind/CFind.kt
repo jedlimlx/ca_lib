@@ -8,6 +8,7 @@ import com.github.ajalt.mordant.rendering.TextStyle
 import com.github.ajalt.mordant.rendering.TextStyles.bold
 import patterns.Pattern
 import patterns.Spaceship
+import prettyPrintNeighbourhood
 import rules.Rule
 import rules.RuleFamily
 import search.SearchProgram
@@ -396,13 +397,14 @@ class CFind(
         }
     }
 
-    val memorisedBCs = leftBC.filter { it.y != -centralHeight } + rightBC.filter { it.y != -centralHeight }
+    val memorisedBCs = leftBC + rightBC
     val memorisedBCsMap = memorisedBCs.mapIndexed { index, it -> it to index }.toMap()
     val bcNeighbourhood: ArrayList<List<Coordinate>> = arrayListOf()
     val inverseBcNeighbourhood: ArrayList<List<Coordinate>> = arrayListOf()
 
+    val ignoreBCs: HashSet<Coordinate> = hashSetOf()
     val boundaryConditionTable: Array<Array<BooleanArray?>> = Array(
-        leftBC.count { it.y != -centralHeight } + rightBC.count { it.y != -centralHeight }
+        leftBC.size + rightBC.size
     ) {
         if (verbosity >= 0 && !stdin) {
             t.cursor.move {
@@ -419,18 +421,28 @@ class CFind(
 
         val newNeighbourhood = neighbourhood[0].map { it - coordinate }
         val bcNeighbourhood = newNeighbourhood.filter {
-            it.y != 0 || (if (coordinate.x < baseCoordinates.last().x) it.x > 0 else it.x < 0)
+            it.y != 0 && if (coordinate.x < baseCoordinates.last().x) it.x <= 0 else it.x >= 0
         }
         val inverseBcNeighbourhood = newNeighbourhood.filter {
             it.y == 0 && (if (coordinate.x < baseCoordinates.last().x) it.x <= 0 else it.x >= 0)
         }
+
         this.bcNeighbourhood.add(bcNeighbourhood)
         this.inverseBcNeighbourhood.add(inverseBcNeighbourhood)
 
-        val removedCoordinateIndexes = inverseBcNeighbourhood.map { newNeighbourhood.indexOf(it) }.toSet()
+        val removedCoordinateIndexes = newNeighbourhood.filter {
+            it !in bcNeighbourhood || it in inverseBcNeighbourhood
+        }.map { newNeighbourhood.indexOf(it) }.toSet()
+        val removedCoordinateIndexes2 = inverseBcNeighbourhood.map { newNeighbourhood.indexOf(it) }.toSet()
+
+        // Check if the central cell will be 0
+        val centralCell = (-coordinate.y != 0) && if (
+            coordinate.x < baseCoordinates.last().x
+        ) -coordinate.x <= 0 else -coordinate.x >= 0
 
         // Running the computation
-        Array(pow(rule.numStates, bcNeighbourhood.size + 2)) {
+        var useful = false
+        val output = Array(pow(rule.numStates, bcNeighbourhood.size + if (centralCell) 2 else 0)) {
             val lst = IntArray(neighbourhood[0].size) { 0 }
 
             // Populating the list
@@ -443,29 +455,42 @@ class CFind(
             }
 
             // Getting the current and new states of the cells
-            val currentState = getDigit(it, power, rule.numStates)
-            power *= rule.numStates
+            val currentState: Int
+            val newState: Int
+            if (centralCell) {
+                currentState = getDigit(it, power, rule.numStates)
+                power *= rule.numStates
 
-            val newState = getDigit(it, power, rule.numStates)
-            power *= rule.numStates
+                newState = getDigit(it, power, rule.numStates)
+            } else {
+                currentState = 0
+                newState = 0
+            }
 
             // Building the inner lookup table
-            var useful = false
-            val output = BooleanArray(pow(numEquivalentStates, removedCoordinateIndexes.size)) {
+            var useful2 = false
+            val output = BooleanArray(pow(numEquivalentStates, removedCoordinateIndexes2.size)) {
                 var power = 1
-                for (i in removedCoordinateIndexes) {
+                for (i in removedCoordinateIndexes2) {
                     lst[i] = getDigit(it, power, numEquivalentStates)
                     power *= numEquivalentStates
                 }
 
                 val output = newState == rule.transitionFunc(lst, currentState, 0, Coordinate(0, 0))
-                if (output) useful = true
+                if (!output) {
+                    useful = true
+                    useful2 = true
+                }
 
                 output
             }
 
-            if (useful) output else null
+            if (useful2) output else null
         }
+
+        // Removing BCs that can be ignored
+        if (!useful) ignoreBCs.add(coordinate)
+        output
     }
 
     val approximateLookaheadTable: IntArray? = run {
@@ -503,6 +528,14 @@ class CFind(
         } else null
     }
 
+    // Filter out the boundary conditions that don't need checking
+    val filteredRightBCs = rightBC.filter { it !in ignoreBCs }
+    val filteredLeftBCs = leftBC.subList(
+        0,
+        if (symmetry != ShipSymmetry.ASYMMETRIC && symmetry != ShipSymmetry.GLIDE) lastBaseCoordinate.x
+        else leftBC.size
+    ).filter { it !in ignoreBCs }
+
     // For hybrid BFS / pure DFS, we will represent the queue / stack as a linked list
     var head: Row? = null
     var tail: Row? = null
@@ -533,9 +566,12 @@ class CFind(
 
         // Printing out some debugging information
         println(brightRed(bold("\nNeighbourhood\n----------------")), verbosity = 1)
-        println((bold("Neighbourhood: ") + "${neighbourhood.toList()}"), verbosity = 1)
+        println((bold("Neighbourhood: ") + "\n${prettyPrintNeighbourhood(neighbourhood[0].toTypedArray())}"), verbosity = 1)
         println((bold("Neighbourhood Height: ") + "$centralHeight / $height"), verbosity = 1)
-        println((bold("Extra Boundary Conditions: ") + "$leftBC / $rightBC"), verbosity = 1)
+        println((bold("Boundary Conditions: ") +
+                "[${leftBC.map { if (it !in filteredLeftBCs) gray(it.toString()) else it.toString() }.joinToString(", ")}] / " +
+                "[${rightBC.map { if (it !in filteredRightBCs) gray(it.toString()) else it.toString() }.joinToString(", ")}]"
+        ), verbosity = 1)
         println((bold("Right BC Depth: ") + "$bcDepth"), verbosity = 1)
         println((bold("Base Coordinates: ") + "$baseCoordinates"), verbosity = 1)
         println((bold("Base Coordinate Map: ") + "${baseCoordinateMap.toList()}"), verbosity = 1)
@@ -1182,8 +1218,23 @@ class CFind(
                 power *= rule.numStates
 
                 key += rows[coordinate, 1, row, depth] * power
-            } else bcNeighbourhood[memorisedBCsMap[bcCoordinate]!!].forEachIndexed { index, it ->
-                key += rows[it + bcCoordinate + coordinate, 0, row, depth] * pow(rule.numStates, index)
+            } else {
+                var power = 0
+                bcNeighbourhood[memorisedBCsMap[bcCoordinate]!!].forEachIndexed { index, it ->
+                    power = maxOf(power, pow(rule.numStates, index))
+                    key += rows[it + bcCoordinate + coordinate, 0, row, depth] * pow(rule.numStates, index)
+                }
+
+                // Adding current cell state & next cell state if needed
+                val centralCell = (-bcCoordinate.y != 0) && if (
+                    bcCoordinate.x < baseCoordinates.last().x
+                ) -bcCoordinate.x <= 0 else -bcCoordinate.x >= 0
+                if (centralCell) {
+                    key += rows[coordinate, 0, row, depth] * power
+                    power *= rule.numStates
+
+                    key += rows[coordinate, 1, row, depth] * power
+                }
             }
 
             return key
@@ -1363,9 +1414,9 @@ class CFind(
                 } else index = tempCoordinate.x
 
                 // Getting the boundary state
-                val boundaryState = rows[tempCoordinate, 0, cells, depth]
                 if (it.y == -centralHeight) {
                     val lookupTable = lookup(index)
+                    val boundaryState = rows[tempCoordinate, 0, cells, depth]
 
                     // Finally checking the boundary condition
                     if (((lookupTable[encodeKey(coordinate, cells)] shr boundaryState) and 0b1) != 1) {
@@ -1427,13 +1478,6 @@ class CFind(
                 node.applyOnPredecessor { table[i][it.depth][it.cells.mod(cacheWidths[i])] = 1 }
         }
 
-        // Compute which boundary conditions need to be checked on the left side of the neighbourhood
-        val bcList = leftBC.subList(
-            0,
-            if (symmetry != ShipSymmetry.ASYMMETRIC && symmetry != ShipSymmetry.GLIDE) lastBaseCoordinate.x
-            else leftBC.size
-        )
-
         // Computing the initial key for the inner lookup table
         val key = 0  //encodeKey(-lastBaseCoordinate)
 
@@ -1477,7 +1521,8 @@ class CFind(
             }
 
             // Check extra boundary conditions at the start
-            if (node.depth == 1 && bcDepth == 1 && rightBC.isNotEmpty() && !checkBoundaryCondition(node, rightBC)) continue
+            if (node.depth == 1 && bcDepth == 1 && filteredRightBCs.isNotEmpty() &&
+                !checkBoundaryCondition(node, filteredRightBCs)) continue
 
             // Stuff that is done at the end of the search
             if (node.depth == width) {
@@ -1485,11 +1530,11 @@ class CFind(
                 completedNode(node.predecessor!!)
 
                 if (
-                    bcDepth != 1 && rightBC.isNotEmpty() && 
-                    !checkBoundaryCondition(node, rightBC)
+                    bcDepth != 1 && filteredRightBCs.isNotEmpty() &&
+                    !checkBoundaryCondition(node, filteredRightBCs)
                 ) continue
 
-                if (checkBoundaryCondition(node, bcList, offset=Coordinate(width * spacing - 1, 0))) {
+                if (checkBoundaryCondition(node, filteredLeftBCs, offset=Coordinate(width * spacing - 1, 0))) {
                     // Running the lookahead
                     val row = Row(currentRow, node.completeRow, this)
                     if (lookaheadDepth < this.lookaheadDepth) {

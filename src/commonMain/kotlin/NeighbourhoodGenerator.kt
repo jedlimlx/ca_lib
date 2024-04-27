@@ -266,3 +266,19 @@ private fun generateWithPred(
 
     return lst.toTypedArray()
 }
+
+/**
+ * Outputs the [neighbourhood] nicely represented as a string
+ */
+fun prettyPrintNeighbourhood(neighbourhood: Array<Coordinate>): String = StringBuilder().apply {
+    val range = neighbourhood.maxOf { maxOf(abs(it.x), abs(it.y)) }
+    for (i in -range .. range) {
+        for (j in -range .. range) {
+            if (i == 0 && j == 0) append("x ")
+            else if (Coordinate(i, j) in neighbourhood) append("* ")
+            else append(". ")
+        }
+
+        append("\n")
+    }
+}.toString()
