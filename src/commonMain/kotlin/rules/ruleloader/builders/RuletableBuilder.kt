@@ -7,6 +7,7 @@ import rules.ruleloader.Directive
 import rules.ruleloader.RuleDirective
 import rules.ruleloader.Ruletable
 import rules.ruleloader.ruletable.Symmetry
+import rules.ruleloader.ruletree.RuletreeDirective
 import simulation.Coordinate
 
 @DslMarker
@@ -62,6 +63,22 @@ class RuletableBuilder {
         table.init()
 
         ruleDirectives.add(table.build())
+    }
+
+    /**
+     * Constructs the @TREE directive of the ruletable
+     * @param numStates The number of states of the ruletable
+     * @param neighbourhood The neighbourhood of the ruletable
+     * @param background The background of the rule
+     * @param f The transition function of the rule
+     */
+    fun tree(
+        numStates: Int = 2,
+        neighbourhood: Array<Coordinate> = moore(1),
+        background: IntArray = intArrayOf(0),
+        f: (Int, IntArray) -> Int
+    ) {
+        directives.add(RuletreeDirective(numStates, neighbourhood, background, f))
     }
 
     /**

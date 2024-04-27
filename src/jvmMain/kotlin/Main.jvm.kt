@@ -15,6 +15,9 @@ import simulation.DenseGrid
 import patterns.Spaceship
 import patterns.gliderdb.GliderDB
 import rules.hrot.HROTExtendedGenerations
+import rules.ruleloader.Ruletable
+import rules.ruleloader.builders.RuletableBuilder
+import rules.ruleloader.builders.ruletable
 import java.io.File
 
 actual fun main() {
@@ -79,9 +82,24 @@ actual fun main() {
 //    search.displayPartials()
     //search.search()
 
+    File("Test.rule").writeText(
+        ruletable {
+            name = "Test"
+
+            tree(numStates = 2, neighbourhood = moore(1), background = intArrayOf(0, 1)) { state, neighbourhood ->
+                val sum = neighbourhood.sum()
+                when {
+                    state == 0 && sum in setOf(0, 1, 5) -> 1
+                    state == 1 && sum in setOf(2, 3) -> 1
+                    else -> 0
+                }
+            }
+        }.toString()
+    )
+
     val search = CFind(
         HROT("R2,C2,S6-9,B7-8,NM"), 2, 1, 8,
-        ShipSymmetry.ASYMMETRIC, verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS
+        ShipSymmetry.ASYMMETRIC, verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS, numShips = 1
     )
     search.search()
 

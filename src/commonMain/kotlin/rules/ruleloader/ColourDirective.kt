@@ -11,7 +11,7 @@ import Colour
  */
 class ColourDirective(val colours: Array<Colour>, val background: IntArray = intArrayOf(1)) : Directive("colors") {
     override fun export(): String = with(StringBuilder()) {
-        for (i in 0 until 1 + (colours.size - 1) * background.size) {
+        for (i in 0..<1 + (colours.size - 1) * background.size) {
             var index = i % (colours.size - 1)
             if (index == 0 && i > 0) index = colours.size - 1
 
