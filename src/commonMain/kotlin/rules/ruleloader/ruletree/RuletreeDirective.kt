@@ -12,10 +12,10 @@ import simulation.Coordinate
  * @param f The transition function of the rule
  */
 class RuletreeDirective(
-    val numStates: Int,
-    val neighbourhood: Array<Coordinate>,
-    val background: IntArray,
-    val f: (Int, IntArray) -> Int
+    override val numStates: Int,
+    override val neighbourhood: Array<Coordinate>,
+    override val background: IntArray,
+    val f: (IntArray, Int) -> Int
 ) : RuleDirective("tree") {
     private var nodeSeq = 0
     private val params = IntArray(neighbourhood.size + 1)
@@ -25,7 +25,7 @@ class RuletreeDirective(
     private val _numStates = background.size * (numStates - 1) + 1
 
     // Emulates the strobing background
-    private fun _f(state: Int, neighbourhood: IntArray): Int {
+    private fun _f(neighbourhood: IntArray, state: Int): Int {
         if (state == 0 && neighbourhood.sum() == 0) return 0
 
         // Finding the state that isn't 0
@@ -40,7 +40,7 @@ class RuletreeDirective(
         // Converting back to the emulated representation
         val newBg = (bg + 1) % background.size
         val newState = Utils.convert(
-            f(actualState, actualNeighbourhood.toIntArray()),
+            f(actualNeighbourhood.toIntArray(), actualState),
             background[newBg]
         )
         return if (newState == 0) newState else newState + newBg * (numStates - 1)
@@ -56,7 +56,7 @@ class RuletreeDirective(
     }
 
     private fun recur(at: Int): Int {
-        if (at == 0) return _f(params[params.size - 1], IntArray(params.size - 1) { params[it] })
+        if (at == 0) return _f(IntArray(params.size - 1) { params[it] }, params[params.size - 1])
 
         val arr = IntArray(_numStates + 1)
         arr[0] = at
@@ -67,6 +67,8 @@ class RuletreeDirective(
 
         return getNode(arr)
     }
+
+    override fun transitionFunc(cells: IntArray, cellState: Int): Int = f(cells, cellState)
 
     override fun export(): String {
         // Generating the rule tree

@@ -76,7 +76,7 @@ class RuletableBuilder {
         numStates: Int = 2,
         neighbourhood: Array<Coordinate> = moore(1),
         background: IntArray = intArrayOf(0),
-        f: (Int, IntArray) -> Int
+        f: (IntArray, Int) -> Int
     ) {
         directives.add(RuletreeDirective(numStates, neighbourhood, background, f))
     }

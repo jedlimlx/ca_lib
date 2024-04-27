@@ -18,9 +18,9 @@ internal fun convertWithIndex(state: Int, bg: Int, bgIndex: Int, numStates: Int)
  * @param neighbourhood The neighbourhood of the table directive
  */
 class RuletableDirective(
-    val numStates: Int = 2,
-    var neighbourhood: Array<Coordinate> = moore(1),
-    val background: IntArray
+    override val numStates: Int = 2,
+    override var neighbourhood: Array<Coordinate> = moore(1),
+    override val background: IntArray
 ) : RuleDirective("table") {
     // Properties of the ruletable to be exposed
     /**
@@ -42,6 +42,8 @@ class RuletableDirective(
     private val _variables: ArrayList<Variable?> = arrayListOf()
     private val _transitions: ArrayList<Transition?> = arrayListOf()
     private val _comments: ArrayList<String?> = arrayListOf()
+
+    override fun transitionFunc(cells: IntArray, cellState: Int): Int = TODO("Not yet implemented")
 
     override fun export(): String = with(StringBuilder()) {
         // Headers
