@@ -1,23 +1,12 @@
-import rules.hrot.HROT
-import rules.hrot.HROTGenerations
-import rules.nontotalistic.rules.INT
-import search.cfind.CFind
-import search.cfind.SearchStrategy
-import search.cfind.ShipSymmetry
-
 import it.skrape.core.*
 import it.skrape.fetcher.*
 import it.skrape.selects.*
 import it.skrape.selects.html5.*
-
-import simulation.Coordinate
-import simulation.DenseGrid
-import patterns.Spaceship
-import patterns.gliderdb.GliderDB
-import rules.hrot.HROTExtendedGenerations
-import rules.ruleloader.Ruletable
-import rules.ruleloader.builders.RuletableBuilder
+import rules.hrot.HROT
 import rules.ruleloader.builders.ruletable
+import search.cfind.CFind
+import search.cfind.SearchStrategy
+import search.cfind.ShipSymmetry
 import java.io.File
 
 actual fun main() {
@@ -83,21 +72,43 @@ actual fun main() {
     //search.search()
 
     val ruletable = ruletable {
-        name = "Test"
+        name = "R1,B3-5,S2-3,5-6,F0,2,5-6,K3,L0-8,NM"
 
-        tree(numStates = 2, neighbourhood = moore(1), background = intArrayOf(0, 1)) { neighbourhood, state ->
-            val sum = neighbourhood.sum()
-            when {
-                state == 0 && sum in setOf(0, 1, 5) -> 1
-                state == 1 && sum in setOf(2, 3) -> 1
-                else -> 0
+        val birth = setOf(3, 4, 5)
+        val survival = setOf(2, 3, 5, 6)
+        val forcing = setOf(0, 2, 5, 6)
+        val killing = setOf(3)
+        val living = setOf(0, 1, 2, 3, 4, 5, 6, 7, 8)
+
+        tree(
+            numStates = 3,
+            neighbourhood = moore(1),
+            background = intArrayOf(0)
+        ) { neighbours, cellState ->
+            val sum1 = neighbours.count { it == 1 }
+            val sum2 = neighbours.count { it == 2 }
+
+            when (cellState) {
+                1 -> {
+                    if (killing.contains(sum2)) 0
+                    else if (survival.contains(sum1)) 1
+                    else 2
+                }
+                2 -> {
+                    if (living.contains(sum1)) 0 else 2
+                }
+                else -> {
+                    if (birth.contains(sum1) && forcing.contains(sum2)) 1 else 0
+                }
             }
         }
-    }.toString()
+    }
+
+    File("Test.rule").writeText(ruletable.export())
 
     val search = CFind(
-        HROT("R2,C2,S6-9,B7-8,NM"), 2, 1, 8,
-        ShipSymmetry.ASYMMETRIC, verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS, numShips = 1
+        ruletable, 3, 1, 10,
+        ShipSymmetry.ODD, verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS
     )
     search.search()
 

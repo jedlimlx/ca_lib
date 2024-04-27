@@ -78,7 +78,9 @@ class RuletableBuilder {
         background: IntArray = intArrayOf(0),
         f: (IntArray, Int) -> Int
     ) {
-        directives.add(RuletreeDirective(numStates, neighbourhood, background, f))
+        val directive = RuletreeDirective(numStates, neighbourhood, background, f)
+        directives.add(directive)
+        ruleDirectives.add(directive)
     }
 
     /**

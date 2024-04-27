@@ -26,6 +26,7 @@ fun ruletableFromFile(filePath: String) {
  * @property ruleDirectives The directives of the ruletable which store metadata about the rule's transitions
  */
 class Ruletable(val name: String, val directive: List<Directive>, val ruleDirectives: List<RuleDirective>): Rule() {
+    override val numStates: Int = ruleDirectives[0].numStates
     override val neighbourhood: Array<Array<Coordinate>>
         get() = ruleDirectives.map { it.neighbourhood }.toTypedArray()
     override val possibleSuccessors: Array<Array<IntArray>> = Array(alternatingPeriod) {
@@ -57,5 +58,5 @@ class Ruletable(val name: String, val directive: List<Directive>, val ruleDirect
     /**
      * Converts the ruletable to a string. Has the same function as [export].
      */
-    override fun toString(): String = export()
+    override fun toString(): String = name
 }
