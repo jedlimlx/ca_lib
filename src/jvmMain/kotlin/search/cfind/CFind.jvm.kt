@@ -118,7 +118,7 @@ actual fun multithreadedDfs(cfind: CFind): Int {
                             cfind.t.cursor.hide(showOnExit = true)
                         }
 
-                        println(
+                        cfind.println(
                             TextStyles.bold(
                                 "\nChecked ${count - 1} / ${cfind.maxQueueSize} rows, " +
                                         "pruned ${(10000 - ((count - prunedCount) * 10000 / count)) / 100.0}%"
@@ -180,7 +180,7 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
                 cfind.t.cursor.hide(showOnExit = true)
             }
 
-            println(message)
+            cfind.println(message)
             clearLines = cfind.printRLE(grid)
             clearPartial = true
         }

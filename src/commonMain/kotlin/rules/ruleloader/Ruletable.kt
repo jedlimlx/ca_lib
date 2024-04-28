@@ -6,13 +6,61 @@ import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.readString
 import rules.Rule
 import rules.RuleFamily
+import rules.ruleloader.ruletree.ruletreeDirectiveFromString
 import simulation.Coordinate
 
 /**
- * Generates a ruletable from the file located at [filePath]
+ * Generates a ruletable from the rule file at [filePath]
  */
-fun ruletableFromFile(filePath: String) {
+fun ruletableFromFile(filePath: String): Ruletable {
+    // Reading from a file
     val contents = SystemFileSystem.source(Path(filePath)).buffered().readString()
+
+    // Generating the rule directives
+    val directives = ArrayList<Directive>(2)
+    val ruleDirectives = ArrayList<RuleDirective>(1)
+
+    var name = ""
+    var currentDirective = ""
+    val stringBuilder = StringBuilder()
+    contents.split("\n").forEach {
+        if (it.startsWith("@")) {
+            // Adding new directive
+            val content = stringBuilder.toString()
+            val newDirective = when (currentDirective) {
+                "COLORS" -> colourDirectiveFromString(content)
+                "TREE" ->  ruletreeDirectiveFromString(content)
+                else -> null
+            }
+
+            if (newDirective != null) {
+                directives.add(newDirective)
+                if (newDirective is RuleDirective)
+                    ruleDirectives.add(newDirective)
+            }
+
+            // Setting new directive
+            stringBuilder.clear()
+            currentDirective = it.split(" ").first().substring(1)
+            if (currentDirective == "RULE") name = it.split(" ").last()
+        } else stringBuilder.append(it).append("\n")
+    }
+
+    // Adding new directive
+    val content = stringBuilder.toString()
+    val newDirective = when (currentDirective) {
+        "COLORS" -> colourDirectiveFromString(content)
+        "TREE" ->  ruletreeDirectiveFromString(content)
+        else -> null
+    }
+
+    if (newDirective != null) {
+        directives.add(newDirective)
+        if (newDirective is RuleDirective)
+            ruleDirectives.add(newDirective)
+    }
+
+    return Ruletable(name, directives, ruleDirectives)
 }
 
 /**

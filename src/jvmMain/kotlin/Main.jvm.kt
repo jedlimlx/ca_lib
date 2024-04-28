@@ -6,6 +6,8 @@ import rules.hrot.HROT
 import rules.nontotalistic.rules.INT
 import rules.nontotalistic.rules.INTGenerations
 import rules.ruleloader.builders.ruletable
+import rules.ruleloader.ruletableFromFile
+import rules.ruleloader.ruletree.ruletreeDirectiveFromString
 import search.cfind.CFind
 import search.cfind.SearchStrategy
 import search.cfind.ShipSymmetry
@@ -63,16 +65,6 @@ actual fun main() {
     //     "x = 0, y = 0, rule = ${it.ruleRange!!.first}\n${it.canonPhase}"
     // }.joinToString("\n\n"))
 
-//    val search = CFind(
-//        HROT("R2,C2,S6-9,14-20,B7-8,15-24,NM"), 4, 3, 8, symmetry = ShipSymmetry.ODD,
-//        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 1000,
-//        backupName = "backups/minibugs_2c3o_w11_even", maxQueueSize = 1 shl 22, //stdin = true,
-//        backupFrequency = 10
-//    )
-//    search.loadState(File("/mnt/c/users/jedli/Documents/CA/cfind_dumps/minibugs_variant_3c4o_w8_odd.txt").readText())
-//    search.displayPartials()
-    //search.search()
-
 //    val ruletable = ruletable {
 //        name = "B1S235F23K4L035"
 //
@@ -105,12 +97,11 @@ actual fun main() {
 //            }
 //        }
 //    }
-//
-//    File("Test.rule").writeText(ruletable.export())
+    val ruletable = ruletableFromFile("SoManyShips3.rule")
+
     val search = CFind(
-        INTGenerations("1c2-an3-ijqr4-inrwy5cejkr6cen78/2-ac3ikr4-iktwy5acejq6-i78/3"),
-        5, 1, 10,
-        ShipSymmetry.EVEN, verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE,
+        ruletable, 3, 1, 10,
+        ShipSymmetry.GLIDE, verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE,
         numThreads = 8, partialFrequency = 1000
     )
     search.search()

@@ -1,8 +1,48 @@
 package rules.ruleloader.ruletree
 
+import moore
+import rules.ruleloader.ColourDirective
 import rules.ruleloader.RuleDirective
 import rules.ruleloader.ruletable.convertWithIndex
 import simulation.Coordinate
+
+/**
+ * Constructs a @TREE directive given the [contents] found in a ruletable under that directive
+ */
+fun ruletreeDirectiveFromString(contents: String): RuletreeDirective {
+    var numStates = 2
+    var nodes = Array(0) { intArrayOf() }
+    val neighbourhood = arrayOf(
+        Coordinate(-1, -1),
+        Coordinate(1, -1),
+        Coordinate(-1, 1),
+        Coordinate(1, 1),
+        Coordinate(0, -1),
+        Coordinate(-1, 0),
+        Coordinate(1, 0),
+        Coordinate(0, 1)
+    )
+
+    var count = 0
+    contents.split("\n").forEach {
+        when {
+            it.startsWith("num_states") -> numStates = it.split("=").last().toInt()
+            //it.startsWith("num_neighbours") || it.startsWith("num_neighbors") -> neighbourhood = it.split("=").last()
+            it.startsWith("num_nodes") -> nodes = Array(it.split("=").last().toInt()) { intArrayOf() }
+            it.isNotEmpty() && it[0].isDigit() -> nodes[count++] = it.split(" ").map { it.toInt() }.toIntArray()
+        }
+    }
+
+    return RuletreeDirective(
+        numStates, neighbourhood, intArrayOf(0)
+    ) { neighbours, cellState ->
+        var currentNode = nodes.last()
+        for (state in neighbours)
+            currentNode = nodes[currentNode[state + 1]]
+
+        return@RuletreeDirective currentNode[cellState + 1]
+    }
+}
 
 /**
  * Represents the @TREE directive of the ruletable

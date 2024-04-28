@@ -3,6 +3,18 @@ package rules.ruleloader
 import Colour
 
 /**
+ * Constructs a @COLORS directive given the [contents] found in a ruletable under that directive
+ */
+fun colourDirectiveFromString(contents: String): ColourDirective {
+    return ColourDirective(
+        colours = contents.split("\n").map {
+            val tokens = it.split(" ")
+            Colour(tokens[1].toInt(), tokens[2].toInt(), tokens[3].toInt())
+        }.toTypedArray()
+    )
+}
+
+/**
  * Represents the @COLORS directive in ruletables for specifying the colour of different states
  * @param colours The colours of each state (colours\[i\] gives colour of state i)
  * @property colours The colours of each state (colours\[i\] gives colour of state i)
