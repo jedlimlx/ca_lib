@@ -107,6 +107,7 @@ actual fun main() {
 //    }
 //
 //    File("Test.rule").writeText(ruletable.export())
+    val search = CFind(
         INTGenerations("1c2-an3-ijqr4-inrwy5cejkr6cen78/2-ac3ikr4-iktwy5acejq6-i78/3"),
         5, 1, 10,
         ShipSymmetry.EVEN, verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE,
