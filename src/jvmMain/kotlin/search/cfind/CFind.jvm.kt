@@ -189,6 +189,8 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
     val threads = arrayListOf<Thread>()
     for (i in 0 ..< cfind.numThreads) {
         val thread = Thread {
+            Thread.sleep(i*1000L)
+
             // Begin the search
             var row: Row
             var currentRow: Row
@@ -308,7 +310,7 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
                                 currentRow,
                                 TextStyles.bold(
                                     "\nPriority Queue Size: ${cfind.priorityQueue.size} / ${cfind.maxQueueSize}" +
-                                            "\nThread $i / ${synchronized(mutex5) { numProcessing }}, " +
+                                            "\nThread $i / ${numProcessing}, " +
                                             "Stack Size: ${stack.size}, Depth: ${currentRow.depth} / $maxDepth"
                                 ), numLines = 4
                             )

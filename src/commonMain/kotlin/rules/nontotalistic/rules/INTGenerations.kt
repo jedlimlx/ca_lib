@@ -9,43 +9,59 @@ import rules.ruleloader.builders.ruletable
 import simulation.Coordinate
 
 /**
- * Represents a 2-state isotropic non-totalistic (INT) rule
+ * Represents an isotropic non-totalistic (INT) generations rule
  */
-class INT : BaseINT {
+class INTGenerations : BaseINT {
     /**
-     * The birth transitions of the INT rule
+     * The birth conditions of the INT generations rule
      */
     val birth: INTTransitions
 
     /**
-     * The survival transitions of the INT rule
+     * The survival conditions of the INT generations rule
      */
     val survival: INTTransitions
 
+    override val numStates: Int
     override val neighbourhood: Array<Array<Coordinate>>
     override val neighbourhoodString: String
 
-    override val possibleSuccessors: Array<Array<IntArray>> = arrayOf(arrayOf(intArrayOf(0, 1), intArrayOf(0, 1)))
+    override val possibleSuccessors: Array<Array<IntArray>>
+    override val equivalentStates: IntArray
 
     override val regex: List<Regex> by lazy {
         INT_NEIGHBOURHOODS.map { (key, entry) ->
-            Regex("[Bb]${entry.regex}/?[Ss]${entry.regex}(/?[Nn]($key|${key.lowercase()}))?")
+            Regex("[BbSs]?${entry.regex}/[BbSs]?${entry.regex}/[CcGg]?[0-9]+(/[Nn]?($key|${key.lowercase()}))?")
+        } + INT_NEIGHBOURHOODS.map { (key, entry) ->
+            Regex("[BbSs]${entry.regex}/?[BbSs]${entry.regex}/?[CcGg][0-9]+(/?[Nn]($key|${key.lowercase()}))?")
+        } + INT_NEIGHBOURHOODS.map { (key, entry) ->
+            Regex("[CcGg][0-9]+/?[Bb]${entry.regex}/?[Ss]${entry.regex}(/?[Nn]($key|${key.lowercase()}))?")
         }
     }
 
-    override val equivalentStates: IntArray = intArrayOf(0, 1)
-
-    constructor(birth: INTTransitions, survival: INTTransitions, neighbourhoodString: String) {
+    constructor(birth: INTTransitions, survival: INTTransitions, numStates: Int, neighbourhoodString: String) {
         this.birth = birth
         this.survival = survival
+        this.numStates = numStates
         this.neighbourhoodString = neighbourhoodString
 
         require(neighbourhoodString in INT_NEIGHBOURHOODS) { "INT Neighbourhood identifier " +
             "$neighbourhoodString is not supported." }
         neighbourhood = arrayOf(INT_NEIGHBOURHOODS[neighbourhoodString]!!.neighbourhood)
+
+        // Setting the possible successors of each state
+        possibleSuccessors = arrayOf(Array(numStates) {
+            when (it) {
+                0 -> intArrayOf(0, 1)
+                1 -> if (this.survival.isEmpty()) intArrayOf(2) else intArrayOf(1, 2)
+                else -> intArrayOf((it + 1) % numStates)
+            }
+        })
+
+        equivalentStates = intArrayOf(0, 1) + IntArray(numStates - 2) { 0 }
     }
 
-    constructor(rulestring: String = "B2n3/S23-q") {
+    constructor(rulestring: String = "12/34/3") {
         // Get the neighbourhood string
         neighbourhoodString = Regex("/?[Nn]?(${INT_NEIGHBOURHOODS.keys.map {
             listOf(it.lowercase(), it.uppercase())
@@ -60,17 +76,36 @@ class INT : BaseINT {
         val string = INT_NEIGHBOURHOODS[neighbourhoodString]!!.regex.pattern
 
         "[Bb](($string)*)"  // This useless line makes the unit tests pass, don't question
-        birth = parseTransition(Regex("[Bb](($string)*)").find(rulestring)!!.groupValues[1])
-        survival = parseTransition(Regex("[Ss](($string)*)").find(rulestring)!!.groupValues[1])
+        if (Regex("[Bb](($string)*)").find(rulestring) != null) {
+            birth = parseTransition(Regex("[Bb](($string)*)").find(rulestring)!!.groupValues[1])
+            survival = parseTransition(Regex("[Ss](($string)*)").find(rulestring)!!.groupValues[1])
+            numStates = Regex("[CcGg]([0-9]+)").find(rulestring)!!.groupValues[1].toInt()
+        } else {
+            val tokens = rulestring.split("/")
+            birth = parseTransition(tokens[1])
+            survival = parseTransition(tokens[0])
+            numStates = tokens[2].toInt()
+        }
+
+        // Setting the possible successors of each state
+        possibleSuccessors = arrayOf(Array(numStates) {
+            when (it) {
+                0 -> intArrayOf(0, 1)
+                1 -> if (this.survival.isEmpty()) intArrayOf(2) else intArrayOf(1, 2)
+                else -> intArrayOf((it + 1) % numStates)
+            }
+        })
+
+        equivalentStates = intArrayOf(0, 1) + IntArray(numStates - 2) { 0 }
     }
 
-    override fun canoniseRulestring(): String = "B${birth.transitionString}/S${survival.transitionString}" +
-            if (neighbourhoodString != "M") "/N$neighbourhoodString" else ""
+    override fun canoniseRulestring(): String = "${survival.transitionString}/${birth.transitionString}/${numStates}" +
+            if (neighbourhoodString != "M") "/$neighbourhoodString" else ""
 
-    override fun fromRulestring(rulestring: String): INT = INT(rulestring)
+    override fun fromRulestring(rulestring: String): INTGenerations = INTGenerations(rulestring)
 
     override fun between(minRule: RuleFamily, maxRule: RuleFamily): Boolean {
-        if (minRule !is INT || maxRule !is INT) return false
+        if (minRule !is INTGenerations || maxRule !is INTGenerations) return false
         return birth.containsAll(minRule.birth) && survival.containsAll(minRule.survival) &&
                 maxRule.birth.containsAll(birth) && maxRule.survival.containsAll(survival)
     }
@@ -94,27 +129,27 @@ class INT : BaseINT {
             when {
                 it[0] == 0 && it[1] == 0 -> maxBirth.remove(string)  // No birth
                 it[0] == 0 && it[1] == 1 -> minBirth.add(string)  // Birth
-                it[0] == 1 && it[1] == 0 -> maxSurvival.remove(string)  // No survival
+                it[0] == 1 && it[1] == 2 -> maxSurvival.remove(string)  // No survival
                 it[0] == 1 && it[1] == 1 -> minSurvival.add(string) // Survival
             }
         }
 
-        val minRule = INT(
+        val minRule = INTGenerations(
             fromStringTransitions(neighbourhoodString, minBirth),
             fromStringTransitions(neighbourhoodString, minSurvival),
-            neighbourhoodString
+            numStates, neighbourhoodString
         )
-        val maxRule = INT(
+        val maxRule = INTGenerations(
             fromStringTransitions(neighbourhoodString, maxBirth),
             fromStringTransitions(neighbourhoodString, maxSurvival),
-            neighbourhoodString
+            numStates, neighbourhoodString
         )
 
         return Pair(minRule, maxRule)
     }
 
     override fun enumerate(minRule: RuleFamily, maxRule: RuleFamily): Sequence<RuleFamily> {
-        require(minRule is INT && maxRule is INT) { "minRule and maxRule must be an instance of INT" }
+        require(minRule is INTGenerations && maxRule is INTGenerations) { "minRule and maxRule must be an instance of INT Generations" }
 
         // Get the difference between the birth and survival transitions of the min and max rules
         val birthDiff = (maxRule.birth.transitionStrings - minRule.birth.transitionStrings).toList()
@@ -129,11 +164,14 @@ class INT : BaseINT {
                 else {
                     // Add the transition to the rule
                     val newRule = if (index < birthDiff.size)
-                        INT(rule.birth + setOf(birthDiff[index]), rule.survival, neighbourhoodString)
+                        INTGenerations(
+                            rule.birth + setOf(birthDiff[index]), rule.survival,
+                            numStates, neighbourhoodString
+                        )
                     else
-                        INT(
+                        INTGenerations(
                             rule.birth, rule.survival + setOf(survivalDiff[index - birthDiff.size]),
-                            neighbourhoodString
+                            numStates, neighbourhoodString
                         )
 
                     // 2 cases -> transition added and transition not added
@@ -145,13 +183,13 @@ class INT : BaseINT {
     }
 
     override fun random(minRule: RuleFamily, maxRule: RuleFamily, seed: Int?): Sequence<RuleFamily> {
-        require(minRule is INT && maxRule is INT) { "minRule and maxRule must be an instance of INT" }
+        require(minRule is INTGenerations && maxRule is INTGenerations) { "minRule and maxRule must be an instance of INT Generations" }
 
         return generateSequence {
             val randomBirth = randomTransition(minRule.birth, maxRule.birth, seed)
             val randomSurvival = randomTransition(minRule.survival, maxRule.survival, seed)
 
-            INT(randomBirth, randomSurvival, neighbourhoodString)
+            INTGenerations(randomBirth, randomSurvival, numStates, neighbourhoodString)
         }
     }
 
@@ -181,20 +219,25 @@ class INT : BaseINT {
             }
 
             comment("Everything else dies")
-            transition { "1 ${"any ".repeat(neighbourhood.size)}0" }
+            for (i in 1..<numStates)
+                transition { "$i ${"any ".repeat(neighbourhood.size)}${(i + 1) % numStates}" }
         }
 
         colours(numStates, background) { colours[it] }
     }
 
     override fun transitionFunc(cells: IntArray, cellState: Int, generation: Int, coordinate: Coordinate): Int {
+        val temp = cells.map { equivalentStates[it] }
         return when (cellState) {
-            0 -> if (cells in birth) 1 else 0
-            else -> if (cells in survival) 1 else 0
+            0 -> if (temp in birth) 1 else 0
+            1 -> if (temp in survival) 1 else 2
+            else -> (cellState + 1) % numStates
         }
     }
 
     override fun transitionFuncWithUnknowns(cells: IntArray, cellState: Int, generation: Int, coordinate: Coordinate): Int {
+        if (cellState >= 2) return 1 shl (cellState + 1).mod(numStates)
+
         val output = IntArray(2) { 0 }
 
         // Enumerate all possible configurations of the unknown cells
@@ -211,12 +254,12 @@ class INT : BaseINT {
             }
 
             // Ask the transition function what the output state will be
-            output[transitionFunc(cellsCopy, cellState, generation, coordinate)] = 1
+            output[equivalentStates[transitionFunc(cellsCopy, cellState, generation, coordinate)]] = 1
             if (output.sum() == 2) break  // Quit if all possible output states have been reached
         }
 
         var num = 0
-        if (output[0] == 1) num += 1 shl 0
+        if (output[0] == 1) num += 1 shl (if (cellState == 0) 0 else 2)
         if (output[1] == 1) num += 1 shl 1
 
         return num

@@ -339,7 +339,7 @@ class HROTGenerations : BaseHROT {
             }
 
             comment("Everything else dies")
-            for (i in 1 until numStates)
+            for (i in 1..<numStates)
                 transition { "$i ${"any ".repeat(neighbourhood.size)}${(i + 1) % numStates}" }
         }
 

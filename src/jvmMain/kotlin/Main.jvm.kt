@@ -3,6 +3,8 @@ import it.skrape.fetcher.*
 import it.skrape.selects.*
 import it.skrape.selects.html5.*
 import rules.hrot.HROT
+import rules.nontotalistic.rules.INT
+import rules.nontotalistic.rules.INTGenerations
 import rules.ruleloader.builders.ruletable
 import search.cfind.CFind
 import search.cfind.SearchStrategy
@@ -71,44 +73,44 @@ actual fun main() {
 //    search.displayPartials()
     //search.search()
 
-    val ruletable = ruletable {
-        name = "R1,B3-5,S2-3,5-6,F0,2,5-6,K3,L0-8,NM"
-
-        val birth = setOf(3, 4, 5)
-        val survival = setOf(2, 3, 5, 6)
-        val forcing = setOf(0, 2, 5, 6)
-        val killing = setOf(3)
-        val living = setOf(0, 1, 2, 3, 4, 5, 6, 7, 8)
-
-        tree(
-            numStates = 3,
-            neighbourhood = moore(1),
-            background = intArrayOf(0)
-        ) { neighbours, cellState ->
-            val sum1 = neighbours.count { it == 1 }
-            val sum2 = neighbours.count { it == 2 }
-
-            when (cellState) {
-                1 -> {
-                    if (killing.contains(sum2)) 0
-                    else if (survival.contains(sum1)) 1
-                    else 2
-                }
-                2 -> {
-                    if (living.contains(sum1)) 0 else 2
-                }
-                else -> {
-                    if (birth.contains(sum1) && forcing.contains(sum2)) 1 else 0
-                }
-            }
-        }
-    }
-
-    File("Test.rule").writeText(ruletable.export())
-
-    val search = CFind(
-        ruletable, 3, 1, 10,
-        ShipSymmetry.ODD, verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS
+//    val ruletable = ruletable {
+//        name = "B1S235F23K4L035"
+//
+//        val birth = setOf(1)
+//        val survival = setOf(2, 3, 5)
+//        val forcing = setOf(2, 3)
+//        val killing = setOf(4)
+//        val living = setOf(0, 3, 5)
+//
+//        tree(
+//            numStates = 3,
+//            neighbourhood = moore(1),
+//            background = intArrayOf(0)
+//        ) { neighbours, cellState ->
+//            val sum1 = neighbours.count { it == 1 }
+//            val sum2 = neighbours.count { it == 2 }
+//
+//            when (cellState) {
+//                1 -> {
+//                    if (killing.contains(sum2)) 0
+//                    else if (survival.contains(sum1)) 1
+//                    else 2
+//                }
+//                2 -> {
+//                    if (living.contains(sum1)) 0 else 2
+//                }
+//                else -> {
+//                    if (birth.contains(sum1) && forcing.contains(sum2)) 1 else 0
+//                }
+//            }
+//        }
+//    }
+//
+//    File("Test.rule").writeText(ruletable.export())
+        INTGenerations("1c2-an3-ijqr4-inrwy5cejkr6cen78/2-ac3ikr4-iktwy5acejq6-i78/3"),
+        5, 1, 10,
+        ShipSymmetry.EVEN, verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE,
+        numThreads = 8, partialFrequency = 1000
     )
     search.search()
 
