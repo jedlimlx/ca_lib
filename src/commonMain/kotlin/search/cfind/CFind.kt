@@ -1658,12 +1658,14 @@ class CFind(
                 if ((i - delay).mod(70) == 0 && i != 0) {
                     if (string[i].isDigit()) delay++
                     else {
-                        append("\n")
+                        if (!stdin) append("\n")
                         newLines++
                     }
                 }
             }
         }.toString()
+
+        if (rle == "!") return newLines
         if (verbosity <= this.verbosity) {
             if (style != null) t.println(style("x = 0, y = 0, rule = ${rule}\n$rle"))
             else t.println("x = 0, y = 0, rule = ${rule}\n$rle")
