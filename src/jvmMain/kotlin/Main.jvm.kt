@@ -100,7 +100,7 @@ actual fun main() {
     val ruletable = ruletableFromFile("SoManyShips3.rule")
 
     val search = CFind(
-        ruletable, 3, 1, 10,
+        ruletable, 4, 1, 7,
         ShipSymmetry.GLIDE, verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE,
         numThreads = 8, partialFrequency = 1000
     )

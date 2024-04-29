@@ -146,12 +146,11 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
 
     // Synchronisation primitives
     val mutex = Object()
-    val mutex2 = Object()
-    val mutex3 = Object()
-    val mutex4 = Object()
-    val mutex5 = Object()
-    val mutex6 = Object()
-    val mutex7 = Object()
+    val equivalentStatesMutex = Object()
+    val printingMutex = Object()
+    val anyProcessingMutex = Object()
+    val timingMutex = Object()
+    val quitMutex = Object()
 
     val anyProcessing = Semaphore(1)
 
@@ -165,6 +164,8 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
 
     var clearPartial = false
     var clearLines = 0
+
+    var quitProcessing = false
 
     fun printPartials(currentRow: Row, message: Any, numLines: Int = 3, forcePrint: Boolean = false) {
         if ((count++).mod(cfind.partialFrequency) == 0 || forcePrint) {
@@ -198,19 +199,23 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
             while (true) {
                 // Check if the queue is empty
                 var emptyQueue = false
-                if (cfind.priorityQueue.isEmpty()) {
-                    anyProcessing.acquire()
+                synchronized(quitMutex) { 
                     if (cfind.priorityQueue.isEmpty()) {
-                        emptyQueue = true
-                        row = Row(null, intArrayOf(0), cfind)
-                    } else row = cfind.priorityQueue.poll()
-                    anyProcessing.release()
-                } else row = synchronized(mutex) { cfind.priorityQueue.poll() }
+                        quitProcessing = true
+                        anyProcessing.acquire()
+                        quitProcessing = false
+                        if (cfind.priorityQueue.isEmpty()) {
+                            emptyQueue = true
+                            row = Row(null, intArrayOf(0), cfind)
+                        } else row = cfind.priorityQueue.poll()
+                        anyProcessing.release()
+                    } else synchronized(mutex) { row = cfind.priorityQueue.poll() }
+                }
 
                 if (emptyQueue) break
 
                 // Acquire the saving state lock
-                synchronized(mutex5) {
+                synchronized(anyProcessingMutex) {
                     if (++numProcessing == 1) anyProcessing.acquire()
                 }
 
@@ -219,12 +224,12 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
 
                 // Decide what depth we should reach
                 val maxDepth = row.prunedDepth + cfind.minDeepeningIncrement
-                val roundStartTime = synchronized (mutex7) { timeSource.markNow() }
+                val roundStartTime = timeSource.markNow()
 
                 do {
                     // Check if stack is empty
                     if (stack.isEmpty()) {
-                        synchronized(mutex6) { pruning = 0.99 * pruning + 0.01 }
+                        pruning = 0.99 * pruning + 0.01
                         break
                     }
 
@@ -232,8 +237,11 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
                     currentRow = stack.removeLast()
 
                     // Check if we should exit this round
-                    if (currentRow.depth == maxDepth || (timeSource.markNow() - roundStartTime).inWholeSeconds > cfind.maxTimePerRound) {
-                        synchronized(mutex6) { pruning *= 0.99 }
+                    if (
+                        currentRow.depth == maxDepth || quitProcessing ||
+                        (timeSource.markNow() - roundStartTime).inWholeSeconds > cfind.maxTimePerRound
+                    ) {
+                        pruning *= 0.99
 
                         // Compute the predecessors
                         val predecessors = currentRow.getAllPredecessors(
@@ -243,9 +251,7 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
                         // Decide how many rows to add to the priority queue
                         var rowsAdded = 0
                         var finalDepth = -1
-                        val maxRowsAdded = synchronized(mutex6) {
-                            (cfind.maxQueueSize / (cfind.priorityQueue.size + 0.0001) * (1.0 - pruning)).toInt()
-                        }
+                        val maxRowsAdded = (cfind.maxQueueSize / (cfind.priorityQueue.size + 0.0001) * (1.0 - pruning)).toInt()
                         for (depth in row.depth + 1..currentRow.depth) {
                             val lst = stack.filter { it.depth == depth }
                             rowsAdded += lst.size
@@ -271,7 +277,7 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
 
                     var foundEnoughShips = false
                     var equivalentState = false
-                    synchronized(mutex2) {
+                    synchronized(equivalentStatesMutex) {
                         // Check if the ship is completed
                         if (cfind.checkCompletedShip(currentRow)) {
                             clearPartial = false
@@ -293,7 +299,7 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
                     stack.addAll(processSuccessors(currentRow, successors))
 
                     // Printing out the partials
-                    synchronized(mutex4) {
+                    synchronized(printingMutex) {
                         // Insert some randomness in order to increase variety of partials shown to user
                         if (currentRow.depth > longestPartialSoFar && Random.nextInt(1, 5) == 1) {
                             longestPartialSoFar = currentRow.depth
@@ -319,18 +325,22 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
                 } while (true)
 
                 // Release the saving state lock
-                synchronized(mutex5) {
+                synchronized(anyProcessingMutex) {
                     if (--numProcessing == 0) anyProcessing.release()
                 }
 
                 // Check if sufficiently many ships have been found
                 var foundEnoughShips = false
-                synchronized(mutex2) { if (shipsFound == cfind.numShips) foundEnoughShips = true }
+                synchronized(equivalentStatesMutex) { if (shipsFound == cfind.numShips) foundEnoughShips = true }
                 if (foundEnoughShips) break
 
                 // Check how much time has past and see if we need to write to a backup
                 if ((timeSource.markNow() - startTime).inWholeMilliseconds > (backups+1)*cfind.backupFrequency*1000) {
-                    anyProcessing.acquire()
+                    synchronized(quitMutex) {
+                        quitProcessing = true
+                        anyProcessing.acquire()
+                        quitProcessing = false
+                    }
                     if ((timeSource.markNow() - startTime).inWholeMilliseconds > (backups+1)*cfind.backupFrequency*1000)
                         backupState("${cfind.backupName}_${backups++}.txt", cfind.saveState())
                     anyProcessing.release()
