@@ -124,8 +124,13 @@ actual fun multithreadedDfs(cfind: CFind): Int {
                                         "pruned ${(10000 - ((count - prunedCount) * 10000 / count)) / 100.0}%"
                             )
                         )
-                        clearLines = cfind.printRLE(grid)
+                        clearLines = cfind.printRLE(grid, write=count.mod(cfind.partialFileFrequency) == 0)
                         clearPartial = true
+                    } else if (count.mod(cfind.partialFileFrequency) == 0) {
+                        val grid = currentRow.toGrid(cfind.period, cfind.symmetry)
+                        grid.rule = cfind.rule
+                        
+                        cfind.printRLE(grid, write=true, print=false)
                     }
                 }
             }
@@ -180,10 +185,15 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
                 }
                 cfind.t.cursor.hide(showOnExit = true)
             }
-
+            
             cfind.println(message)
-            clearLines = cfind.printRLE(grid)
+            clearLines = cfind.printRLE(grid, write=count.mod(cfind.partialFileFrequency) == 0)
             clearPartial = true
+        } else if (count.mod(cfind.partialFileFrequency) == 0) {
+            val grid = currentRow.toGrid(cfind.period, cfind.symmetry)
+            grid.rule = cfind.rule
+            
+            cfind.printRLE(grid, write=true, print=false)
         }
     }
 

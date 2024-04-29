@@ -1,5 +1,9 @@
 package search.cfind
 
+import kotlinx.io.buffered
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
+import kotlinx.io.writeString
 import LRUCache
 import PLATFORM
 import PriorityQueue
@@ -16,6 +20,7 @@ import simulation.Coordinate
 import simulation.Grid
 import kotlin.math.pow
 import kotlin.time.TimeSource
+import kotlin.random.Random
 
 /**
  * Searches for spaceships using a method similar to the method used by gfind, which was described by David Eppstein in
@@ -40,9 +45,13 @@ class CFind(
     val maxTimePerRound: Int = 5*60,
     val numThreads: Int = 8,
     val stdin: Boolean = false,
+    val partialFiles: List<String> = listOf(),
+    partialFileFrequency: Int = -1,
     verbosity: Int = 0
 ): SearchProgram(verbosity) {
     override val searchResults: MutableList<Pattern> = mutableListOf()
+
+    val partialFileFrequency = if (partialFileFrequency > 0) partialFileFrequency else partialFrequency
 
     // TODO Handle alternating stuff properly / don't support alternating neighbourhoods
     var minDeepeningIncrement = if (minDeepeningIncrement == -1) {
@@ -536,6 +545,9 @@ class CFind(
         else leftBC.size
     ).filter { it !in ignoreBCs }
 
+    // Opening the partial files
+    val partialFileStreams = partialFiles.map { SystemFileSystem.sink(Path(it)).buffered() }
+
     // For hybrid BFS / pure DFS, we will represent the queue / stack as a linked list
     var head: Row? = null
     var tail: Row? = null
@@ -660,8 +672,13 @@ class CFind(
                 }
 
                 println(message)
-                clearLines = printRLE(grid)
+                clearLines = printRLE(grid, write=count.mod(partialFileFrequency) == 0)
                 clearPartial = true
+            } else if (count.mod(partialFileFrequency) == 0) {
+                val grid = currentRow.toGrid(period, symmetry)
+                grid.rule = rule
+
+                printRLE(grid, write=true, print=false)
             }
         }
 
@@ -1648,7 +1665,13 @@ class CFind(
             t.println(x)
     }
 
-    fun printRLE(grid: Grid, verbosity: Int = 0, style: TextStyle? = null): Int {
+    fun printRLE(
+        grid: Grid, 
+        verbosity: Int = 0, 
+        style: TextStyle? = null, 
+        print: Boolean = true,
+        write: Boolean = true
+    ): Int {
         var newLines = 1
         val rle = StringBuilder().apply {
             var delay = 0
@@ -1666,10 +1689,15 @@ class CFind(
         }.toString()
 
         if (rle == "!") return newLines
-        if (verbosity <= this.verbosity) {
+        if (verbosity <= this.verbosity && print) {
             if (style != null) t.println(style("x = 0, y = 0, rule = ${rule}\n$rle"))
             else t.println("x = 0, y = 0, rule = ${rule}\n$rle")
         }
+        
+        if (partialFileStreams.isNotEmpty() && write)
+            partialFileStreams[Random.nextInt(partialFileStreams.size)].writeString(
+                "x = 0, y = 0, rule = ${rule}\n${rle.replace("\n", "")}\n"
+            )
 
         return newLines
     }

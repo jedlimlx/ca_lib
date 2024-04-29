@@ -97,12 +97,15 @@ actual fun main() {
 //            }
 //        }
 //    }
+    
+
     val ruletable = ruletableFromFile("SoManyShips3.rule")
 
     val search = CFind(
-        ruletable, 3, 2, 15,
-        ShipSymmetry.GLIDE, verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE,
-        numThreads = 8, partialFrequency = 10, stdin = true
+        ruletable, 3, 2, 15, ShipSymmetry.GLIDE, 
+        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE,
+        numThreads = 8, partialFrequency = 10000, partialFiles = listOf("partials_1.txt"),
+        partialFileFrequency = 1000
     )
     search.search()
 
