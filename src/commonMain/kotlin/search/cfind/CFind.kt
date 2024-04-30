@@ -33,6 +33,7 @@ class CFind(
     val width: Int,
     val symmetry: ShipSymmetry,
     val direction: Coordinate = Coordinate(0, 1),
+    val isotropic: Boolean = true,
     val maxQueueSize: Int = 1 shl 20,
     minDeepeningIncrement: Int = -1,
     lookaheadDepth: Int = Int.MAX_VALUE,
@@ -571,6 +572,7 @@ class CFind(
             t.cursor.hide(showOnExit = true)
         }
 
+        // TODO Error handling of invalid inputs, e.g. invalid symmetries
         // Print a message that indicates the search is beginning
         println(bold("Beginning search for width ${green("$width")} " +
                 "spaceship with ${green("$symmetry")} symmetry moving towards ${green("$direction")} at " +
@@ -1075,6 +1077,10 @@ class CFind(
         }
     }
 
+    fun backupState(file: String, state: String) {
+        SystemFileSystem.sink(Path(file)).buffered().writeString(state)
+    }
+
     fun displayPartials(minDepth: Int = 0) {
         val depthMap = hashMapOf<Int, Int>()
         if (searchStrategy == SearchStrategy.PRIORITY_QUEUE) {
@@ -1143,9 +1149,11 @@ class CFind(
     @OptIn(ExperimentalUnsignedTypes::class)
     fun checkEquivalentState(row: Row): Boolean {
         val rows = row.getAllPredecessors((height - 1) * period)
-        if (rows.hashCode().toUShort() in equivalentStates.keys) {
+        val hash = rows.map { it.hashCode() }.hashCode().toUShort()
+        val reverseHash = rows.map { it.reverseHashCode() }.hashCode().toUShort()
+        if (hash in equivalentStates.keys) {
             var equivalent = true
-            val state = equivalentStates.get(rows.hashCode().toUShort())!!
+            val state = equivalentStates.get(hash)!!
             for (i in state.indices) {
                 if (state[i] != rows[i].hashCode().toUShort()) {
                     equivalent = false
@@ -1154,8 +1162,30 @@ class CFind(
             }
 
             if (!equivalent) return false
+        } else if (
+            isotropic && 
+            (symmetry == ShipSymmetry.GLIDE || symmetry == ShipSymmetry.ASYMMETRIC) &&
+            reverseHash in equivalentStates.keys
+         ) {
+            var equivalent = true
+            val state = equivalentStates.get(reverseHash)!!
+            for (i in state.indices) {
+                if (state[i] != rows[i].reverseHashCode().toUShort()) {
+                    equivalent = false
+                    break
+                }
+            }
+
+            if (!equivalent) return false
         } else {
-            equivalentStates.put(rows.hashCode().toUShort(), rows.map { it.hashCode().toUShort() }.toUShortArray())
+            val temp = rows.map { it.hashCode().toUShort() }.toUShortArray()
+            equivalentStates.put(hash, temp)
+            if (isotropic && (symmetry == ShipSymmetry.GLIDE || symmetry == ShipSymmetry.ASYMMETRIC)) {
+                equivalentStates.put(
+                    reverseHash, 
+                    rows.map { it.reverseHashCode().toUShort() }.toUShortArray()
+                )
+            }
             return false
         }
 
@@ -1551,7 +1581,7 @@ class CFind(
                     !checkBoundaryCondition(node, filteredRightBCs)
                 ) continue
 
-                if (checkBoundaryCondition(node, filteredLeftBCs, offset=Coordinate(width * spacing - 1, 0))) {
+                if (checkBoundaryCondition(node, leftBC, offset=Coordinate(width * spacing - 1, 0))) {
                     // Running the lookahead
                     val row = Row(currentRow, node.completeRow, this)
                     if (lookaheadDepth < this.lookaheadDepth) {
@@ -1688,13 +1718,13 @@ class CFind(
             }
         }.toString()
 
-        if (rle == "!") return newLines
+        if (rle == "!" && stdin) return 0
         if (verbosity <= this.verbosity && print) {
             if (style != null) t.println(style("x = 0, y = 0, rule = ${rule}\n$rle"))
             else t.println("x = 0, y = 0, rule = ${rule}\n$rle")
         }
         
-        if (partialFileStreams.isNotEmpty() && write)
+        if (partialFileStreams.isNotEmpty() && write && rle != "!")
             partialFileStreams[Random.nextInt(partialFileStreams.size)].writeString(
                 "x = 0, y = 0, rule = ${rule}\n${rle.replace("\n", "")}\n"
             )
@@ -1706,8 +1736,6 @@ class CFind(
 expect fun multithreadedDfs(cfind: CFind): Int
 
 expect fun multithreadedPriorityQueue(cfind: CFind)
-
-expect fun backupState(filename: String, backup: String)
 
 private fun getDigit(number: Int, power: Int, base: Int) = number.floorDiv(power).mod(base)
 

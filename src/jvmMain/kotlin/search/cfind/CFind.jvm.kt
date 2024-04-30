@@ -266,7 +266,7 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
                             val lst = stack.filter { it.depth == depth }
                             rowsAdded += lst.size
 
-                            if (rowsAdded < maxRowsAdded || depth == row.depth + 1) {
+                            if (rowsAdded < 1.5 * maxRowsAdded || depth == row.depth + 1) {
                                 synchronized(mutex) { lst.forEach { cfind.priorityQueue.add(it) } }
                                 finalDepth = depth
                             } else break
@@ -352,7 +352,7 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
                         quitProcessing = false
                     }
                     if ((timeSource.markNow() - startTime).inWholeMilliseconds > (backups+1)*cfind.backupFrequency*1000)
-                        backupState("${cfind.backupName}_${backups++}.txt", cfind.saveState())
+                        cfind.backupState("${cfind.backupName}_${backups++}.txt", cfind.saveState())
                     anyProcessing.release()
                 }
             }
@@ -362,9 +362,4 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
     }
 
     threads.forEach { it.join() }
-}
-
-actual fun backupState(filename: String, backup: String) {
-    val file = File(filename)
-    file.writeText(backup)
 }

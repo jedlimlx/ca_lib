@@ -19,6 +19,15 @@ class Row(val predecessor: Row?, val cells: IntArray, var search: CFind? = null)
         hash
     }
 
+    private val reverseHash = run {
+        var hash = 0
+        for (i in cells.indices) {
+            hash += cells[cells.size - i - 1] * pow(search!!.rule.numStates, i)
+        }
+
+        hash
+    }
+
     // information about the row and its position within the larger ship
     var depth = 0
     val prunedDepth: Int
@@ -144,7 +153,8 @@ class Row(val predecessor: Row?, val cells: IntArray, var search: CFind? = null)
     }
 
     override fun hashCode() = hash
-    override fun compareTo(other: Row): Int = this.prunedDepth - other.prunedDepth
+    fun reverseHashCode() = reverseHash
+    override fun compareTo(other: Row): Int = this.depth - other.depth
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
