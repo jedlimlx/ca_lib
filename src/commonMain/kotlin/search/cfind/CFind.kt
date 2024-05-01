@@ -1454,7 +1454,7 @@ class CFind(
                 val index: Int
                 val tempCoordinate = coordinate + lastBaseCoordinate
                 if (spacing != 1) {
-                    val temp = coordinate.x - offsets[(depth - coordinate.y * period).mod(offsets.size)]
+                    val temp = tempCoordinate.x - offsets[(depth - tempCoordinate.y * period).mod(offsets.size)]
                     if (temp.mod(spacing) != 0) return@forEach
 
                     index = temp / spacing
@@ -1468,6 +1468,13 @@ class CFind(
                     // Finally checking the boundary condition
                     if (((lookupTable[encodeKey(coordinate, cells)] shr boundaryState) and 0b1) != 1) {
                         satisfyBC = false
+                        if (it !in filteredLeftBCs) {
+                            println("$it $coordinate $tempCoordinate")
+                            println("a ${lookup(index).toList()} ${encodeKey(coordinate, cells)} ${rows[tempCoordinate, 0, cells, depth]} ${(lookupTable[encodeKey(coordinate, cells)] shr boundaryState) and 0b1}")
+                            println("b ${lookup(width-1).toList()} " +
+                                    "${encodeKey(Coordinate(5, 2), cells)} ${rows[Coordinate(7, 0), 0, cells, depth]} ${(lookup(width-1)[encodeKey(Coordinate(5, 2), cells)] shr rows[Coordinate(7, 0), 0, cells, depth]) and 0b1}")
+                            println(node.predecessor!!.cells)
+                        }
                         return@forEach
                     }
                 } else {
@@ -1553,8 +1560,8 @@ class CFind(
                 symmetry != ShipSymmetry.GLIDE ||
                 (period.mod(2) == 0 && rows.last().phase.mod(period) == 1)
             ) {
-                if (depthToCheck + additionalDepth < node.depth) continue
-                else depthToCheck = Int.MAX_VALUE - 1000
+                //if (depthToCheck + additionalDepth < node.depth) continue
+                //else depthToCheck = Int.MAX_VALUE - 1000
 
                 // Run the approximate lookahead
                 if (

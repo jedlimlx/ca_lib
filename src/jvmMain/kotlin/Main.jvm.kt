@@ -98,22 +98,20 @@ actual fun main() {
 //            }
 //        }
 //    }
-    
 
-    // val ruletable = ruletableFromFile("SoManyShips3.rule")
+     // val ruletable = ruletableFromFile("SoManyShips3.rule")
 
-    // val search = CFind(
-    //     ruletable, 7, 4, 7, ShipSymmetry.ODD, 
-    //     verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE,
-    //     numThreads = 8, partialFrequency = 5000, partialFiles = listOf("partials_2.txt", "partials_3.txt"),
-    //     partialFileFrequency = 1000
-    // )
-    // search.search()
+//     val search = CFind(
+//         HROT("R2,C2,S2-3,B3,N@891891"), 4, 1, 6, ShipSymmetry.ODD,
+//         verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE,
+//         numThreads = 8, partialFrequency = 1000  //, partialFiles = (0..<2).map { "../partials_$it.txt" }
+//     )
+//     search.search()
 
    val search = CFind(
-       HROT("R2,C2,S9-14,B9-14,16,NW0010003330130310333000100"), 3, 1, 4, symmetry = ShipSymmetry.ODD,
+       HROT("R2,C2,S9-14,B9-14,NW0010003330130310333000100"), 3, 1, 4, symmetry = ShipSymmetry.ODD,
        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 1000,
-       backupName = "dump", maxQueueSize = 1 shl 22, numThreads = 2, direction = Coordinate(1, 1),
+       backupName = "dump", maxQueueSize = 1 shl 22, numThreads = 1, direction = Coordinate(1, 1),
        backupFrequency = 600, lookaheadDepth = 0
    )
    search.search()
