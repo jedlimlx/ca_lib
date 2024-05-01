@@ -41,6 +41,10 @@ actual fun readResource(resource: String): String {
         "intSimulationTest.txt" -> require("intSimulationTest.txt") as String
         "intRuleRangeTest.txt" -> require("intRuleRangeTest.txt") as String
 
+        "generationsIntParsingTest.txt" -> require("generationsIntParsingTest.txt") as String
+        "generationsIntSimulationTest.txt" -> require("generationsIntSimulationTest.txt") as String
+        "generationsIntRuleRangeTest.txt" -> require("generationsIntRuleRangeTest.txt") as String
+
         else -> require(tokens[tokens.size - 1]) as String
     }
 }

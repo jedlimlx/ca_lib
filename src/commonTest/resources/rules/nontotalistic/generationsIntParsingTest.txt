@@ -1,0 +1,32 @@
+#R g5b2n3s23-q
+#C 23-q/2n3/5
+
+#R G3/B3/S23
+#C 23/3/3
+
+#R B3/S01234a4-a5678/C56/NC2
+#C 012345678/3/56/C2
+
+#R 3/01234a4-a5678/3/K
+#C 3/012345678/3/K
+
+#R g5b2ca3e3cs106-aK
+#C 016-a/2ac3ce/5/K
+
+#R g10b24m3o3mps106h
+#C 016/234m/10H
+
+#R C3B2c2k2a3k3a3j4k4a4y4w5kS02c2e2k2n3a3n4w5k5aFE
+#C 02-ai3an4w5ak/2ack3ajk4akwy5k/3/FE
+
+#R g3/B2a3q3j3r4w4z/S1c2e2k2i3q3j3r4w/NFC
+#C 1c2eik3jqr4w/2a3jqr4wz/3/FC
+
+#R B3cea5/S223eiac/C7
+#C 23acei/3ace5/7
+
+#R B2ek2i3re4r/S1c1e2e2a3r4a/C45/NFC
+#C 12ae3r4a/2eik3er4r/45/FC
+
+#R B0xdxf/S2x1ea/G10/NV2
+#C 1ea2x/0xc/10/V2

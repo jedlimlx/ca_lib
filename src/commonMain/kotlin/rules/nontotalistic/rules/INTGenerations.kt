@@ -79,7 +79,15 @@ class INTGenerations : BaseINT {
         if (Regex("[Bb](($string)*)").find(rulestring) != null) {
             birth = parseTransition(Regex("[Bb](($string)*)").find(rulestring)!!.groupValues[1])
             survival = parseTransition(Regex("[Ss](($string)*)").find(rulestring)!!.groupValues[1])
-            numStates = Regex("[CcGg]([0-9]+)").find(rulestring)!!.groupValues[1].toInt()
+
+            val option1 = Regex("[CcGg]([0-9]+)/?[Bb](($string)*)/?[Ss](($string)*)").find(rulestring)
+            val option2 = Regex("[Bb]?:(($string)*)/?[Ss]?:(($string)*)/?[CcGg]([0-9]+)").find(rulestring)
+            if (option1 != null) numStates = option1.groupValues[1].toInt()
+            else if (option2 != null) numStates = option2.groupValues[1].toInt()
+            else {
+                numStates = 2
+                require(false) { "This rulestring is invalid!" }
+            }
         } else {
             val tokens = rulestring.split("/")
             birth = parseTransition(tokens[1])
