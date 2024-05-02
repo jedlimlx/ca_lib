@@ -294,10 +294,13 @@ class CFind(
         0, if (successorLookahead) successorLookaheadDepth else this.lookaheadDepth
     )
 
-    val additionalDepth: Int = when (indices[0].indexOf(indices[0].min())) {
+    val rawAdditionalDepth: Int = when (indices[0].indexOf(indices[0].min())) {
         0 -> neighbourhood[0].filter { it.y == baseCoordinates[0].y + 1 }.maxOf{ it.x } + 1 - baseCoordinates.last().x
         indices[0].size - 1 -> neighbourhood[0].filter { it.y == 0 }.maxOf{ it.x } + 1 - baseCoordinates.last().x
         else -> -1
+    }
+    val additionalDepthArray = IntArray(spacing) {
+        ((rawAdditionalDepth - 1) + (offsets[(it + 1).mod(spacing)] - offsets[it])) / spacing + 1
     }
     val maxWidth: Int = widthsByHeight.slice(0 .. this.lookaheadDepth).maxOf { it }
 
@@ -329,7 +332,7 @@ class CFind(
     }
 
     val cacheWidths: IntArray = IntArray(height) {
-        pow(numEquivalentStates, (widthsByHeight[it] - (if (it == 0) 1 else 0) + spacing - 1) / spacing)
+        pow(numEquivalentStates, widthsByHeight[it] - (if (it == 0) 1 else 0))
     }
 
     val successorTable: Array<IntArray> = run {
@@ -604,7 +607,7 @@ class CFind(
         println((bold("Maximum Lookahead Depth: ") + "$maxLookaheadDepth"), verbosity = 1)
         println((bold("Successor Lookahead: ") + "$successorLookaheadDepth / $successorLookahead"), verbosity = 1)
         println((bold("Approximate Lookahead: ") + "$approximateLookahead"), verbosity = 1)
-        println((bold("Additional Depth (for lookahead): ") + "$additionalDepth"), verbosity = 1)
+        println((bold("Additional Depth (for lookahead): ") + "${additionalDepthArray.toList()}"), verbosity = 1)
         println((bold("Lookahead Depth: ") + "$lookaheadDepth"), verbosity = 1)
         println(
             (
@@ -1406,7 +1409,7 @@ class CFind(
             else indices[depth.mod(period)].min()
         } else 0
         fun approximateLookahead(index: Int, row: Int): Boolean {
-            val index = index - additionalDepth
+            val index = index - additionalDepthArray[depth.mod(spacing)]
             if (index < 0) return true
 
             val depth = depth + lookaheadDepthDiff
@@ -1426,7 +1429,6 @@ class CFind(
             for ((it, p) in lookaheadNeighbourhood[0]) {
                 if ((it + coordinate).x >= 0)  // TODO consider different backgrounds
                     key += getDigit(row, pow(numEquivalentStates, (it.x + minX) / spacing), numEquivalentStates) * p
-                // TODO consider special case for diagonal / oblique ships
             }
 
             _lookaheadMemo2!![index] = key
@@ -1468,13 +1470,6 @@ class CFind(
                     // Finally checking the boundary condition
                     if (((lookupTable[encodeKey(coordinate, cells)] shr boundaryState) and 0b1) != 1) {
                         satisfyBC = false
-                        if (it !in filteredLeftBCs) {
-                            println("$it $coordinate $tempCoordinate")
-                            println("a ${lookup(index).toList()} ${encodeKey(coordinate, cells)} ${rows[tempCoordinate, 0, cells, depth]} ${(lookupTable[encodeKey(coordinate, cells)] shr boundaryState) and 0b1}")
-                            println("b ${lookup(width-1).toList()} " +
-                                    "${encodeKey(Coordinate(5, 2), cells)} ${rows[Coordinate(7, 0), 0, cells, depth]} ${(lookup(width-1)[encodeKey(Coordinate(5, 2), cells)] shr rows[Coordinate(7, 0), 0, cells, depth]) and 0b1}")
-                            println(node.predecessor!!.cells)
-                        }
                         return@forEach
                     }
                 } else {
@@ -1560,8 +1555,8 @@ class CFind(
                 symmetry != ShipSymmetry.GLIDE ||
                 (period.mod(2) == 0 && rows.last().phase.mod(period) == 1)
             ) {
-                //if (depthToCheck + additionalDepth < node.depth) continue
-                //else depthToCheck = Int.MAX_VALUE - 1000
+                if (depthToCheck + additionalDepthArray[depth.mod(spacing)] < node.depth) continue
+                else depthToCheck = Int.MAX_VALUE - 1000
 
                 // Run the approximate lookahead
                 if (
@@ -1588,7 +1583,7 @@ class CFind(
                     !checkBoundaryCondition(node, filteredRightBCs)
                 ) continue
 
-                if (checkBoundaryCondition(node, leftBC, offset=Coordinate(width * spacing - 1, 0))) {
+                if (checkBoundaryCondition(node, filteredLeftBCs, offset=Coordinate(width * spacing - 1, 0))) {
                     // Running the lookahead
                     val row = Row(currentRow, node.completeRow, this)
                     if (lookaheadDepth < this.lookaheadDepth) {
@@ -1635,6 +1630,10 @@ class CFind(
                     ((stateMask shr i) and 0b1) == 1 &&
                     (node.depth + 1 == width || !pruneNodes(node, newKey))
                 ) {
+                    // if (node.depth == width - 1 && stateMask != 0) {
+                    //     println("${lookup(node.depth).toList()} ${node.cells.mod(cacheWidths[0])} $stateMask")
+                    // }
+
                     // Adding the new nodes to the stack
                     deadend = false
                     stack.add(
