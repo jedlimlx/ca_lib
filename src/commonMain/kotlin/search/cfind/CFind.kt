@@ -98,6 +98,7 @@ class CFind(
         array
     }
 
+    // More stuff for the integer lattice
     private val tempOffsets = IntArray(spacing) {
         for (y in 0..<spacing) {
             if ((it * direction.y - y * direction.x).mod(spacing) == 0) {
@@ -143,7 +144,14 @@ class CFind(
 
     val lastBaseCoordinate = baseCoordinates.last()
 
-    val widthsByHeight: IntArray = IntArray(height) { height ->
+    val skippedRows = (neighbourhood[0].minBy { it.y }.y..neighbourhood[0].maxBy { it.y }.y).filter { y ->
+        neighbourhood[0].count { it.y == y } == 0 && y != 0
+    }.map { it - neighbourhood[0].minBy { it.y }.y }
+    val notSkippedRows = (0..height).filter { y -> y !in skippedRows }
+    val indexToRowMap = Array(height) { notSkippedRows.indexOf(it) }
+
+    val widthsByHeight: IntArray = IntArray(notSkippedRows.size) { it ->
+        val height = notSkippedRows[it]
         val minY = neighbourhood[0].minOf { it.y }
         if (neighbourhood[0].count { it.y == height + minY } > 0) {
             (neighbourhood[0].filter { it.y == height + minY }.maxOf { it.x } -  // ceiling division
@@ -159,10 +167,12 @@ class CFind(
         var minY = Int.MAX_VALUE
         val minimums = arrayListOf<Coordinate>()
         for (x in minX.x .. maxX.x) {
-            val coordinate = neighbourhood[0].filter { it.x == x }.minBy { it.y }
-            if (coordinate.y <= minY) {
-                minimums.add(coordinate)
-                minY = coordinate.y
+            if (neighbourhood[0].count { it.x == x } > 0) {
+                val coordinate = neighbourhood[0].filter { it.x == x }.minBy { it.y }
+                if (coordinate.y <= minY) {
+                    minimums.add(coordinate)
+                    minY = coordinate.y
+                }
             }
         }
 
@@ -185,10 +195,12 @@ class CFind(
         var minY = Int.MAX_VALUE
         val minimums = arrayListOf<Coordinate>()
         for (x in (minX.x .. maxX.x).reversed()) {
-            val coordinate = neighbourhood[0].filter { it.x == x }.minBy { it.y }
-            if (coordinate.y <= minY) {
-                minimums.add(coordinate)
-                minY = coordinate.y
+            if (neighbourhood[0].count { it.x == x } > 0) {
+                val coordinate = neighbourhood[0].filter { it.x == x }.minBy { it.y }
+                if (coordinate.y <= minY) {
+                    minimums.add(coordinate)
+                    minY = coordinate.y
+                }
             }
         }
 
@@ -226,9 +238,12 @@ class CFind(
 
     // Computing the rows that should be used in computing the next state
     val indices = Array(period) { phase ->
-        IntArray(height) {
-            if (it < height - 1) (it + 1) * period
-            else centralHeight * period - backOff[phase]
+        var count = 1
+        IntArray(height - skippedRows.size) {
+            if (count < height) {
+                while (count in skippedRows) { count++ }
+                (count++) * period
+            } else centralHeight * period - backOff[phase]
         }
     }
 
@@ -295,7 +310,11 @@ class CFind(
     )
 
     val rawAdditionalDepth: Int = when (indices[0].indexOf(indices[0].min())) {
-        0 -> neighbourhood[0].filter { it.y == baseCoordinates[0].y + 1 }.maxOf{ it.x } + 1 - baseCoordinates.last().x
+        0 -> {
+            var count = 1
+            while (count in skippedRows) count++
+            neighbourhood[0].filter { it.y == baseCoordinates[0].y + count }.maxOf{ it.x } + 1 - baseCoordinates.last().x
+        }
         indices[0].size - 1 -> neighbourhood[0].filter { it.y == 0 }.maxOf{ it.x } + 1 - baseCoordinates.last().x
         else -> -1
     }
@@ -304,19 +323,24 @@ class CFind(
     }
     val maxWidth: Int = widthsByHeight.slice(0 .. this.lookaheadDepth).maxOf { it }
 
+    // TODO fix approximate lookahead for spacing != 1
     val approximateLookahead = spacing == 1 && lookaheadDepth > 0 && lookaheadIndices[0][0].last() != 0
 
     // Computing neighbourhoods to be memorised for lookahead
     val memorisedlookaheadNeighbourhood: List<List<Pair<Coordinate, Int>>> = lookaheadIndices.indices.map {
         if (lookaheadIndices[it][0].indexOf(lookaheadIndices[it][0].min()) == 0) {
-            mainNeighbourhood.filter { (it, _) -> it.y > -centralHeight + 1 }
+            var count = 1
+            while (count in skippedRows) count++
+            mainNeighbourhood.filter { (it, _) -> it.y > -centralHeight + count }
         } else {
             mainNeighbourhood
         }
     }.toList()
     val lookaheadNeighbourhood: List<List<Pair<Coordinate, Int>>> = lookaheadIndices.indices.map {
         if (lookaheadIndices[it][0].indexOf(lookaheadIndices[it][0].min()) == 0) {
-            mainNeighbourhood.filter { (it, _) -> it.y == -centralHeight + 1 }
+            var count = 1
+            while (count in skippedRows) count++
+            mainNeighbourhood.filter { (it, _) -> it.y == -centralHeight + count }
         } else {
             listOf()
         }
@@ -331,7 +355,7 @@ class CFind(
         lst
     }
 
-    val cacheWidths: IntArray = IntArray(height) {
+    val cacheWidths: IntArray = IntArray(widthsByHeight.size) {
         pow(numEquivalentStates, widthsByHeight[it] - (if (it == 0) 1 else 0))
     }
 
@@ -593,7 +617,10 @@ class CFind(
         println((bold("Base Coordinates: ") + "$baseCoordinates"), verbosity = 1)
         println((bold("Base Coordinate Map: ") + "${baseCoordinateMap.toList()}"), verbosity = 1)
         println((bold("Continuous Base Coordinates: ") + "${reversedBaseCoordinate.toList()}"), verbosity = 1)
-        println((bold("Cache Widths: ") + "${cacheWidths.toList()}"), verbosity = 1)
+        println((bold("Cache Widths: ") + "${cacheWidths.toList()} / ${widthsByHeight.toList()}"), verbosity = 1)
+        println((bold("Skipped Rows: ") + "${skippedRows.toList()}"), verbosity = 1)
+        println((bold("Index to Row: ") + "${indexToRowMap.toList()}"), verbosity = 1)
+
 
         println(brightRed(bold("\nLattice\n----------------")), verbosity = 1)
         println((bold("Basis Vectors: ") + "${basisVectors.first} / ${basisVectors.second}"), verbosity = 1)
@@ -1254,7 +1281,9 @@ class CFind(
                             for ((it, p) in lookaheadNeighbourhood[lookaheadDepth - 1])
                                 key += rows[it + coordinate, 0, row, depth] * p
                         }
-                    } else neighbourhoodWithoutBg[coordinate]!!.forEach { (it, p) -> key += rows[it, 0, row, depth] * p }
+                    } else neighbourhoodWithoutBg[coordinate]!!.forEach { (it, p) ->
+                        key += rows[it, 0, row, depth] * p
+                    }
                 } else {
                     key = partialKey
                     if (!approximateLookahead) {
@@ -1315,13 +1344,15 @@ class CFind(
                             partialKey = lookaheadMemo[it]
                         )
                     ]
-                } else memo[it] = successorTable[
-                    encodeNeighbourhood(
-                        translate(Coordinate(it, 0), depth) - lastBaseCoordinate, row,
-                        index = it,
-                        partialKey = lookaheadMemo?.get(it) ?: -1
-                    )
-                ]
+                } else {
+                    memo[it] = successorTable[
+                        encodeNeighbourhood(
+                            translate(Coordinate(it, 0), depth) - lastBaseCoordinate, row,
+                            index = it,
+                            partialKey = lookaheadMemo?.get(it) ?: -1
+                        )
+                    ]
+                }
                 return memo[it]!!
             } else {
                 val temp = memo[it]!!
@@ -1683,9 +1714,14 @@ class CFind(
             }
             return currentRow[coordinate.x / spacing]
         }
-        return if (coordinate.y > 0 && coordinate.y < this.size) {
-            if (generation == 0) this[coordinate.y - 1]?.get(coordinate.x) ?: -1
-            else if (coordinate.y == centralHeight && generation == 1) {
+        return if (coordinate.y > 0 && coordinate.y < indexToRowMap.size) {
+            if (generation == 0) {
+                if (indexToRowMap[coordinate.y] != -1) {
+                    this[indexToRowMap[coordinate.y] - 1]?.get(coordinate.x) ?: -1
+                } else {
+                    this[0]?.getPredecessor((coordinate.y - 1) * period)?.get(coordinate.x) ?: -1
+                }
+            } else if (coordinate.y == centralHeight && generation == 1) {
                 if (
                     symmetry != ShipSymmetry.GLIDE ||
                     (period.mod(2) == 0 && this.last()!!.phase.mod(period) == 0)

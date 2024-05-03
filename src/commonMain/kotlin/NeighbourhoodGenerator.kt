@@ -109,7 +109,7 @@ fun toCoordCA(neighbourhood: Array<Coordinate>): String {
             result[(coordinate.x + range) + (2 * range + 1) * (coordinate.y + range) - 1] = 1
     }
 
-    return result.joinToString("").toInt(2).toString(16)
+    return result.joinToString("").toLong(2).toString(16)
 }
 
 /**
