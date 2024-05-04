@@ -79,6 +79,7 @@ class CFind(
     // Computing the backOff array to be used when gcd(k, period) > 1
     val backOff = IntArray(period) { -1 }.apply {
         this[0] = k
+        if (period == 1) return@apply
 
         var count = 0
         for (i in 0..<period) {
@@ -249,7 +250,7 @@ class CFind(
 
     private val tempIndices = run {
         val lst = arrayListOf(indices)
-        for (i in indices[0].indices) {
+        for (i in indices[0].distinct().indices) {
             lst.add(
                 Array(period) { phase ->
                     val temp = lst.last()[phase].filter { it > 0 }.min()
@@ -298,7 +299,7 @@ class CFind(
             }
         }
 
-        output
+        if (breakLoop) output else this.size
     }  // double or even triple lookahead is possible for higher-range rules
     val lookaheadDepth = minOf(lookaheadDepth, maxLookaheadDepth)
 
@@ -1532,6 +1533,8 @@ class CFind(
 
         // Prunes nodes that will reach a deadend
         fun pruneNodes(node: Node, newKey: Int): Boolean {
+            return false
+            
             var pruned = false
             for (i in 0..if (approximateLookahead) this.lookaheadDepth - lookaheadDepth else 0) {
                 if (table[i][node.depth + 1][newKey.mod(cacheWidths[i])] == 0) {
@@ -1586,8 +1589,8 @@ class CFind(
                 symmetry != ShipSymmetry.GLIDE ||
                 (period.mod(2) == 0 && rows.last().phase.mod(period) == 1)
             ) {
-                if (depthToCheck + additionalDepthArray[depth.mod(spacing)] < node.depth) continue
-                else depthToCheck = Int.MAX_VALUE - 1000
+                //if (depthToCheck + additionalDepthArray[depth.mod(spacing)] < node.depth) continue
+                //else depthToCheck = Int.MAX_VALUE - 1000
 
                 // Run the approximate lookahead
                 if (
@@ -1661,10 +1664,6 @@ class CFind(
                     ((stateMask shr i) and 0b1) == 1 &&
                     (node.depth + 1 == width || !pruneNodes(node, newKey))
                 ) {
-                    // if (node.depth == width - 1 && stateMask != 0) {
-                    //     println("${lookup(node.depth).toList()} ${node.cells.mod(cacheWidths[0])} $stateMask")
-                    // }
-
                     // Adding the new nodes to the stack
                     deadend = false
                     stack.add(
