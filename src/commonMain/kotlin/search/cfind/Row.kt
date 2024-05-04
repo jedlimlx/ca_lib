@@ -10,7 +10,7 @@ class Row(val predecessor: Row?, val cells: IntArray, var search: CFind? = null)
     // unique id for each row
     val id = counter++
 
-    private val hash = run {
+    val hash = run {
         var hash = 0
         for (i in cells.indices) {
             hash += cells[i] * pow(search!!.rule.numStates, i)
@@ -19,7 +19,7 @@ class Row(val predecessor: Row?, val cells: IntArray, var search: CFind? = null)
         hash
     }
 
-    private val reverseHash = run {
+    val reverseHash = run {
         var hash = 0
         for (i in cells.indices) {
             hash += cells[cells.size - i - 1] * pow(search!!.rule.numStates, i)
@@ -152,8 +152,8 @@ class Row(val predecessor: Row?, val cells: IntArray, var search: CFind? = null)
         return this
     }
 
-    override fun hashCode() = hash
-    fun reverseHashCode() = reverseHash
+    override fun hashCode() = hash + 201 * depth.mod(search!!.spacing)
+    fun reverseHashCode() = reverseHash + 201 * depth.mod(search!!.spacing)
     override fun compareTo(other: Row): Int = this.depth - other.depth
 
     override fun equals(other: Any?): Boolean {

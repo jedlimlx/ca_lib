@@ -95,6 +95,11 @@ class Test {
         }
     }
 
+    @Test
+    fun farEdgesTest() {
+
+    }
+
     // Test different rulespaces
     @Test
     fun generationsTest() {
@@ -142,6 +147,11 @@ class Test {
             )
             search.search()
         }
+    }
+
+    @Test
+    fun ruletreeTest() {
+
     }
 
     // Miscellaneous tests
@@ -198,6 +208,19 @@ class Test {
             superluminalGlideSearch.search()
 
             assertEquals(superluminalSearch.searchResults.size, 1)
+        }
+    }
+
+    @Test
+    fun photonTest() {
+        for (strategy in searchStrategies) {
+            val photonSearch = CFind(
+                HROT("R2,C2,S3,B3,NN"), 1, 1, 3, ShipSymmetry.ODD,
+                verbosity = 1, searchStrategy = strategy
+            )
+            photonSearch.search()
+
+            assertEquals(photonSearch.searchResults.size, 1)
         }
     }
 }
