@@ -57,6 +57,7 @@ class CFind(
     val partialFileFrequency = if (partialFileFrequency > 0) partialFileFrequency else partialFrequency
 
     // TODO Handle alternating stuff properly / don't support alternating neighbourhoods
+    // TODO Fix photon searches
     var minDeepeningIncrement = if (minDeepeningIncrement == -1) {
         if (searchStrategy == SearchStrategy.HYBRID_BFS) _period
         else _period * 10  // shallow tree with deep leafs :)
@@ -327,7 +328,7 @@ class CFind(
     val maxWidth: Int = widthsByHeight.slice(0 .. this.lookaheadDepth).maxOf { it }
 
     // TODO fix approximate lookahead for spacing != 1
-    val approximateLookahead = spacing == 1 && lookaheadDepth > 0 && lookaheadIndices[0][0].last() != 0
+    val approximateLookahead = spacing == 1 && false && lookaheadDepth > 0 && lookaheadIndices[0][0].last() != 0
 
     // Computing neighbourhoods to be memorised for lookahead
     val memorisedlookaheadNeighbourhood: List<List<Pair<Coordinate, Int>>> = lookaheadIndices.indices.map {
@@ -348,7 +349,7 @@ class CFind(
             listOf()
         }
     }.toList()
-    val minX = if (lookaheadNeighbourhood[0].isNotEmpty()) lookaheadNeighbourhood[0].minOf { (it, _) -> it.x } else 0
+    val minX = if (lookaheadNeighbourhood.isNotEmpty()) lookaheadNeighbourhood[0].minOf { (it, _) -> it.x } else 0
 
     // Building lookup tables
     val numEquivalentStates: Int = rule.equivalentStates.distinct().size

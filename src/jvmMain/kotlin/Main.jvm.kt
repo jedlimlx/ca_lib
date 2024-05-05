@@ -121,8 +121,8 @@ actual fun main() {
 //    search.search()
 
     val search = CFind(
-        HROT("R2,C2,S6-9,B7-8,NM"), 3, 1, 7, ShipSymmetry.EVEN,
-        verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS, numShips = 1
+        HROT("R2,C2,S6-9,B7-8,NM"), 1, 1, 12, ShipSymmetry.ODD,
+        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE
     )
     search.search()
 
