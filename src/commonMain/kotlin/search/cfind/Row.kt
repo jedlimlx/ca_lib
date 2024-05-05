@@ -4,28 +4,38 @@ import simulation.Coordinate
 import simulation.DenseGrid
 import simulation.Grid
 
-class Row(val predecessor: Row?, val cells: IntArray, var search: CFind? = null): Comparable<Row> {
+class Row(
+    val predecessor: Row?, val cells: IntArray, var search: CFind? = null,
+    hash: Int? = null, reverseHash: Int? = null
+): Comparable<Row> {
     companion object { var counter: Long = 0L }
 
     // unique id for each row
     val id = counter++
 
     val hash = run {
-        var hash = 0
-        for (i in cells.indices) {
-            hash += cells[i] * pow(search!!.rule.numStates, i)
-        }
+        if (hash == null) {
+            var _hash = 0
+            for (i in cells.indices)
+                _hash += cells[i] * pow(search!!.rule.numStates, i)
 
-        hash
+            _hash
+        } else hash
     }
 
     val reverseHash = run {
-        var hash = 0
-        for (i in cells.indices) {
-            hash += cells[cells.size - i - 1] * pow(search!!.rule.numStates, i)
-        }
+        if (reverseHash == null) {
+            var _hash = 0
+            if (
+                search!!.isotropic &&
+                (search!!.symmetry == ShipSymmetry.GLIDE || search!!.symmetry == ShipSymmetry.ASYMMETRIC)
+            ) {
+                for (i in cells.indices)
+                    _hash += cells[cells.size - i - 1] * pow(search!!.rule.numStates, i)
+            }
 
-        hash
+            _hash
+        } else reverseHash
     }
 
     // information about the row and its position within the larger ship
@@ -53,10 +63,10 @@ class Row(val predecessor: Row?, val cells: IntArray, var search: CFind? = null)
     }
 
     operator fun get(index: Int): Int {
-        if (search!!.spacing != 1 && (index - offset).mod(search!!.spacing) != 0) {
-            println("crap $depth $index $offset")
-            return 0
-        }
+//        if (search!!.spacing != 1 && (index - offset).mod(search!!.spacing) != 0) {
+//            println("crap $depth $index $offset")
+//            return 0
+//        }
         if (search!!.spacing == 1) return cells[index]
         else return cells[index / search!!.spacing]
     }
@@ -77,7 +87,10 @@ class Row(val predecessor: Row?, val cells: IntArray, var search: CFind? = null)
         while (predecessor != null) {
             if (depth - n == predecessor.depth) break
 
-            list.add(if (deepCopy) Row(null, predecessor.cells, search!!) else predecessor)
+            list.add(
+                if (deepCopy) Row(null, predecessor.cells, search!!, predecessor.hash, predecessor.reverseHash)
+                else predecessor
+            )
             predecessor = predecessor.predecessor
         }
 

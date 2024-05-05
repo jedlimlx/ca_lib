@@ -8,13 +8,21 @@ data class Node(
     val numStates: Int,
     val singleBaseCoordinate: Boolean = false
 ) {
-    val completeRow: IntArray by lazy {
-        predecessor?.completeRow?.plus(intArrayOf(prevCell)) ?: intArrayOf()
+    val completeRow: IntArray? by lazy {
+        var count = depth - 1
+        var tempNode: Node? = this
+        val temp = IntArray(depth) { 0 }
+        while (count >= 0) {
+            temp[count--] = tempNode!!.prevCell
+            tempNode = tempNode.predecessor
+        }
+
+        temp
+        //predecessor?.completeRow?.plus(intArrayOf(prevCell)) ?: intArrayOf()
     }
 
-    fun applyOnPredecessor(f: (Node) -> Unit) {
-        f(this)
-        predecessor?.applyOnPredecessor(f)
+    fun applyOnPredecessor(f: (Node) -> Boolean) {
+        if (f(this)) predecessor?.applyOnPredecessor(f)
     }
 
     override fun hashCode(): Int {

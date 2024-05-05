@@ -2,6 +2,10 @@ import it.skrape.core.*
 import it.skrape.fetcher.*
 import it.skrape.selects.*
 import it.skrape.selects.html5.*
+import kotlinx.io.buffered
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
+import kotlinx.io.writeString
 import rules.hrot.HROT
 import rules.nontotalistic.rules.INT
 import rules.nontotalistic.rules.INTGenerations
@@ -108,13 +112,19 @@ actual fun main() {
 //     )
 //     search.search()
 
-   val search = CFind(
-       HROT("R2,C2,S6-9,B7-8,NM"), 3, 1, 6, symmetry = ShipSymmetry.ODD,
-       verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS, partialFrequency = 50000,
-       backupName = "dump", maxQueueSize = 1 shl 22, numThreads = 8, direction = Coordinate(1 ,1),
-       backupFrequency = 600//, lookaheadDepth = 0
-   )
-   search.search()
+//    val search = CFind(
+//        HROT("R2,C2,S6-9,B7-8,NM"), 2, 1, 8,
+//        symmetry = ShipSymmetry.ASYMMETRIC, verbosity = 1,
+//        searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 50000,
+//        backupName = "dump", maxQueueSize = 1 shl 22, numThreads = 8, backupFrequency = 600
+//    )
+//    search.search()
+
+    val search = CFind(
+        HROT("R2,C2,S6-9,B7-8,NM"), 3, 1, 7, ShipSymmetry.EVEN,
+        verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS, numShips = 1
+    )
+    search.search()
 
 //    val search = CFind(
 //        HROT("R2,C2,S6-9,B7-8,NM"), 3, 2, 11, symmetry = ShipSymmetry.EVEN,

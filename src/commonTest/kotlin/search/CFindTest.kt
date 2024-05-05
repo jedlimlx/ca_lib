@@ -97,7 +97,16 @@ class Test {
 
     @Test
     fun farEdgesTest() {
+        // TODO Figure out why no ships are found at width 4
+        for (strategy in searchStrategies) {
+            val farEdges = CFind(
+                HROT("R3,C2,S2-3,B3,N@1000a4250008"), 2, 1, 5, ShipSymmetry.ODD,
+                verbosity = 1, searchStrategy = strategy
+            )
+            farEdges.search()
 
+            assertEquals(farEdges.searchResults.size, 3)
+        }
     }
 
     // Test different rulespaces
@@ -149,11 +158,6 @@ class Test {
         }
     }
 
-    @Test
-    fun ruletreeTest() {
-
-    }
-
     // Miscellaneous tests
     @Test
     fun dfsTest() {
@@ -169,15 +173,15 @@ class Test {
     }
 
     @Test
-    fun diagonalTest() {  // TODO get diagonal searches working for other neighbourhoods
+    fun diagonalTest() {
         for (strategy in searchStrategies) {
-//            val diagonalSearch = CFind(  TODO figure out why this test keeps giving inconsistent results
-//                HROT("B34/S34"), 3, 1, 3, ShipSymmetry.ASYMMETRIC,
-//                verbosity = 1, direction = Coordinate(1, 1), searchStrategy = strategy
-//            )
-//            diagonalSearch.search()
-//
-//            assertEquals(diagonalSearch.searchResults.size, 2)
+            val diagonalSearch = CFind(
+                HROT("B34/S34"), 3, 1, 3, ShipSymmetry.ASYMMETRIC,
+                verbosity = 1, direction = Coordinate(1, 1), searchStrategy = strategy
+            )
+            diagonalSearch.search()
+
+            assertEquals(diagonalSearch.searchResults.size, 2)
 
             val glideDiagonalSearch = CFind(
                 HROT("B3/S23"), 4, 1, 2, ShipSymmetry.GLIDE,
@@ -185,7 +189,15 @@ class Test {
             )
             glideDiagonalSearch.search()
 
-            assertEquals(glideDiagonalSearch.searchResults.size, 1)
+            assertEquals(glideDiagonalSearch.searchResults.size, 2)
+
+            val minibugsSearch = CFind(
+                HROT("R2,C2,S6-9,B7-8,NM"), 3, 1, 2, ShipSymmetry.ODD,
+                verbosity = 1, searchStrategy = strategy, direction = Coordinate(1 ,1)
+            )
+            minibugsSearch.search()
+
+            assertEquals(minibugsSearch.searchResults.size, 1)
         }
     }
 
