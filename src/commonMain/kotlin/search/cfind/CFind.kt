@@ -1565,8 +1565,7 @@ class CFind(
 
                 // Getting the boundary state
                 if (it.y == -centralHeight) {
-                    val tempCoordinate = coordinate + lastBaseCoordinate
-                    val lookupTable = lookup(tempCoordinate.x / spacing)
+                    val lookupTable = lookup(index)
                     val boundaryState = rows[tempCoordinate, 0, cells, depth]
 
                     // Finally checking the boundary condition
@@ -1622,7 +1621,7 @@ class CFind(
                 if (table[x][it.depth][temp] == -1) {
                     table[x][it.depth][temp] = 0
                     true
-                } else false
+                } else true
             }
         }
 
@@ -1634,7 +1633,7 @@ class CFind(
                     if (table[i][it.depth][temp] != 1) {
                         table[i][it.depth][temp] = 1
                         true
-                    } else false
+                    } else true
                 }
         }
 
