@@ -7,6 +7,7 @@ import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.writeString
 import rules.hrot.HROT
+import rules.hrot.HROTGenerations
 import rules.nontotalistic.rules.INT
 import rules.nontotalistic.rules.INTGenerations
 import rules.ruleloader.builders.ruletable
@@ -120,9 +121,11 @@ actual fun main() {
 //    )
 //    search.search()
 
-    val search = CFind(
-        HROT("R2,C2,S6-9,B7-8,NM"), 1, 1, 9, ShipSymmetry.EVEN,
-        verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS
+    //B2-ei3cjkr4cektyz5-cnr6-ik78/S01e2-ae3cnqry4cqrtwyz5-ain6ekn7e
+    val search = CFind(  
+        HROTGenerations("23/3/3"), 2, 1, 10, ShipSymmetry.ODD,
+        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, //direction = Coordinate(1, 2),
+        //lookaheadDepth = 0, isotropic = false
     )
     search.search()
 

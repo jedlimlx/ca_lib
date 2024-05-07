@@ -117,7 +117,7 @@ class CFind(
     ) { -1 }.apply {
         if (symmetry != ShipSymmetry.GLIDE || direction != Coordinate(1, 1)) {
             for (i in 0 ..<k) {
-                var count = i
+                var count = (i*period).mod(k) // TODO fix for gcd(k, p) > 1
                 while (count < period * k) {
                     this[count] = tempOffsets[i.mod(tempOffsets.size)]
                     count += backOff[count.mod(period)]
@@ -349,7 +349,7 @@ class CFind(
             listOf()
         }
     }.toList()
-    val minX = if (lookaheadNeighbourhood.isNotEmpty()) lookaheadNeighbourhood[0].minOf { (it, _) -> it.x } else 0
+    val minX = if (lookaheadNeighbourhood.isNotEmpty() && lookaheadNeighbourhood[0].isNotEmpty()) lookaheadNeighbourhood[0].minOf { (it, _) -> it.x } else 0
 
     // Building lookup tables
     val numEquivalentStates: Int = rule.equivalentStates.distinct().size
@@ -618,6 +618,10 @@ class CFind(
             }
             t.cursor.hide(showOnExit = true)
         }
+
+        println(bcNeighbourhood)
+        println(inverseBcNeighbourhood)
+        println(memorisedBCsMap)
 
         // TODO Error handling of invalid inputs, e.g. invalid symmetries
         // Print a message that indicates the search is beginning
@@ -1381,7 +1385,7 @@ class CFind(
                     key += rows[coordinate, 0, row, depth] * power
                     power *= rule.numStates
 
-                    key += rows[coordinate, 1, row, depth] * power
+                    key += rows[coordinate, 1, row, depth, currentRow] * power
                 }
             }
 
@@ -1557,10 +1561,10 @@ class CFind(
                 val index: Int
                 val tempCoordinate = coordinate + lastBaseCoordinate
                 if (spacing != 1) {
-                    val temp = tempCoordinate.x - offsets[(depth - tempCoordinate.y * period).mod(offsets.size)]
-                    if (temp.mod(spacing) != 0) return@forEach
+                    val temp = coordinate.x - offsets[(depth - coordinate.y * period).mod(offsets.size)]
+                    //if (temp.mod(spacing) != 0) return@forEach
 
-                    index = temp / spacing
+                    index = tempCoordinate.x / spacing
                 } else index = tempCoordinate.x
 
                 // Getting the boundary state
@@ -1581,6 +1585,7 @@ class CFind(
 
                     satisfyBC = bcMemo[it]?.get(
                         inverseBcNeighbourhood[memorisedBCsMap[it]!!].mapIndexed { index, it ->
+                            //println("$coordinate ${it + offset} ${offsets.toList()}")
                             rule.equivalentStates[
                                 rows[it + offset, 0, cells, depth]
                             ] * pow(numEquivalentStates, index)
@@ -1770,7 +1775,13 @@ class CFind(
         else return Coordinate(coordinate.x * spacing + offsets[depth.mod(offsets.size)], coordinate.y)
     }
 
-    private operator fun List<Row?>.get(coordinate: Coordinate, generation: Int, currentRow: IntArray? = null, depth: Int = 0): Int {
+    private operator fun List<Row?>.get(
+        coordinate: Coordinate, 
+        generation: Int, 
+        currentRow: IntArray? = null, 
+        depth: Int = 0, 
+        mostRecentRow: Row? = null
+    ): Int {
         if (coordinate.x < 0) return 0  // TODO allow different backgrounds
         if (coordinate.x >= width * spacing) {
             return when (symmetry) {
@@ -1783,7 +1794,7 @@ class CFind(
 
         if (coordinate.y == 0 && currentRow != null) {
             if (spacing != 1 && coordinate.x.mod(spacing) != offsets[depth.mod(offsets.size)]) {
-                println("crap $depth")
+                println("crap $depth $coordinate ${coordinate.x.mod(spacing)} ${offsets[depth.mod(offsets.size)]}")
                 return 0
             }
             return currentRow[coordinate.x / spacing]
@@ -1792,17 +1803,19 @@ class CFind(
             if (generation == 0) {
                 if (indexToRowMap[coordinate.y] != -1) {
                     this[indexToRowMap[coordinate.y] - 1]?.get(coordinate.x) ?: -1
-                } else {
+                } else {  // TODO optimise this
                     this[0]?.getPredecessor((coordinate.y - 1) * period)?.get(coordinate.x) ?: -1
                 }
-            } else if (coordinate.y == centralHeight && generation == 1) {
+            } else if (generation == 1) {
+                // TODO optimise this
+                val row = if (coordinate.y == centralHeight) this.last()!!
+                else mostRecentRow!!.getPredecessor(coordinate.y * period - backOff[depth.mod(period)] - 1)!!
+
                 if (
                     symmetry != ShipSymmetry.GLIDE ||
                     (period.mod(2) == 0 && this.last()!!.phase.mod(period) == 0)
-                ) this.last()!![coordinate.x]
-                else this.last()!![width * spacing - coordinate.x - 1]
-            }
-            else -1  // means that the cell state is not known
+                ) row[coordinate.x] else row[width * spacing - coordinate.x - 1]
+            }  else -1  // means that the cell state is not known
         } else -1
     }
 
