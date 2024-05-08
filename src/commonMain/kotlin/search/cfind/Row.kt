@@ -64,7 +64,7 @@ class Row(
 
     operator fun get(index: Int): Int {
         if (search!!.spacing != 1 && (index - offset).mod(search!!.spacing) != 0) {
-            //println("crap $depth $index $offset")
+            println("crap $depth $index $offset ${(index - offset).mod(search!!.spacing)}")
             return 0
         }
         if (search!!.spacing == 1) return cells[index]

@@ -22,6 +22,7 @@ import kotlin.math.pow
 import kotlin.time.TimeSource
 import kotlin.random.Random
 import kotlin.time.measureTime
+import fmod
 
 /**
  * Searches for spaceships using a method similar to the method used by gfind, which was described by David Eppstein in
@@ -93,7 +94,7 @@ class CFind(
             count += this[count.mod(period)]
         }
 
-        this[count.mod(period)] = (period - count).mod(backoffPeriod)
+        this[count.mod(period)] = (backoffPeriod - count).fmod(backoffPeriod)
     }
     val fwdOff = run {
         val array = IntArray(period) { -1 }
@@ -113,7 +114,7 @@ class CFind(
         0
     }
     val offsets = IntArray(this.period * this.k *
-            (if (symmetry == ShipSymmetry.GLIDE && direction == Coordinate(1, 1)) 2 else 1)
+        (if (symmetry == ShipSymmetry.GLIDE && direction == Coordinate(1, 1)) 2 else 1)
     ) { -1 }.apply {
         if (symmetry != ShipSymmetry.GLIDE || direction != Coordinate(1, 1)) {
             for (i in 0 ..<k) {
@@ -124,8 +125,15 @@ class CFind(
                 }
             }
         } else {
-            for (i in 0..<period) this[i] = i.mod(2)
-            for (i in period ..< period*2) this[i] = (i + 1).mod(2)
+            var flipped = false
+            for (i in 0 ..<2*period) {
+                this[i*k] = if (flipped) 1 else 0
+                if (period.mod(2) == 1 || i.mod(period) == 0) flipped = !flipped
+                
+                for (j in 0..<2*k) {
+                    this[(i*k+j*period) % this.size] = (this[i*k] + j) % 2
+                }
+            }
         }
     }
 
@@ -1439,7 +1447,7 @@ class CFind(
                 if (successorLookahead && lookaheadDepth == 0) {
                     val row = lookaheadRows.last()
                     val invert = symmetry != ShipSymmetry.GLIDE ||
-                            (period.mod(2) == 0 && rows.last().phase.mod(period) == 0)
+                            (period.mod(2) == 0 && rows.last().phase == 0)
                     if (invert) return 3  // TODO fix this optimisation for glide-symmetric rules
 
                     val coordinate = translate(
@@ -1505,8 +1513,9 @@ class CFind(
         val approximateLookaheadRows: List<Row?>
         val lookaheadDepthDiff = if (lookaheadDepth < this.lookaheadDepth) {
             approximateLookaheadRows = lookaheadRows[0]
-            if (lookaheadDepth - 1 >= 0) lookaheadIndices[lookaheadDepth - 1][depth.mod(period)].filter { it > 0 }.min()
-            else minIndices[depth.mod(period)]
+            if (lookaheadDepth - 1 >= 0) {
+                lookaheadIndices[lookaheadDepth - 1][depth.mod(period)].filter { it > 0 }.min()
+            } else minIndices[depth.mod(period)]
         } else {
             approximateLookaheadRows = listOf()
             0
@@ -1562,7 +1571,7 @@ class CFind(
                 val tempCoordinate = coordinate + lastBaseCoordinate
                 if (spacing != 1) {
                     val temp = coordinate.x - offsets[(depth - coordinate.y * period).mod(offsets.size)]
-                    //if (temp.mod(spacing) != 0) return@forEach
+                    if (temp.mod(spacing) != 0) return@forEach
 
                     index = tempCoordinate.x / spacing
                 } else index = tempCoordinate.x
@@ -1667,7 +1676,7 @@ class CFind(
             // If no cells are changed before depthToCheck, the row will be rejected by lookahead again
             if (
                 symmetry != ShipSymmetry.GLIDE ||
-                (period.mod(2) == 0 && rows.last().phase.mod(period) == 1)
+                (period.mod(2) == 0 && rows.last().phase == 1)
             ) {
                 if (depthToCheck + additionalDepthArray[depth.mod(spacing)] < node.depth) continue
                 else depthToCheck = Int.MAX_VALUE - 1000
@@ -1794,7 +1803,7 @@ class CFind(
 
         if (coordinate.y == 0 && currentRow != null) {
             if (spacing != 1 && coordinate.x.mod(spacing) != offsets[depth.mod(offsets.size)]) {
-                println("crap $depth $coordinate ${coordinate.x.mod(spacing)} ${offsets[depth.mod(offsets.size)]}")
+                println("crap_bc $depth $coordinate ${coordinate.x.mod(spacing)} ${offsets[depth.mod(offsets.size)]}")
                 return 0
             }
             return currentRow[coordinate.x / spacing]
@@ -1813,9 +1822,9 @@ class CFind(
 
                 if (
                     symmetry != ShipSymmetry.GLIDE ||
-                    (period.mod(2) == 0 && this.last()!!.phase.mod(period) == 0)
+                    (period.mod(2) == 0 && this.last()!!.phase == 0)
                 ) row[coordinate.x] else row[width * spacing - coordinate.x - 1]
-            }  else -1  // means that the cell state is not known
+            } else -1  // means that the cell state is not known
         } else -1
     }
 

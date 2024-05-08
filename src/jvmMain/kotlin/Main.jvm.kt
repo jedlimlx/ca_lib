@@ -120,12 +120,12 @@ actual fun main() {
 //        backupName = "dump", maxQueueSize = 1 shl 22, numThreads = 8, backupFrequency = 600
 //    )
 //    search.search()
-
-    //B2-ei3cjkr4cektyz5-cnr6-ik78/S01e2-ae3cnqry4cqrtwyz5-ain6ekn7e
+    
+    // B2-ei3cjkr4cektyz5-cnr6-ik78/S01e2-ae3cnqry4cqrtwyz5-ain6ekn7e
     val search = CFind(  
-        HROTGenerations("23/3/3"), 2, 1, 10, ShipSymmetry.ODD,
-        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, //direction = Coordinate(1, 2),
-        //lookaheadDepth = 0, isotropic = false
+        HROT("R2,C2,S2-3,B3,N@891891"), 4, 3, 10, ShipSymmetry.GLIDE,
+        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, direction = Coordinate(1, 1),
+        lookaheadDepth = 1//, isotropic = false
     )
     search.search()
 
