@@ -123,9 +123,11 @@ actual fun main() {
     
     // B2-ei3cjkr4cektyz5-cnr6-ik78/S01e2-ae3cnqry4cqrtwyz5-ain6ekn7e
     val search = CFind(  
-        HROT("R2,C2,S2-3,B3,N@891891"), 4, 3, 10, ShipSymmetry.GLIDE,
-        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, direction = Coordinate(1, 1),
-        lookaheadDepth = 1//, isotropic = false
+        HROT("R3,C2,S6-9,B7-8,NN"), 2, 1, 8, ShipSymmetry.EVEN,
+        verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS, 
+        numShips = 1
+        //direction = Coordinate(1, 1),
+        //lookaheadDepth = 1, //, isotropic = false
     )
     search.search()
 

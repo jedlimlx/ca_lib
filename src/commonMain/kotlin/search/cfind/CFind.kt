@@ -94,7 +94,7 @@ class CFind(
             count += this[count.mod(period)]
         }
 
-        this[count.mod(period)] = (backoffPeriod - count).fmod(backoffPeriod)
+        this[count.mod(period)] = period * k - count
     }
     val fwdOff = run {
         val array = IntArray(period) { -1 }
@@ -336,7 +336,7 @@ class CFind(
     val maxWidth: Int = widthsByHeight.slice(0 .. this.lookaheadDepth).maxOf { it }
 
     // TODO fix approximate lookahead for spacing != 1
-    val approximateLookahead = spacing == 1 && false && lookaheadDepth > 0 && lookaheadIndices[0][0].last() != 0
+    val approximateLookahead = spacing == 1 && lookaheadDepth > 0 && lookaheadIndices[0][0].last() != 0
 
     // Computing neighbourhoods to be memorised for lookahead
     val memorisedlookaheadNeighbourhood: List<List<Pair<Coordinate, Int>>> = lookaheadIndices.indices.map {
@@ -420,7 +420,7 @@ class CFind(
         }
     }
 
-    val combinedSuccessorArray: BooleanArray = run {
+    val combinedSuccessorArray: IntArray = run {
         if (verbosity >= 0 && !stdin) {
             t.cursor.move {
                 up(1)
@@ -431,19 +431,28 @@ class CFind(
         }
         println("Generating approximate lookahead lookup table...", verbosity = 0)
 
-        BooleanArray(
+        IntArray(
             pow(rule.numStates, neighbourhood[0].size - baseCoordinates.size + 2)
         ) {
-
-            var output = false
-            for (i in successorTable[it].indices) {
-                if (successorTable[it][i] != 0) {
-                    output = true
-                    break
+            var num = 0
+            for (j in 0..reversedBaseCoordinate.size) {
+                var output = false
+                for (i in successorTable[it].indices) {
+                    if (
+                        (
+                            j == reversedBaseCoordinate.size || 
+                            i and ((2 shl (reversedBaseCoordinate.size - j - 1)) - 1) shl j == 0
+                        ) && successorTable[it][i] != 0
+                    ) {
+                        output = true
+                        break
+                    }
                 }
+
+                if (output) num += 1 shl j
             }
 
-            output
+            num
         }
     }
 
@@ -1513,7 +1522,7 @@ class CFind(
         val approximateLookaheadRows: List<Row?>
         val lookaheadDepthDiff = if (lookaheadDepth < this.lookaheadDepth) {
             approximateLookaheadRows = lookaheadRows[0]
-            if (lookaheadDepth - 1 >= 0) {
+            if (lookaheadDepth >= 1) {
                 lookaheadIndices[lookaheadDepth - 1][depth.mod(period)].filter { it > 0 }.min()
             } else minIndices[depth.mod(period)]
         } else {
@@ -1553,7 +1562,7 @@ class CFind(
             power *= rule.numStates
 
             key += approximateLookaheadRows[coordinate, 1, null, depth] * power
-            return combinedSuccessorArray[key]
+            return combinedSuccessorArray[key] and (1 shl minOf(index, reversedBaseCoordinate.size)) != 0
         }
 
         // Checks boundary conditions
