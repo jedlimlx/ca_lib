@@ -85,7 +85,7 @@ class CFind(
         if (period == 1) return@apply
 
         var count = 0
-        for (i in 0..<period) {
+        for (i in 0..<period-1) {
             var index = 0
             while (this[(count + index + k).mod(period)] != -1) { index++ }
 
@@ -96,6 +96,7 @@ class CFind(
         this[count.mod(period)] = period * k - count
 
         val temp = this.toList()
+        println(temp)
         temp.forEachIndexed { index, it -> this[(index + 1).mod(period)] = it }
     }
     val fwdOff = run {
@@ -117,7 +118,9 @@ class CFind(
     }
     val offsets = IntArray(this.period * this.k *
         (if (symmetry == ShipSymmetry.GLIDE && direction == Coordinate(1, 1)) 2 else 1)
-    ) { 0 }.apply {
+    ) { 0 }
+    
+    /*.apply {
         if (symmetry != ShipSymmetry.GLIDE || direction != Coordinate(1, 1)) {
             for (i in 0 ..<k) {
                 var count = (i*period).mod(k) // TODO fix for gcd(k, p) > 1
@@ -137,7 +140,7 @@ class CFind(
                 }
             }
         }
-    }
+    }*/
 
     // Compute various statistics about the neighbourhood
     // TODO Get neighbourhood coordinate direction conventions right
@@ -266,14 +269,16 @@ class CFind(
         for (i in indices[0].distinct().indices) {
             lst.add(
                 Array(period) { phase ->
-                    val temp = lst.last()[phase].filter { it > 0 }.min()
+                    val temp = if (lst.last()[phase].count { it > 0 } > 0)
+                        lst.last()[phase].filter { it > 0 }.min()
+                    else 0
                     val pos = lst.last()[phase].indexOf(temp)
 
                     if (pos < indices[0].size - 1) lst.last()[phase].map { it - temp }.toIntArray()
                     else {
                         val fwdOffset = fwdOff[phase.mod(period)]
                         lst.last()[phase].map {
-                            if (it - temp != 0) it - (lst.last()[phase][0] - fwdOffset)
+                            if (it - temp != 0) it - (period - fwdOffset)
                             else 0
                         }.toIntArray()
                     }
@@ -285,40 +290,41 @@ class CFind(
         lst.subList(1, lst.size)
     }
 
-    // TODO make sure its legit to only check 0th element
-    val maxLookaheadDepth = tempIndices.map { it[0] }.run {
-        val known = hashSetOf<Int>()
-        var output = 0
-        var breakLoop = false
-        this.forEachIndexed { index, lst ->
-            if (breakLoop) return@forEachIndexed
+    val maxLookaheadDepth = (0..<period).map { phase ->
+        tempIndices.map { it[phase] }.run {
+            val known = hashSetOf<Int>()
+            var output = 0
+            var breakLoop = false
+            this.forEachIndexed { index, lst ->
+                if (breakLoop) return@forEachIndexed
 
-            var unknown = 0
-            if (lst[0] - period !in known) {
-                known.add(lst[0] - period)
-                unknown++
-            }
-
-            lst.forEach {
-                if (it < 0 && it !in known) {
-                    known.add(it)
+                var unknown = 0
+                if (lst[0] - period !in known) {
+                    known.add(lst[0] - period)
                     unknown++
                 }
-            }
 
-            if (unknown > 1) {
-                output = index
-                breakLoop = true
-                return@forEachIndexed
-            }
-        }
+                lst.forEach {
+                    if (it < 0 && it !in known) {
+                        known.add(it)
+                        unknown++
+                    }
+                }
 
-        if (breakLoop) output else this.size
-    }  // double or even triple lookahead is possible for higher-range rules
+                if (unknown > 1) {
+                    output = index
+                    breakLoop = true
+                    return@forEachIndexed
+                }
+            }
+            
+            if (breakLoop) output else this.size
+        }  // double or even triple lookahead is possible for higher-range rules
+    }.toList().min()
     val lookaheadDepth = minOf(lookaheadDepth, maxLookaheadDepth)
 
     val successorLookaheadDepth = tempIndices.map { it[0].last() }.indexOf(0) + 1
-    val successorLookahead = (successorLookaheadDepth == this.lookaheadDepth + 1 || tempIndices[0][1].last() == 0) && lookaheadDepth > 0
+    val successorLookahead = this.lookaheadDepth > 0 && (successorLookaheadDepth == this.lookaheadDepth + 1 || tempIndices[0][1].last() == 0)
 
     val lookaheadIndices = if (this.lookaheadDepth == 0) listOf() else tempIndices.subList(
         0, if (successorLookahead) successorLookaheadDepth else this.lookaheadDepth
@@ -339,7 +345,7 @@ class CFind(
     val maxWidth: Int = widthsByHeight.slice(0 .. this.lookaheadDepth).maxOf { it }
 
     // TODO fix approximate lookahead for spacing != 1
-    val approximateLookahead = spacing == 1 && lookaheadDepth > 0 && lookaheadIndices[0][0].last() != 0
+    val approximateLookahead = spacing == 1 && this.lookaheadDepth > 0 && lookaheadIndices[0][0].last() != 0
 
     // Computing neighbourhoods to be memorised for lookahead
     val memorisedlookaheadNeighbourhood: List<List<Pair<Coordinate, Int>>> = lookaheadIndices.indices.map {
