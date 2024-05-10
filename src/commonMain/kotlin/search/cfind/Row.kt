@@ -2,6 +2,7 @@ package search.cfind
 
 import simulation.Coordinate
 import simulation.DenseGrid
+import simulation.SparseGrid
 import simulation.Grid
 
 class Row(
@@ -115,7 +116,7 @@ class Row(
     fun isEmpty(): Boolean = hash == 0
 
     fun toGrid(period: Int, symmetry: ShipSymmetry): Grid {
-        val grid = DenseGrid()
+        val grid = SparseGrid()
         var temp: Row?
         var predecessor = this
 

@@ -58,7 +58,6 @@ class CFind(
     val partialFileFrequency = if (partialFileFrequency > 0) partialFileFrequency else partialFrequency
 
     // TODO Handle alternating stuff properly / don't support alternating neighbourhoods
-    // TODO Fix photon searches
     var minDeepeningIncrement = if (minDeepeningIncrement == -1) {
         if (searchStrategy == SearchStrategy.HYBRID_BFS) _period
         else _period * 10  // shallow tree with deep leafs :)
@@ -95,6 +94,9 @@ class CFind(
         }
 
         this[count.mod(period)] = period * k - count
+
+        val temp = this.toList()
+        temp.forEachIndexed { index, it -> this[(index + 1).mod(period)] = it }
     }
     val fwdOff = run {
         val array = IntArray(period) { -1 }
@@ -115,7 +117,7 @@ class CFind(
     }
     val offsets = IntArray(this.period * this.k *
         (if (symmetry == ShipSymmetry.GLIDE && direction == Coordinate(1, 1)) 2 else 1)
-    ) { -1 }.apply {
+    ) { 0 }.apply {
         if (symmetry != ShipSymmetry.GLIDE || direction != Coordinate(1, 1)) {
             for (i in 0 ..<k) {
                 var count = (i*period).mod(k) // TODO fix for gcd(k, p) > 1
@@ -269,14 +271,15 @@ class CFind(
 
                     if (pos < indices[0].size - 1) lst.last()[phase].map { it - temp }.toIntArray()
                     else {
-                        val fwdOffset = fwdOff[(phase - temp).mod(period)]
+                        val fwdOffset = fwdOff[phase.mod(period)]
                         lst.last()[phase].map {
-                            if (it - temp != 0) it - temp + backOff[phase] - fwdOffset
+                            if (it - temp != 0) it - (lst.last()[phase][0] - fwdOffset)
                             else 0
                         }.toIntArray()
                     }
                 }
             )
+            println(lst.last().map { it.toList() }.toList())
         }
 
         lst.subList(1, lst.size)
@@ -315,7 +318,7 @@ class CFind(
     val lookaheadDepth = minOf(lookaheadDepth, maxLookaheadDepth)
 
     val successorLookaheadDepth = tempIndices.map { it[0].last() }.indexOf(0) + 1
-    val successorLookahead = successorLookaheadDepth == this.lookaheadDepth + 1 && lookaheadDepth > 0
+    val successorLookahead = (successorLookaheadDepth == this.lookaheadDepth + 1 || tempIndices[0][1].last() == 0) && lookaheadDepth > 0
 
     val lookaheadIndices = if (this.lookaheadDepth == 0) listOf() else tempIndices.subList(
         0, if (successorLookahead) successorLookaheadDepth else this.lookaheadDepth
@@ -1349,7 +1352,7 @@ class CFind(
                 if (coordinate !in neighbourhoodWithoutBg) {
                     neighbourhoodWithoutBg[coordinate] = mainNeighbourhood.filter { (it, _) ->
                         if (symmetry == ShipSymmetry.ASYMMETRIC || symmetry == ShipSymmetry.GLIDE)
-                            (it + coordinate).x in 0 ..< (width * spacing)
+                            0 <= (it + coordinate).x && (it + coordinate).x < (width * spacing)
                         else (it + coordinate).x >= 0
                     }.map { (it, p) -> Pair(it + coordinate, p) }.toList()
                 }
@@ -1522,9 +1525,9 @@ class CFind(
         val approximateLookaheadRows: List<Row?>
         val lookaheadDepthDiff = if (lookaheadDepth < this.lookaheadDepth) {
             approximateLookaheadRows = lookaheadRows[0]
-            if (lookaheadDepth >= 1) {
+            if (lookaheadDepth >= 1)
                 lookaheadIndices[lookaheadDepth - 1][depth.mod(period)].filter { it > 0 }.min()
-            } else minIndices[depth.mod(period)]
+            else minIndices[depth.mod(period)]
         } else {
             approximateLookaheadRows = listOf()
             0
@@ -1545,12 +1548,15 @@ class CFind(
 
                 _lookaheadMemo[index] = key
             } else key = _lookaheadMemo[index]
-
+            
+            //println(lookaheadNeighbourhood[0].toList())
             for ((it, p) in lookaheadNeighbourhood[0]) {
+                //println("$it ${pow(numEquivalentStates, (it.x + minX) / spacing)}")
                 if ((it + coordinate).x >= 0)  // TODO consider different backgrounds
                     key += getDigit(
                         row,
-                        pow(numEquivalentStates, (it.x + minX) / spacing), numEquivalentStates
+                        pow(numEquivalentStates, (it.x + minX) / spacing), 
+                        numEquivalentStates
                     ) * p
             }
 
@@ -1720,8 +1726,8 @@ class CFind(
                     val row = Row(currentRow, node.completeRow!!, this)
                     if (lookaheadDepth < this.lookaheadDepth) {
                         val newRows = lookaheadRows.mapIndexed { index, rows ->
-                            val temp = lookaheadIndices[lookaheadDepth][depth.mod(period)].min()  // TODO may not be legit
-                            val tempIndices = lookaheadIndices[index + lookaheadDepth][depth.mod(period)]
+                            val temp = lookaheadIndices[lookaheadDepth][(depth + 2).mod(period)].min()  // TODO may not be legit
+                            val tempIndices = lookaheadIndices[index + lookaheadDepth][(depth + 2).mod(period)]
                             rows.mapIndexed { index, value -> if (tempIndices[index] == temp) row else value }
                         }
 
