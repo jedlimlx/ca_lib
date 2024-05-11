@@ -6,6 +6,7 @@ import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.writeString
+import patterns.Spaceship
 import rules.hrot.HROT
 import rules.hrot.HROTGenerations
 import rules.nontotalistic.rules.INT
@@ -16,8 +17,9 @@ import rules.ruleloader.ruletree.ruletreeDirectiveFromString
 import search.cfind.CFind
 import search.cfind.SearchStrategy
 import search.cfind.ShipSymmetry
+import simulation.*
 import java.io.File
-import simulation.Coordinate
+import kotlin.random.Random
 
 actual fun main() {
     // val rule = HROT("R2,C2,S6-9,14-20,B7-8,15-24,NM")
@@ -104,38 +106,35 @@ actual fun main() {
 //        }
 //    }
 
-     // val ruletable = ruletableFromFile("SoManyShips3.rule")
+     val ruletable = ruletableFromFile("SoManyShips3.rule")
 
-//     val search = CFind(
-//         HROT("R2,C2,S2-3,B3,N@891891"), 4, 1, 6, ShipSymmetry.ODD,
-//         verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE,
-//         numThreads = 8, partialFrequency = 1000  //, partialFiles = (0..<2).map { "../partials_$it.txt" }
-//     )
-//     search.search()
-
-//    val search = CFind(
-//        HROT("R2,C2,S6-9,B7-8,NM"), 2, 1, 8,
-//        symmetry = ShipSymmetry.ASYMMETRIC, verbosity = 1,
-//        searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 50000,
-//        backupName = "dump", maxQueueSize = 1 shl 22, numThreads = 8, backupFrequency = 600
-//    )
-//    search.search()
-    
     // B2-ei3cjkr4cektyz5-cnr6-ik78/S01e2-ae3cnqry4cqrtwyz5-ain6ekn7e
     val search = CFind(
-        HROT("R2,C2,S6-9,B7-8,NM"), 2, 0, 13, ShipSymmetry.ODD,
-        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE,
-        lookaheadDepth = 0
-        //numShips = 1, //, direction = Coordinate(1, 1)
+        HROT("B3/S23"), 4, 2, 7, ShipSymmetry.ASYMMETRIC,
+        verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS, numThreads = 1
     )
     search.search()
 
-//    val search = CFind(
-//        HROT("R2,C2,S6-9,B7-8,NM"), 3, 2, 11, symmetry = ShipSymmetry.EVEN,
-//        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, partialFrequency = 10,
-//        backupName = "backups/minibugs_2c3o_w11_even", maxQueueSize = 1 shl 22, stdin = true,
-//        backupFrequency = 60*60
-//    )
-//    search.loadState(File("backups/minibugs_2c3o_w11_even_2.txt").readText())
-//    search.search()
+//    val ship = SparseGrid(
+//        "obo\$bo4\$bo\$bo\$3o\$obo!",
+//        rule = INT("B2cei3-eijr4ceirtw5ciqy6-e7c/S1c2-c3-aiqy4ikntw5nqr6-a")
+//    ).identify() as Spaceship
+//    val phases = ship.phases.filter { it.population < 50 }
+//
+//    while (true) {
+//        val soup = SparseGrid()
+//        for (i in 2..Random.nextInt(3) + 2) {
+//            val pattern = phases[Random.nextInt(phases.size)]
+////            .apply {
+////                for (j in 0 .. Random.nextInt(3))
+////                    rotate(Rotation.CLOCKWISE)
+////                if (Random.nextInt(2) == 0) flip(Flip.VERTICAL)
+////                if (Random.nextInt(2) == 0) flip(Flip.HORIZONTAL)
+////            }
+//            soup[Coordinate(Random.nextInt(100), Random.nextInt(100))] = pattern
+//        }
+//
+//        println("x = 0, y = 0, rule = B2cei3-eijr4ceirtw5ciqy6-e7c/S1c2-c3-aiqy4ikntw5nqr6-a")
+//        println(soup.toRLE())
+//    }
 }

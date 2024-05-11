@@ -1,9 +1,21 @@
 package search.cfind
 
 import simulation.Coordinate
-import simulation.DenseGrid
-import simulation.SparseGrid
 import simulation.Grid
+import simulation.SparseGrid
+
+fun lcm(a: Int, b: Int): Int {
+    val maxLcm = a * b
+    val larger = if (a > b) a else b
+
+    var lcm = larger
+    while (lcm <= maxLcm) {
+        if (lcm % a == 0 && lcm % b == 0) return lcm
+        lcm += larger
+    }
+
+    return maxLcm
+}
 
 class Row(
     val predecessor: Row?, val cells: IntArray, var search: CFind? = null,
@@ -13,6 +25,7 @@ class Row(
 
     // unique id for each row
     val id = counter++
+    val depthPeriod = search!!.spacing
 
     val hash = run {
         if (hash == null) {
@@ -123,12 +136,12 @@ class Row(
         var counter = this.offset
         while (true) {
             predecessor.cells.forEachIndexed { index, state ->
-                grid[translate(index * search!!.spacing + predecessor.offset, -counter)] = state.toInt()
+                grid[translate(index * search!!.spacing + predecessor.offset, -counter)] = state
                 when(symmetry) {
                     ShipSymmetry.EVEN -> grid[translate(2 * predecessor.cells.size * search!!.spacing - 1 -
-                            (index * search!!.spacing + predecessor.offset), -counter)] = state.toInt()
+                            (index * search!!.spacing + predecessor.offset), -counter)] = state
                     ShipSymmetry.ODD -> grid[translate(2 * predecessor.cells.size * search!!.spacing - 2 -
-                            (index * search!!.spacing + predecessor.offset), -counter)] = state.toInt()
+                            (index * search!!.spacing + predecessor.offset), -counter)] = state
                     else -> {}
                 }
             }
@@ -166,8 +179,8 @@ class Row(
         return this
     }
 
-    override fun hashCode() = hash + 201 * depth.mod(search!!.spacing)
-    fun reverseHashCode() = reverseHash + 201 * depth.mod(search!!.spacing)
+    override fun hashCode() = hash + 293 * depth.mod(depthPeriod)
+    fun reverseHashCode() = reverseHash + 293 * depth.mod(depthPeriod)
     override fun compareTo(other: Row): Int = this.depth - other.depth
 
     override fun equals(other: Any?): Boolean {
