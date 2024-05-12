@@ -9,6 +9,7 @@ import kotlinx.io.writeString
 import patterns.Spaceship
 import rules.hrot.HROT
 import rules.hrot.HROTGenerations
+import rules.nontotalistic.rules.DeficientINT
 import rules.nontotalistic.rules.INT
 import rules.nontotalistic.rules.INTGenerations
 import rules.ruleloader.builders.ruletable
@@ -106,12 +107,12 @@ actual fun main() {
 //        }
 //    }
 
-     val ruletable = ruletableFromFile("SoManyShips3.rule")
-
-    // B2-ei3cjkr4cektyz5-cnr6-ik78/S01e2-ae3cnqry4cqrtwyz5-ain6ekn7e
+//    val ruletable = ruletableFromFile("SoManyShips3.rule")
+//
+//    // B2-ei3cjkr4cektyz5-cnr6-ik78/S01e2-ae3cnqry4cqrtwyz5-ain6ekn7e
     val search = CFind(
-        HROT("B3/S23"), 4, 2, 7, ShipSymmetry.ASYMMETRIC,
-        verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS, numThreads = 1
+        DeficientINT("B2/S/D"), 2, 1, 6, ShipSymmetry.ODD,
+        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, lookaheadDepth = 1
     )
     search.search()
 

@@ -325,7 +325,7 @@ class CFind(
 
     val successorLookaheadDepth = tempIndices.map { it[0].last() }.indexOf(0) + 1
     val successorLookahead = this.lookaheadDepth.map {
-        it > 0 && (successorLookaheadDepth == it + 1 || tempIndices[0][1].last() == 0)
+        false && it > 0 && (successorLookaheadDepth == it + 1 || tempIndices[0][1].last() == 0)
     }
 
     val lookaheadIndices = if (this.lookaheadDepth.max() == 0) listOf() else tempIndices.subList(
@@ -837,7 +837,7 @@ class CFind(
                     avgSuccessorTime = avgSuccessorTime * 0.999 + measureTime {
                         val (rows, lookaheadRows) = extractRows(currentRow)
                         successors = nextRow(currentRow, rows, lookaheadRows, depth = currentRow.depth + 1).first
-                        println("${successors.size} ${rows.toList()} ${currentRow.depth + 1}")
+                        //println("${successors.size} ${rows.toList()} ${currentRow.depth + 1}")
                     }.inWholeNanoseconds * 0.001
                     if (successors.size in numSuccessors)
                         numSuccessors[successors.size] = numSuccessors[successors.size]!! + 1
@@ -1824,6 +1824,10 @@ class CFind(
                 ShipSymmetry.GLIDE -> 0
                 ShipSymmetry.EVEN -> this[Coordinate(2 * width * spacing - coordinate.x - 1, coordinate.y), generation, currentRow, depth]
                 ShipSymmetry.ODD -> this[Coordinate(2 * width * spacing - coordinate.x - 2, coordinate.y), generation, currentRow, depth]
+                ShipSymmetry.GUTTER -> {
+                    if (coordinate.x == width * spacing) 0
+                    else this[Coordinate(2 * width * spacing - coordinate.x, coordinate.y), generation, currentRow, depth]
+                }
             }
         }
 

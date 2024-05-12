@@ -142,6 +142,8 @@ class Row(
                             (index * search!!.spacing + predecessor.offset), -counter)] = state
                     ShipSymmetry.ODD -> grid[translate(2 * predecessor.cells.size * search!!.spacing - 2 -
                             (index * search!!.spacing + predecessor.offset), -counter)] = state
+                    ShipSymmetry.GUTTER -> grid[translate(2 * predecessor.cells.size * search!!.spacing -
+                            (index * search!!.spacing + predecessor.offset), -counter)] = state
                     else -> {}
                 }
             }
