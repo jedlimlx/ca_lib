@@ -152,6 +152,19 @@ class CFind(
         }
     }
 
+    // Computing the background for strobing rules
+    val background = IntArray(this.period * maxOf(this.k, 1)) { -1 }.apply {
+        // Compute the offsets
+        var count = 0
+        var index = 0
+        while (count < period * k) {
+            val rem = count % period
+            for (i in 0 ..<k) this[rem] = rule.background[index]
+            count += backOff[count.mod(period)]
+            index++
+        }
+    }
+
     // Compute various statistics about the neighbourhood
     // TODO Get neighbourhood coordinate direction conventions right
     val height: Int = neighbourhood.maxOf { it.maxOf { it.y } - it.minOf { it.y } } + 1
@@ -690,6 +703,7 @@ class CFind(
         println((bold("Successor Table Size: ") + "${successorTable.size}"), verbosity = 1)
         println((bold("Backoff Table: ") + "${backOff.toList()}"), verbosity = 1)
         println((bold("Reverse Backoff Table: ") + "${fwdOff.toList()}"), verbosity = 1)
+        println((bold("Background: ") + "${background.toList()}"), verbosity = 1)
         println((bold("Maximum Lookahead Depth: ") + "$maxLookaheadDepth"), verbosity = 1)
         println((bold("Successor Lookahead: ") + "$successorLookaheadDepth / $successorLookahead"), verbosity = 1)
         println((bold("Approximate Lookahead: ") + "$approximateLookahead"), verbosity = 1)
