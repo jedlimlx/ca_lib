@@ -119,15 +119,24 @@ class CFind(
     // TODO fix this for oscillators searches in other directions
     val offsets = IntArray(this.period * maxOf(this.k, 1) *
         (if (symmetry == ShipSymmetry.GLIDE && direction == Coordinate(1, 1)) 2 else 1)
-    ) { 0 }
-    
-    /*.apply {
+    ) { -1 }.apply {
         if (symmetry != ShipSymmetry.GLIDE || direction != Coordinate(1, 1)) {
+            // Compute the offsets
+            var initialCount = 0
             for (i in 0 ..<k) {
-                var count = (i*period).mod(k) // TODO fix for gcd(k, p) > 1
+                var count = initialCount
+                val lst = arrayListOf(initialCount)
                 while (count < period * k) {
                     this[count] = tempOffsets[i.mod(tempOffsets.size)]
                     count += backOff[count.mod(period)]
+                    lst.add(count)
+                }
+
+                for (j in initialCount..lst.max()) {
+                    if (j !in lst) {
+                        initialCount = j
+                        break
+                    }
                 }
             }
         } else {
@@ -135,13 +144,13 @@ class CFind(
             for (i in 0 ..<2*period) {
                 this[i*k] = if (flipped) 1 else 0
                 if (period.mod(2) == 1 || i.mod(period) == 0) flipped = !flipped
-                
+
                 for (j in 0..<2*k) {
                     this[(i*k+j*period) % this.size] = (this[i*k] + j) % 2
                 }
             }
         }
-    }*/
+    }
 
     // Compute various statistics about the neighbourhood
     // TODO Get neighbourhood coordinate direction conventions right

@@ -12,6 +12,7 @@ import rules.hrot.HROTGenerations
 import rules.nontotalistic.rules.DeficientINT
 import rules.nontotalistic.rules.INT
 import rules.nontotalistic.rules.INTGenerations
+import rules.nontotalistic.transitions.R2VonNeumannINT
 import rules.ruleloader.builders.ruletable
 import rules.ruleloader.ruletableFromFile
 import rules.ruleloader.ruletree.ruletreeDirectiveFromString
@@ -68,51 +69,32 @@ actual fun main() {
     //         htmlDocument { body { findFirst { text } } }
     //     }
     // }
-    
+
     // val gliderdb = GliderDB(output)
     // println(gliderdb.searchByRule(HROTGenerations("/2/3")..HROTGenerations("012345678/2345678/3")).map {
     //     "x = 0, y = 0, rule = ${it.ruleRange!!.first}\n${it.canonPhase}"
     // }.joinToString("\n\n"))
 
-//    val ruletable = ruletable {
-//        name = "B1S235F23K4L035"
-//
-//        val birth = setOf(1)
-//        val survival = setOf(2, 3, 5)
-//        val forcing = setOf(2, 3)
-//        val killing = setOf(4)
-//        val living = setOf(0, 3, 5)
-//
-//        tree(
-//            numStates = 3,
-//            neighbourhood = moore(1),
-//            background = intArrayOf(0)
-//        ) { neighbours, cellState ->
-//            val sum1 = neighbours.count { it == 1 }
-//            val sum2 = neighbours.count { it == 2 }
-//
-//            when (cellState) {
-//                1 -> {
-//                    if (killing.contains(sum2)) 0
-//                    else if (survival.contains(sum1)) 1
-//                    else 2
-//                }
-//                2 -> {
-//                    if (living.contains(sum1)) 0 else 2
-//                }
-//                else -> {
-//                    if (birth.contains(sum1) && forcing.contains(sum2)) 1 else 0
-//                }
-//            }
-//        }
-//    }
+    val transitions: MutableList<List<Int>> = arrayListOf()
+    val weights = arrayOf(3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2)
+    for (i in 0..<(1 shl 12)) {
+        val string = i.toString(2).padStart(12, '0')
+        val cells = string.map { it.digitToInt() }
 
-//    val ruletable = ruletableFromFile("SoManyShips3.rule")
-//
-//    // B2-ei3cjkr4cektyz5-cnr6-ik78/S01e2-ae3cnqry4cqrtwyz5-ain6ekn7e
+        val sum = cells.mapIndexed { index, it -> weights[index] * it }.sum()
+        if (sum in 9 .. 11 || sum == 4)
+            transitions.add(cells)
+    }
+
+    println(R2VonNeumannINT(transitions).transitionString)
+
+    val ruletable = ruletableFromFile("SoManyShips3.rule")
+
+    // B2-ei3cjkr4cektyz5-cnr6-ik78/S01e2-ae3cnqry4cqrtwyz5-ain6ekn7e
     val search = CFind(
-        DeficientINT("B2/S/D"), 2, 1, 6, ShipSymmetry.ODD,
-        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, lookaheadDepth = 1
+        HROT("R2,C2,S3,B3,NN"), 4, 1, 6, ShipSymmetry.ODD,
+        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, //lookaheadDepth = 0,
+        direction = Coordinate(1, 1)
     )
     search.search()
 
