@@ -88,13 +88,14 @@ actual fun main() {
 
     println(R2VonNeumannINT(transitions).transitionString)
 
-    val ruletable = ruletableFromFile("SoManyShips3.rule")
+    //val ruletable = ruletableFromFile("SoManyShips3.rule")
 
     // B2-ei3cjkr4cektyz5-cnr6-ik78/S01e2-ae3cnqry4cqrtwyz5-ain6ekn7e
+    // HROT("R2,C2,S6-11,B4,9-11,NW0020003330230320333000200")
     val search = CFind(
-        HROT("R2,C2,S3,B0,NN"), 4, 1, 6, ShipSymmetry.ODD,
-        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, //lookaheadDepth = 0,
-        direction = Coordinate(1, 1)
+        HROT("R3,C2,S2,B3,N+"), 2, 1, 10, ShipSymmetry.ODD,
+        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, //lookaheadDepth = 2,
+        direction = Coordinate(1, 1), numThreads = 8
     )
     search.search()
 
