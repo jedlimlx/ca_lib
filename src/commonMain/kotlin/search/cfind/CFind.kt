@@ -362,7 +362,7 @@ class CFind(
     // }
     
     val successorLookahead =  this.lookaheadDepth.map {
-        false && it > 0 && (successorLookaheadDepth == it + 1 || tempIndices[0][1].last() == 0)
+        it > 0 && (successorLookaheadDepth == it + 1 || tempIndices[0][1].last() == 0)
     }
 
     val lookaheadIndices = if (this.lookaheadDepth.max() == 0) listOf() else tempIndices.subList(
