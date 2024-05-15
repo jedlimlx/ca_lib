@@ -25,7 +25,7 @@ class Row(
 
     // unique id for each row
     val id = counter++
-    val depthPeriod = search!!.spacing
+    val depthPeriod = 1//search!!.spacing
 
     val hash = run {
         if (hash == null) {

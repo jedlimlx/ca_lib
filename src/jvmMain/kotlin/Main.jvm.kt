@@ -22,6 +22,7 @@ import search.cfind.ShipSymmetry
 import simulation.*
 import java.io.File
 import kotlin.random.Random
+import patterns.Oscillator
 
 actual fun main() {
     // val rule = HROT("R2,C2,S6-9,14-20,B7-8,15-24,NM")
@@ -75,27 +76,43 @@ actual fun main() {
     //     "x = 0, y = 0, rule = ${it.ruleRange!!.first}\n${it.canonPhase}"
     // }.joinToString("\n\n"))
 
-    val transitions: MutableList<List<Int>> = arrayListOf()
-    val weights = arrayOf(3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2)
-    for (i in 0..<(1 shl 12)) {
-        val string = i.toString(2).padStart(12, '0')
-        val cells = string.map { it.digitToInt() }
+    // val transitions: MutableList<List<Int>> = arrayListOf()
+    // val weights = arrayOf(3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2)
+    // for (i in 0..<(1 shl 12)) {
+    //     val string = i.toString(2).padStart(12, '0')
+    //     val cells = string.map { it.digitToInt() }
 
-        val sum = cells.mapIndexed { index, it -> weights[index] * it }.sum()
-        if (sum in 9 .. 11 || sum == 4)
-            transitions.add(cells)
-    }
+    //     val sum = cells.mapIndexed { index, it -> weights[index] * it }.sum()
+    //     if (sum in 9 .. 11 || sum == 4)
+    //         transitions.add(cells)
+    // }
 
-    println(R2VonNeumannINT(transitions).transitionString)
+    // println(R2VonNeumannINT(transitions).transitionString)
+
+    // val pattern = "b3o\$2o2bo\$2o2bo\$b4o\$2b2o9\$2b2o\$b4o\$2o2bo\$2o2bo\$b3o!"
+    // val ship = SparseGrid("b3o\$2o2bo\$2o2bo\$b4o\$2b2o!", HROT("R2,C2,S6-9,B7-8,NM")).identify()!!
+
+    // var count = 0
+    // val range = ship.ruleRange!!.first as HROT .. ship.ruleRange!!.second as HROT
+    // //println("${range.size} rules to search.")
+    // for (i in range.randomSequence()) {
+    //     val test = DenseGrid(pattern, i)
+    //     val output = test.identify(200)
+    //     if (output != null && (output as Spaceship).period > 1)
+    //         println("$i, ${output}")
+        
+    //     if ((count++).mod(1000) == 0)
+    //         println("Searched $count...")
+    // }
 
     //val ruletable = ruletableFromFile("SoManyShips3.rule")
 
     // B2-ei3cjkr4cektyz5-cnr6-ik78/S01e2-ae3cnqry4cqrtwyz5-ain6ekn7e
     // HROT("R2,C2,S6-11,B4,9-11,NW0020003330230320333000200")
     val search = CFind(
-        HROT("R3,C2,S2,B3,N+"), 4, 3, 8, ShipSymmetry.ODD,
-        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, lookaheadDepth = 0,
-        direction = Coordinate(1, 1), numThreads = 8
+        HROT("R2,C2,S0,B2,N+"), 2, 1, 8, ShipSymmetry.ODD,
+        verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS, //lookaheadDepth = 1, //stdin = true,
+        direction = Coordinate(1, 1), numThreads = 8, lookaheadDepth = 2
     )
     search.search()
 

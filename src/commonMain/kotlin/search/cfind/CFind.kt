@@ -123,7 +123,7 @@ class CFind(
         if (symmetry != ShipSymmetry.GLIDE || direction != Coordinate(1, 1)) {
             // Compute the offsets
             var initialCount = 0
-            for (i in 0 ..<k) {
+            for (i in 0 ..<2*k) {
                 var count = initialCount
                 val lst = arrayListOf(initialCount)
                 while (count < period * k) {
@@ -273,7 +273,7 @@ class CFind(
 
     // Initialising the transposition table
     @OptIn(ExperimentalUnsignedTypes::class)
-    val equivalentStates: LRUCache<Int, UShortArray> = LRUCache(transpositionTableSize)
+    val equivalentStates: HashMap<Int, UShortArray> = HashMap(transpositionTableSize)
 
     // Computing the rows that should be used in computing the next state
     val indices = Array(period) { phase ->
@@ -345,30 +345,39 @@ class CFind(
     }.toList()
     val lookaheadDepth = maxLookaheadDepth.map { minOf(lookaheadDepth, it) }
 
-    val successorLookaheadDepth = tempIndices.map { it[0].last() }.indexOf(0) + 1
-    // val successorLookahead = (0..<period).map { phase ->
-    //     val lst = tempIndices.map { it[phase] }
-    //     lst.map {
-    //         val target = it[0] - indices[0][0]
-    //         val known = setOf(0) //+ lookaheadIndices.subList(0, lookaheadDepth[phase]).map { it[phase][0] - indices[phase][0] }.toSet()
-    //         for (i in lst) {
-    //             if (i.indexOf(target) == i.size - 1 && lst[indexToRowMap[centralHeight] - 1] in known) {
-    //                 return@map 
-    //             }
-    //         }
+    val successorLookahead = (0..<period).map { phase ->
+        val lst = (listOf(indices) + tempIndices).map { it[phase] }
+        var count = 0
+        lst.subList(0, this.lookaheadDepth.max() + 1).map {
+            val target = it[0] - indices[0][0]
+            val known = setOf(0) + tempIndices.subList(0, count++).map { it[phase][0] - indices[phase][0] }.toSet()
+            for (i in lst.indices) {
+                if (lst[i].indexOf(target) == lst[i].size - 1) {
+                    val centralRow = lst[i][indexToRowMap[centralHeight] - 1]
+                    if (centralRow in known || centralRow > 0)
+                        return@map i
+                }
+            }
 
-    //         -1
-    //     }
-    // }
-    
-    val successorLookahead =  this.lookaheadDepth.map {
-        it > 0 && (successorLookaheadDepth == it + 1 || tempIndices[0][1].last() == 0)
+            -1
+        }
+    }
+    val successorLookaheadIndices = successorLookahead.mapIndexed { phase, lst ->
+        lst.filter { it > 0 }.map { tempIndices[it - 1][phase] }
+    }
+    val successorLookaheadIndex = successorLookahead.map { lst ->
+        var count = 0
+        lst.filter { it > 0 }.map { this.lookaheadDepth.max() + count++ }
     }
 
-    val lookaheadIndices = if (this.lookaheadDepth.max() == 0) listOf() else tempIndices.subList(
-        0, if (successorLookahead.count { it } > 0) maxOf(successorLookaheadDepth, this.lookaheadDepth.max())
-        else this.lookaheadDepth.max()
-    )
+    val lookaheadIndices = if (this.lookaheadDepth.max() == 0) listOf() 
+    else tempIndices.subList(0, this.lookaheadDepth.max()) + Array(successorLookaheadIndices.map { it.size }.max()) { depth -> 
+        Array(period) { phase -> 
+            if (depth < successorLookaheadIndices[phase].size)
+                successorLookaheadIndices[phase][depth]
+            else successorLookaheadIndices[phase].last()
+        }
+    }.toList()
 
     val rawAdditionalDepth: Int = when (indices[0].indexOf(indices[0].min())) {
         0 -> {
@@ -720,7 +729,7 @@ class CFind(
         println((bold("Reverse Backoff Table: ") + "${fwdOff.toList()}"), verbosity = 1)
         println((bold("Background: ") + "${background.toList()}"), verbosity = 1)
         println((bold("Maximum Lookahead Depth: ") + "$maxLookaheadDepth"), verbosity = 1)
-        println((bold("Successor Lookahead: ") + "$successorLookaheadDepth / $successorLookahead"), verbosity = 1)
+        println((bold("Successor Lookahead: ") + "$successorLookahead"), verbosity = 1)
         println((bold("Approximate Lookahead: ") + "$approximateLookahead"), verbosity = 1)
         println((bold("Additional Depth (for lookahead): ") + "${additionalDepthArray.toList()}"), verbosity = 1)
         println((bold("Lookahead Depth: ") + "$lookaheadDepth"), verbosity = 1)
@@ -1302,7 +1311,10 @@ class CFind(
             val grid = row.toGrid(period, symmetry)
             grid.rule = rule
 
-            println(brightRed(bold("\nShip found at depth ${row.depth}!")))
+            var predecessor = row.getPredecessor((height - 1) * period)!!
+            while (predecessor.hash != 0) predecessor = predecessor.predecessor!!
+
+            println(brightRed(bold("\nShip found at depth ${row.depth}, starting at ${predecessor.depth}!")))
             printRLE(grid, style=brightBlue + bold)
 
             searchResults.add(Spaceship(0, k, period, grid))
@@ -1370,7 +1382,7 @@ class CFind(
         val phase = (row.depth + 1).mod(period)
         return Pair(
             indices[phase].map { row.getPredecessor(it - 1)!! }.toList(),
-            lookaheadIndices.subList(0, this.lookaheadDepth[phase]).map {
+            lookaheadIndices.map {
                 it[phase].map { row.getPredecessor(it - 1) }.toList()
             }
         )
@@ -1517,8 +1529,8 @@ class CFind(
         val possibleSuccessorMemo = IntArray(width) { -1 }
         fun possibleSuccessors(it: Int): Int {
             if (possibleSuccessorMemo[it] == -1) {
-                if (successorLookahead[originalPhase] && lookaheadDepth == 0) {
-                    val row = lookaheadRows.last()
+                if (successorLookahead[originalPhase][lookaheadDepth] > 0) {
+                    val row = lookaheadRows[successorLookaheadIndex[originalPhase][lookaheadDepth] - lookaheadDepth]
                     val invert = symmetry != ShipSymmetry.GLIDE ||
                             (period.mod(2) == 0 && rows.last().phase == 0)
                     if (invert) return 3  // TODO fix this optimisation for glide-symmetric rules
