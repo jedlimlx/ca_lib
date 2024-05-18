@@ -1,15 +1,15 @@
 package search.cfind
 
-import kotlinx.io.buffered
-import kotlinx.io.files.Path
-import kotlinx.io.files.SystemFileSystem
-import kotlinx.io.writeString
 import LRUCache
 import PLATFORM
 import PriorityQueue
 import com.github.ajalt.mordant.rendering.TextColors.*
 import com.github.ajalt.mordant.rendering.TextStyle
 import com.github.ajalt.mordant.rendering.TextStyles.bold
+import kotlinx.io.buffered
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
+import kotlinx.io.writeString
 import patterns.Pattern
 import patterns.Spaceship
 import prettyPrintNeighbourhood
@@ -19,10 +19,8 @@ import search.SearchProgram
 import simulation.Coordinate
 import simulation.Grid
 import kotlin.math.pow
-import kotlin.time.TimeSource
 import kotlin.random.Random
-import kotlin.time.measureTime
-import fmod
+import kotlin.time.TimeSource
 
 /**
  * Searches for spaceships using a method similar to the method used by gfind, which was described by David Eppstein in
@@ -50,7 +48,6 @@ class CFind(
     val stdin: Boolean = false,
     partialFiles: List<String> = listOf(),
     partialFileFrequency: Int = -1,
-    val profiling: String? = null,
     verbosity: Int = 0
 ): SearchProgram(verbosity) {
     override val searchResults: MutableList<Pattern> = mutableListOf()
@@ -66,11 +63,11 @@ class CFind(
 
     // Rotate the direction of the neighbour so the ship will go north
     val basisVectors = Pair(Coordinate(direction.y, -direction.x), direction)
-    val neighbourhood: List<List<Coordinate>> = rule.neighbourhood.map {
+    val neighbourhood: Array<Array<Coordinate>> = rule.neighbourhood.map {
         it.map {
             basisVectors.first * it.x + basisVectors.second * it.y
-        }.toList()
-    }.toList()
+        }.toTypedArray()
+    }.toTypedArray()
 
     // Compute statistics about the periodicity of the integer lattice (for oblique and diagonal searches)
     // TODO Figure out why oblique searches don't work
@@ -273,7 +270,7 @@ class CFind(
 
     // Initialising the transposition table
     @OptIn(ExperimentalUnsignedTypes::class)
-    val equivalentStates: HashMap<Int, UShortArray> = HashMap(transpositionTableSize)
+    val equivalentStates: LRUCache<Int, UShortArray> = LRUCache(transpositionTableSize)
 
     // Computing the rows that should be used in computing the next state
     val indices = Array(period) { phase ->
@@ -349,18 +346,18 @@ class CFind(
             }
 
             -1
-        }
-    }
+        }.toTypedArray()
+    }.toTypedArray()
     val successorLookaheadIndices = successorLookahead.mapIndexed { phase, lst ->
         lst.filter { it > this.lookaheadDepth[phase] }.map { tempIndices[phase][it - 1] }
-    }
+    }.toTypedArray()
     val successorLookaheadIndex = successorLookahead.mapIndexed { phase, lst ->
         var count = 0
         lst.map {
             if (it <= this.lookaheadDepth[phase]) it - 1
             else this.lookaheadDepth[phase] + count++
         }
-    }
+    }.toTypedArray()
 
     // TODO fix approximate lookahead for spacing != 1
     val approximateLookahead = (0..<period).map { phase ->
@@ -382,18 +379,18 @@ class CFind(
             }
 
             -1
-        }
-    }
+        }.toTypedArray()
+    }.toTypedArray()
     val approximateLookaheadIndices = approximateLookahead.mapIndexed { phase, lst ->
         lst.filter { it > this.lookaheadDepth[phase] }.map { tempIndices[phase][it - 1] }
-    }
+    }.toTypedArray()
     val approximateLookaheadIndex = approximateLookahead.mapIndexed { phase, lst ->
         var count = 0
         lst.map {
             if (it <= this.lookaheadDepth[phase]) it - 1
             else this.lookaheadDepth[phase] + successorLookaheadIndices[phase].size + count++
         }
-    }
+    }.toTypedArray()
 
     val lookaheadIndices = if (this.lookaheadDepth.max() == 0) Array(period) {
         (successorLookaheadIndices[it] + approximateLookaheadIndices[it]).toTypedArray()
@@ -516,7 +513,7 @@ class CFind(
                 for (i in successorTable[it].indices) {
                     if (
                         (
-                            j == reversedBaseCoordinate.size || 
+                            j == reversedBaseCoordinate.size ||
                             i and ((2 shl (reversedBaseCoordinate.size - j - 1)) - 1) shl j == 0
                         ) && successorTable[it][i] != 0
                     ) {
@@ -637,10 +634,10 @@ class CFind(
             }
             t.cursor.hide(showOnExit = true)
         }
-        
+
         println("Generating approximate lookahead table...")
 
-        if ((rule.numStates + 1.0).pow(neighbourhood[0].size + 1) < 1.0.pow(31)) {
+        if ((rule.numStates + 1.0).pow(neighbourhood[0].size + 1) < 2.0.pow(31)) {
             IntArray(
                 pow(rule.numStates + 1, neighbourhood[0].size + 1)
             ) {
@@ -720,7 +717,7 @@ class CFind(
 
         // Printing out some debugging information
         println(brightRed(bold("\nNeighbourhood\n----------------")), verbosity = 1)
-        println((bold("Neighbourhood: ") + "\n${prettyPrintNeighbourhood(neighbourhood[0].toTypedArray())}"), verbosity = 1)
+        println((bold("Neighbourhood: ") + "\n${prettyPrintNeighbourhood(neighbourhood[0])}"), verbosity = 1)
         println((bold("Neighbourhood Height: ") + "$centralHeight / $height"), verbosity = 1)
         println((bold("Boundary Conditions: ") +
                 "[${leftBC.map { if (it !in filteredLeftBCs) gray(it.toString()) else it.toString() }.joinToString(", ")}] / " +
@@ -745,8 +742,8 @@ class CFind(
         println((bold("Reverse Backoff Table: ") + "${fwdOff.toList()}"), verbosity = 1)
         println((bold("Background: ") + "${background.toList()}"), verbosity = 1)
         println((bold("Maximum Lookahead Depth: ") + "$maxLookaheadDepth"), verbosity = 1)
-        println((bold("Successor Lookahead: ") + "$successorLookahead"), verbosity = 1)
-        println((bold("Approximate Lookahead: ") + "$approximateLookahead"), verbosity = 1)
+        println((bold("Successor Lookahead: ") + "${successorLookahead.map { it.toList() }.toList()}"), verbosity = 1)
+        println((bold("Approximate Lookahead: ") + "${approximateLookahead.map { it.toList() }.toList()}"), verbosity = 1)
         println((bold("Additional Depth (for lookahead): ") + "${additionalDepthArray.toList()}"), verbosity = 1)
         println((bold("Lookahead Depth: ") + "$lookaheadDepth"), verbosity = 1)
         println(bold("Row Indices: "))
@@ -817,12 +814,6 @@ class CFind(
         var clearPartial = false
         var clearLines = 0
 
-        // Some statistics that we will be keeping track of
-        var avgSuccessorTime = 0.0
-        val queueSizes: ArrayList<Int> = arrayListOf()
-        val times: ArrayList<Double> = arrayListOf()
-        val numSuccessorList = ArrayList<Map<Int, Int>>()
-
         val numSuccessors = HashMap<Int, Int>()
 
         // Some common functions
@@ -880,20 +871,6 @@ class CFind(
                                         "${green("$shipsFound")} ship${if (shipsFound == 1) "" else "s"} found."
                             )
                         )
-
-                        // Writing to the profiling file
-                        if (profiling != null) {
-                            val data = StringBuilder().apply {
-                                append("queue_size,avg_time,num_successors\n")
-                                for (i in 0..<queueSizes.size) {
-                                    append("${queueSizes[i]},${times[i]},${(0..<numSuccessorList[i].keys.max()).map {
-                                        numSuccessorList[i][it] ?: 0
-                                    }.joinToString(",")}\n")
-                                }
-                            }.toString()
-
-                            SystemFileSystem.sink(Path(profiling)).buffered().writeString(data)
-                        }
                         return
                     }
 
@@ -921,15 +898,8 @@ class CFind(
                     if (checkEquivalentState(currentRow)) continue
 
                     // Get the rows that will need to be used to find the next row
-                    val successors: List<Row>
-                    avgSuccessorTime = avgSuccessorTime * 0.999 + measureTime {
-                        val (rows, lookaheadRows) = extractRows(currentRow)
-                        successors = nextRow(currentRow, rows, lookaheadRows, depth = currentRow.depth + 1).first
-                        //println("${successors.size} ${rows.toList()} ${currentRow.depth + 1}")
-                    }.inWholeNanoseconds * 0.001
-                    if (successors.size in numSuccessors)
-                        numSuccessors[successors.size] = numSuccessors[successors.size]!! + 1
-                    else numSuccessors[successors.size] = 1
+                    val (rows, lookaheadRows) = extractRows(currentRow)
+                    val successors = nextRow(currentRow, rows, lookaheadRows, depth = currentRow.depth + 1).first
 
                     // Adding the new rows to the linked list
                     val temp = processSuccessors(successors)
@@ -940,14 +910,6 @@ class CFind(
                         tail?.next = it
                         it.prev = tail
                         tail = it
-                    }
-
-                    if (count.mod(1000) == 0) {
-                        queueSizes.add(queueSize)
-                        times.add(avgSuccessorTime)
-                        numSuccessorList.add(numSuccessors.toMap())
-
-                        numSuccessors.clear()
                     }
 
                     // Printing out the partials
@@ -1172,20 +1134,6 @@ class CFind(
                         "${green("$shipsFound")} ship${if (shipsFound == 1) "" else "s"} found."
             )
         )
-
-        // Writing to the profiling file
-        if (profiling != null) {
-            val data = StringBuilder().apply {
-                append("queue_size,avg_time,num_successors\n")
-                for (i in 0..<queueSizes.size) {
-                    append("${queueSizes[i]},${times[i]},${(0..<numSuccessorList[i].keys.max()).map {
-                        numSuccessorList[i][it] ?: 0
-                    }.joinToString(",")}\n")
-                }
-            }.toString()
-
-            SystemFileSystem.sink(Path(profiling)).buffered().writeString(data)
-        }
     }
 
     override fun stop() {
@@ -1383,7 +1331,7 @@ class CFind(
 
             if (!equivalent) return false
         } else if (
-            isotropic && 
+            isotropic &&
             (symmetry == ShipSymmetry.GLIDE || symmetry == ShipSymmetry.ASYMMETRIC) &&
             reverseHash in equivalentStates.keys
         ) {
@@ -1402,7 +1350,7 @@ class CFind(
             equivalentStates.put(hash, temp)
             if (isotropic && (symmetry == ShipSymmetry.GLIDE || symmetry == ShipSymmetry.ASYMMETRIC)) {
                 equivalentStates.put(
-                    reverseHash, 
+                    reverseHash,
                     rows.map { it.reverseHash.toUShort() }.toUShortArray()
                 )
             }
@@ -1416,13 +1364,11 @@ class CFind(
      * Extract the relevant rows that will be used in finding the next state given the current latest [row].
      * It will return a pair of rows - one for the regular successor search and the other for lookahead.
      */
-    fun extractRows(row: Row): Pair<List<Row>, List<List<Row?>>> {
+    fun extractRows(row: Row): Pair<Array<Row>, Array<Array<Row?>>> {
         val phase = (row.depth + 1).mod(period)
         return Pair(
-            indices[phase].map { row.getPredecessor(it - 1)!! }.toList(),
-            lookaheadIndices[phase].map {
-                it.map { row.getPredecessor(it - 1) }.toList()
-            }
+            indices[phase].map { row.getPredecessor(it - 1)!! }.toTypedArray(),
+            lookaheadIndices[phase].map { it.map { row.getPredecessor(it - 1) }.toTypedArray() }.toTypedArray()
         )
     }
 
@@ -1431,8 +1377,8 @@ class CFind(
      */
     fun nextRow(
         currentRow: Row,
-        rows: List<Row>,
-        lookaheadRows: List<List<Row?>>,
+        rows: Array<Row>,
+        lookaheadRows: Array<Array<Row?>>,
         lookaheadDepth: Int = 0,
         lookaheadMemo: IntArray? = null,
         depth: Int = 0,
@@ -1637,7 +1583,7 @@ class CFind(
         }
 
         // Running another type of approximate lookahead
-        val approximateLookaheadRows: List<Row?>
+        val approximateLookaheadRows: Array<Row?>
         val lookaheadDepthDiff = if (lookaheadDepth < this.lookaheadDepth[originalPhase]) {
             if (lookaheadDepth >= 1)
                 lookaheadIndices[originalPhase][lookaheadDepth - 1][0] - lookaheadIndices[originalPhase][lookaheadDepth][0]
@@ -1645,14 +1591,16 @@ class CFind(
         } else 0
 
         val approximateDepthDiff = if (approximateLookahead[originalPhase][lookaheadDepth] > 0) {
-            approximateLookaheadRows = lookaheadRows[approximateLookaheadIndex[originalPhase][lookaheadDepth] - lookaheadDepth]
+            approximateLookaheadRows = lookaheadRows[
+                approximateLookaheadIndex[originalPhase][lookaheadDepth] - lookaheadDepth
+            ]
             if (lookaheadDepth >= 1)
                 lookaheadIndices[originalPhase][lookaheadDepth - 1][0] -
                         lookaheadIndices[originalPhase][approximateLookaheadIndex[originalPhase][lookaheadDepth]][0]
             else indices[originalPhase][0] -
                     lookaheadIndices[originalPhase][approximateLookaheadIndex[originalPhase][lookaheadDepth]][0]
         } else {
-            approximateLookaheadRows = listOf()
+            approximateLookaheadRows = arrayOf()
             0
         }
         fun approximateLookahead(index: Int, row: Int): Boolean {
@@ -1701,7 +1649,7 @@ class CFind(
 
             bcList.forEach {
                 if (!satisfyBC) return@forEach
-                val coordinate = -it + offset
+                val coordinate = offset - it
 
                 // Do not consider boundary conditions if they do not check valid cells (for diagonal / oblique searches)
                 val index: Int
@@ -1849,12 +1797,12 @@ class CFind(
                     row.depth = depth
                     if (lookaheadDepth < this.lookaheadDepth[originalPhase]) {
                         // Replaces the unknown rows within the lookahead with the current row value
-                        val currentRowIndex = if (lookaheadDepth >= 1) 
+                        val currentRowIndex = if (lookaheadDepth >= 1)
                             lookaheadIndices[originalPhase][lookaheadDepth - 1][0] - indices[0][0]
                         else 0
                         val newRows = lookaheadRows.mapIndexed { index, _row ->
                             val tempIndices = lookaheadIndices[originalPhase][index + lookaheadDepth]
-                            _row.mapIndexed { index, value -> if (tempIndices[index] == currentRowIndex) row else value }
+                            Array(_row.size) { if (tempIndices[it] == currentRowIndex) row else _row[it] }
                         }
 
                         // Runs the lookahead
@@ -1863,8 +1811,8 @@ class CFind(
                                     successorLookahead[originalPhase][lookaheadDepth] == lookaheadDepth + 1
                         val (lookaheadOutput, temp) = nextRow(
                             row,
-                            newRows.first() as List<Row>,
-                            newRows.subList(1, newRows.size),
+                            newRows.first() as Array<Row>,
+                            Array(newRows.size - 1) { newRows[it + 1] },
                             lookaheadDepth + 1,
                             if (memoriseLookahead) _lookaheadMemo2 else _lookaheadMemo,
                             depth + lookaheadDepthDiff,
@@ -1933,7 +1881,7 @@ class CFind(
         else return Coordinate(coordinate.x * spacing + offsets[depth.mod(offsets.size)], coordinate.y)
     }
 
-    private operator fun List<Row?>.get(
+    private operator fun Array<out Row?>.get(
         coordinate: Coordinate,
         generation: Int,
         currentRow: IntArray? = null,
@@ -1955,10 +1903,10 @@ class CFind(
         }
 
         if (coordinate.y == 0 && currentRow != null) {
-            if (spacing != 1 && coordinate.x.mod(spacing) != offsets[depth.mod(offsets.size)]) {
-                println("crap_bc $depth $coordinate ${coordinate.x.mod(spacing)} ${offsets[depth.mod(offsets.size)]}")
-                return 0
-            }
+//            if (spacing != 1 && coordinate.x.mod(spacing) != offsets[depth.mod(offsets.size)]) {
+//                println("crap_bc $depth $coordinate ${coordinate.x.mod(spacing)} ${offsets[depth.mod(offsets.size)]}")
+//                return 0
+//            }
             return currentRow[coordinate.x / spacing]
         }
         return if (coordinate.y > 0 && coordinate.y < indexToRowMap.size) {

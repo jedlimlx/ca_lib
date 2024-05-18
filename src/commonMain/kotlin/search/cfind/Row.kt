@@ -17,6 +17,18 @@ fun lcm(a: Int, b: Int): Int {
     return maxLcm
 }
 
+fun gcd(a: Int, b: Int): Int {
+    var num1 = a
+    var num2 = b
+    while (num2 != 0) {
+        val temp = num2
+        num2 = num1 % num2
+        num1 = temp
+    }
+
+    return num1
+}
+
 class Row(
     val predecessor: Row?, val cells: IntArray, var search: CFind? = null,
     hash: Int? = null, reverseHash: Int? = null
@@ -25,13 +37,16 @@ class Row(
 
     // unique id for each row
     val id = counter++
-    val depthPeriod = 1//search!!.spacing
+    val depthPeriod = lcm(search!!.spacing, if (gcd(search!!.period, search!!.k) > 1) search!!.period else 1)
 
     val hash = run {
         if (hash == null) {
             var _hash = 0
-            for (i in cells.indices)
-                _hash += cells[i] * pow(search!!.rule.numStates, i)
+            var p = 1
+            for (i in cells.indices) {
+                _hash += cells[i] * p
+                p *= search!!.rule.numStates
+            }
 
             _hash
         } else hash
@@ -60,8 +75,9 @@ class Row(
     val phase: Int
         get() { return depth.mod(search!!.period) }
 
-    val offset: Int
-        get() { return search!!.offsets[depth.mod(search!!.offsets.size)] }
+    val offset: Int by lazy {
+        search!!.offsets[depth.mod(search!!.offsets.size)]
+    }
 
     // information about the row in relation to its siblings in the tree
     var successorSequence: IntArray? = null
@@ -77,10 +93,10 @@ class Row(
     }
 
     operator fun get(index: Int): Int {
-        if (search!!.spacing != 1 && (index - offset).mod(search!!.spacing) != 0) {
-            println("crap $depth $index $offset ${(index - offset).mod(search!!.spacing)}")
-            return 0
-        }
+//        if (search!!.spacing != 1 && (index - offset).mod(search!!.spacing) != 0) {
+//            println("crap $depth $index $offset ${(index - offset).mod(search!!.spacing)}")
+//            return 0
+//        }
         if (search!!.spacing == 1) return cells[index]
         else return cells[index / search!!.spacing]
     }
