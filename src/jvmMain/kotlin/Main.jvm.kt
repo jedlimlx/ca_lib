@@ -105,37 +105,15 @@ actual fun main() {
     //         println("Searched $count...")
     // }
 
-    //val ruletable = ruletableFromFile("SoManyShips3.rule")
+    val ruletable = ruletableFromFile("SoManyShips3.rule")
 
     // B2-ei3cjkr4cektyz5-cnr6-ik78/S01e2-ae3cnqry4cqrtwyz5-ain6ekn7e
+    // B2ac3anr4-ijkz5cjkry6-cn7c8/S12i3aejy4nqtw5ceny6-kn7c
     // HROT("R2,C2,S6-11,B4,9-11,NW0020003330230320333000200")
     val search = CFind(
-        HROT("R2,C2,S0,B2,N+"), 2, 1, 8, ShipSymmetry.ODD,
-        verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS, //lookaheadDepth = 1, //stdin = true,
-        direction = Coordinate(1, 1), numThreads = 8, lookaheadDepth = 2
+        HROT("R2,C2,S6-9,B7-8,NM"), 2, 2, 13, ShipSymmetry.ODD,
+        verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS, numThreads = 8, lookaheadDepth = 2
+        //direction = Coordinate(1, 1), lookaheadDepth = 3
     )
     search.search()
-
-//    val ship = SparseGrid(
-//        "obo\$bo4\$bo\$bo\$3o\$obo!",
-//        rule = INT("B2cei3-eijr4ceirtw5ciqy6-e7c/S1c2-c3-aiqy4ikntw5nqr6-a")
-//    ).identify() as Spaceship
-//    val phases = ship.phases.filter { it.population < 50 }
-//
-//    while (true) {
-//        val soup = SparseGrid()
-//        for (i in 2..Random.nextInt(3) + 2) {
-//            val pattern = phases[Random.nextInt(phases.size)]
-////            .apply {
-////                for (j in 0 .. Random.nextInt(3))
-////                    rotate(Rotation.CLOCKWISE)
-////                if (Random.nextInt(2) == 0) flip(Flip.VERTICAL)
-////                if (Random.nextInt(2) == 0) flip(Flip.HORIZONTAL)
-////            }
-//            soup[Coordinate(Random.nextInt(100), Random.nextInt(100))] = pattern
-//        }
-//
-//        println("x = 0, y = 0, rule = B2cei3-eijr4ceirtw5ciqy6-e7c/S1c2-c3-aiqy4ikntw5nqr6-a")
-//        println(soup.toRLE())
-//    }
 }
