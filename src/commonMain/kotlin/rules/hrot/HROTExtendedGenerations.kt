@@ -355,25 +355,30 @@ class HROTExtendedGenerations : BaseHROT {
     }
 
     override fun transitionFuncWithUnknowns(cells: IntArray, cellState: Int, generation: Int, coordinate: Coordinate): Int {
+        if (cellState !in activeStates && cellState != 0) return 1 shl (cellState + 1).mod(numStates)
+
         var unknowns = 0
         var live = 0
         cells.forEachIndexed { index, it ->
-            if (it == -1) unknowns += (weights?.get(index) ?: 1)
-            else if (it in activeStates) live += (weights?.get(index) ?: 1)
+            if (it == -1) unknowns += 1
+            else if (it in activeStates) live += 1
         }
 
         var count = 0
         for (i in live..(live+unknowns)) {
-            if (if (cellState in activeStates) i in survival else i in birth)
+            if (if (cellState == 0) i in birth else i in survival)
                 count++
         }
 
-        var state = 0b00
+        var state = 0
         if (count != 0) {
-            if (state == 0) state += 0b10
+            if (cellState == 0) state += 1 shl 1
             else state += 1 shl cellState
         }
-        if (count < unknowns + 1) state += 1 shl ((cellState + 1).mod(numStates))
+        if (count < unknowns + 1) {
+            if (cellState == 0) state += 1 shl 0
+            else state += 1 shl ((cellState + 1).mod(numStates))
+        }
 
         return state
     }

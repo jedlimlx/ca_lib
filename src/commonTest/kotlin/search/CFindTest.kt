@@ -13,7 +13,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.TimeSource
 
-@Ignore
 class Test {
     private val searchStrategies = listOf(SearchStrategy.HYBRID_BFS, SearchStrategy.PRIORITY_QUEUE)
 
@@ -155,6 +154,8 @@ class Test {
                 verbosity = 1, searchStrategy = strategy
             )
             search.search()
+
+            assertEquals(search.searchResults.size, 3)
         }
     }
 
@@ -191,13 +192,12 @@ class Test {
 
             assertEquals(glideDiagonalSearch.searchResults.size, 2)
 
-            val minibugsSearch = CFind(
-                HROT("R2,C2,S6-9,B7-8,NM"), 3, 1, 2, ShipSymmetry.ODD,
+            val p2search = CFind(
+                HROT("R2,C2,S2,B3,NN"), 2, 1, 6, ShipSymmetry.ODD,
                 verbosity = 1, searchStrategy = strategy, direction = Coordinate(1 ,1)
             )
-            minibugsSearch.search()
-
-            assertEquals(minibugsSearch.searchResults.size, 1)
+            p2search.search()
+            assertEquals(p2search.searchResults.size, 21)
         }
     }
 
@@ -233,6 +233,18 @@ class Test {
             photonSearch.search()
 
             assertEquals(photonSearch.searchResults.size, 1)
+        }
+    }
+
+    fun highPeriodTest() {
+        for (strategy in searchStrategies) {
+            val search = CFind(
+                HROT("R2,C2,S2,B3,NN"), 4, 2, 5, ShipSymmetry.ASYMMETRIC,
+                verbosity = 1, searchStrategy = strategy, numShips = 1
+            )
+            search.search()
+
+            assertEquals(search.searchResults.size, 1)
         }
     }
 }

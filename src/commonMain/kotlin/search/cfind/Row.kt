@@ -37,6 +37,8 @@ class Row(
 
     // unique id for each row
     val id = counter++
+
+    // TODO think harder about if this is actually correct
     val depthPeriod = lcm(search!!.spacing, if (gcd(search!!.period, search!!.k) > 1) search!!.period else 1)
 
     val hash = run {

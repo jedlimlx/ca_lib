@@ -92,7 +92,7 @@ class CFind(
 
         this[count.mod(period)] = period * k - count
 
-        val temp = this.toList()
+        val temp = this.toList()  // TODO figure out why on Earth this is needed
         temp.forEachIndexed { index, it -> this[(index + 1).mod(period)] = it }
     }
     val fwdOff = run {
@@ -766,7 +766,7 @@ class CFind(
 
                         if (depth <= this.lookaheadDepth[phase]) string
                         else gray(string)
-                    } else " ".repeat(4*this@CFind.indices[0].size)
+                    } else " ".repeat(4*this@CFind.indices[0].size - 1)
                 }.joinToString(bold(" | "))
             )
         }
@@ -1528,7 +1528,7 @@ class CFind(
                 if (successorLookahead[originalPhase][lookaheadDepth] > 0) {
                     val row = lookaheadRows[successorLookaheadIndex[originalPhase][lookaheadDepth] - lookaheadDepth]
                     val invert = symmetry == ShipSymmetry.GLIDE &&
-                            (period.mod(2) == 0 && rows.last().phase == 0)
+                            (period.mod(2) == 1 || rows.last().phase == 0)
                     if (invert) return (1 shl rule.numStates) - 1  // TODO fix this optimisation for glide-symmetric rules
 
                     val coordinate = translate(
@@ -1544,17 +1544,20 @@ class CFind(
                             val temp = it + coordinate
                             val state = row[temp, 0, null, depth]
                             key += (if (state == -1) rule.numStates else state) * power
-                            key2 += (if (state == -1) 0 else state) * power2
                             power *= (rule.numStates + 1)
-                            power2 *= rule.numStates
+
+                            if (it !in baseCoordinates) {
+                                key2 += (if (state == -1) 0 else state) * power2
+                                power2 *= rule.numStates
+                            }
                         }
 
-                        val cellState = lookaheadRows.last()[coordinate, 0, null, depth]
+                        val cellState = row[coordinate, 0, null, depth]
                         key += cellState * power
                         key2 += cellState * power2
 
                         if (successorLookahead[originalPhase][lookaheadDepth] == lookaheadDepth + 1)
-                            _lookaheadMemo2!![it + additionalDepthArray[originalPhase]] = key2
+                            _lookaheadMemo2!![it + additionalDepthArray[depth.mod(spacing)]] = key2
 
                         possibleSuccessorMemo[it] = approximateLookaheadTable[key]
                     } else {
@@ -1661,9 +1664,10 @@ class CFind(
                     index = tempCoordinate.x / spacing
                 } else index = tempCoordinate.x
 
-                // Getting the boundary state
                 if (it.y == -centralHeight) {
                     val lookupTable = lookup(index)
+
+                    // Getting the boundary state
                     val boundaryState = rows[tempCoordinate, 0, cells, depth]
 
                     // Finally checking the boundary condition
