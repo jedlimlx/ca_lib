@@ -338,6 +338,7 @@ class CFind(
                 it[0] - indices[phase][0]
             }.toSet()
             for (i in lst.indices) {
+                if (lst[i][0] == target && lst[i].last() == target) return@map -1
                 if (lst[i].indexOf(target) == lst[i].size - 1) {
                     val centralRow = lst[i][indexToRowMap[centralHeight] - 1]
                     if (centralRow in known || centralRow > 0)
@@ -365,12 +366,14 @@ class CFind(
         var count = 0
         lst.subList(0, this.lookaheadDepth[phase] + 1).map {
             if (spacing != 1) return@map -1
+
             val target = it[0] - indices[0][0]
             val known = setOf(0) + tempIndices[phase].slice(0..<count++).map {
                 it[0] - indices[phase][0]
             }.toSet()
 
             for (i in lst.indices) {
+                if (lst[i][0] == target && lst[i].last() == target) return@map -1
                 if (lst[i].indexOf(target) == 0) {
                     val finalRow = lst[i].last()
                     if (finalRow in known || finalRow > 0)
