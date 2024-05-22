@@ -7,15 +7,15 @@ import patterns.fromGliderDBEntry
 
 import kotlin.math.abs
 
-import rules.Rule
 import rules.RuleFamily
 import rules.RuleRange
+import rules.RuleRangeable
 
 /**
  * Represents a database of gliders (spaceships) / oscillators.
  * @param lst A list of spaceships to initialise the database with.
  */
-class GliderDB(lst: List<Spaceship>): PatternCollection<Spaceship>() {
+class GliderDB<R>(lst: List<Spaceship>): PatternCollection<Spaceship>() where R : RuleFamily, R : RuleRangeable<R> {
     val lst = ArrayList(lst)
 
     /**
@@ -59,7 +59,7 @@ class GliderDB(lst: List<Spaceship>): PatternCollection<Spaceship>() {
      * Searches for spaceships moving at ([dx], [dy])c/[period].
      * @param higher_periods Should ships of the same speed but higher period be returned?
      */
-    fun searchBySpeed(dx: Int, dy: Int, period: Int, higherPeriod: Boolean = false): GliderDB {
+    fun searchBySpeed(dx: Int, dy: Int, period: Int, higherPeriod: Boolean = false): GliderDB<R> {
         if (higherPeriod) {
             return GliderDB(
                 this.filter {
@@ -77,13 +77,13 @@ class GliderDB(lst: List<Spaceship>): PatternCollection<Spaceship>() {
         }
     }
 
-    fun searchBySpeed(speed: String, higherPeriod: Boolean = false): GliderDB {
+    fun searchBySpeed(speed: String, higherPeriod: Boolean = false): GliderDB<R> {
         val (displacement, period) = parseSpeed(speed)
         val (dx, dy) = displacement
         return searchBySpeed(dx, dy, period, higherPeriod)
     }
 
-    fun searchBySlope(dx: Int, dy: Int): GliderDB {
+    fun searchBySlope(dx: Int, dy: Int): GliderDB<R> {
         require(dx != 0 || dy != 0) { "(0, 0) is not a valid slope." }
         return GliderDB(
             this.filter {
@@ -94,13 +94,13 @@ class GliderDB(lst: List<Spaceship>): PatternCollection<Spaceship>() {
         )
     }
 
-    fun searchByRule(rule: RuleFamily) = GliderDB(
-        this.filter { rule in (it.ruleRange!!.first as RuleFamily) .. (it.ruleRange!!.second as RuleFamily) }
+    fun searchByRule(rule: RuleFamily) = GliderDB<R>(
+        this.filter { rule in it.ruleRange!! }
     )
 
-    fun searchByRule(ruleRange: RuleRange) = GliderDB(
+    fun searchByRule(ruleRange: RuleRange<R>) = GliderDB<R>(
         this.filter { 
-            ruleRange intersect ((it.ruleRange!!.first as RuleFamily) .. (it.ruleRange!!.second as RuleFamily)) != null
+            ruleRange intersect (it.ruleRange!! as RuleRange<R>) != null
         }
     )
 

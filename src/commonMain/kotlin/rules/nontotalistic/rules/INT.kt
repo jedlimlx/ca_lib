@@ -2,6 +2,7 @@ package rules.nontotalistic.rules
 
 import rules.RuleFamily
 import rules.RuleRange
+import rules.RuleRangeable
 import rules.nontotalistic.transitions.DoubleLetterTransitions
 import rules.nontotalistic.transitions.INTTransitions
 import rules.nontotalistic.transitions.SingleLetterTransitions
@@ -11,7 +12,7 @@ import simulation.Coordinate
 /**
  * Represents a 2-state isotropic non-totalistic (INT) rule
  */
-class INT : BaseINT {
+class INT : BaseINT, RuleRangeable<INT> {
     /**
      * The birth transitions of the INT rule
      */
@@ -69,13 +70,12 @@ class INT : BaseINT {
 
     override fun fromRulestring(rulestring: String): INT = INT(rulestring)
 
-    override fun between(minRule: RuleFamily, maxRule: RuleFamily): Boolean {
-        if (minRule !is INT || maxRule !is INT) return false
+    override fun between(minRule: INT, maxRule: INT): Boolean {
         return birth.containsAll(minRule.birth) && survival.containsAll(minRule.survival) &&
                 maxRule.birth.containsAll(birth) && maxRule.survival.containsAll(survival)
     }
 
-    override fun ruleRange(transitionsToSatisfy: Iterable<List<Int>>): Pair<RuleFamily, RuleFamily> {
+    override fun ruleRange(transitionsToSatisfy: Iterable<List<Int>>): RuleRange<INT> {
         // The minimum transitions
         val minBirth = hashSetOf<String>()
         val minSurvival = hashSetOf<String>()
@@ -110,12 +110,12 @@ class INT : BaseINT {
             neighbourhoodString
         )
 
-        return Pair(minRule, maxRule)
+        return minRule .. maxRule
     }
 
-    override fun enumerate(minRule: RuleFamily, maxRule: RuleFamily): Sequence<RuleFamily> {
-        require(minRule is INT && maxRule is INT) { "minRule and maxRule must be an instance of INT" }
+    override fun rangeTo(maxRule: INT): RuleRange<INT> = RuleRange(this, maxRule)
 
+    override fun enumerate(minRule: INT, maxRule: INT): Sequence<INT> {
         // Get the difference between the birth and survival transitions of the min and max rules
         val birthDiff = (maxRule.birth.transitionStrings - minRule.birth.transitionStrings).toList()
         val survivalDiff = (maxRule.survival.transitionStrings - minRule.survival.transitionStrings).toList()
@@ -144,9 +144,7 @@ class INT : BaseINT {
         }
     }
 
-    override fun random(minRule: RuleFamily, maxRule: RuleFamily, seed: Int?): Sequence<RuleFamily> {
-        require(minRule is INT && maxRule is INT) { "minRule and maxRule must be an instance of INT" }
-
+    override fun random(minRule: INT, maxRule: INT, seed: Int?): Sequence<INT> {
         return generateSequence {
             val randomBirth = randomTransition(minRule.birth, maxRule.birth, seed)
             val randomSurvival = randomTransition(minRule.survival, maxRule.survival, seed)
@@ -155,7 +153,7 @@ class INT : BaseINT {
         }
     }
 
-    override fun intersect(ruleRange1: RuleRange, ruleRange2: RuleRange): RuleRange? {
+    override fun intersect(ruleRange1: RuleRange<INT>, ruleRange2: RuleRange<INT>): RuleRange<INT>? {
         TODO("Not yet implemented")
     }
     

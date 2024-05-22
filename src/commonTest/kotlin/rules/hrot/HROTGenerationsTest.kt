@@ -3,7 +3,6 @@ package rules.hrot
 import readResource
 import rules.RuleFamily
 import rules.enumerateRules
-import rules.fromRulestring
 import rules.randomRules
 import simulation.SparseGrid
 import kotlin.test.Test
@@ -127,8 +126,8 @@ class HROTGenerationsTest {
                     val pattern = grid.identify()
 
                     assertEquals(type, pattern.toString())
-                    assertEquals(minRule, (pattern!!.ruleRange!!.first as RuleFamily).rulestring)
-                    assertEquals(maxRule, (pattern.ruleRange!!.second as RuleFamily).rulestring)
+                    assertEquals(minRule, pattern!!.ruleRange!!.minRule.rulestring)
+                    assertEquals(maxRule, pattern.ruleRange!!.maxRule.rulestring)
                 }
             }
         }

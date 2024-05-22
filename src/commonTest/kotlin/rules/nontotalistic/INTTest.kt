@@ -103,8 +103,8 @@ class INTTest {
                         val pattern = grid.identify()
 
                         assertEquals(type, pattern.toString())
-                        assertEquals(minRule, (pattern!!.ruleRange!!.first as RuleFamily).rulestring)
-                        assertEquals(maxRule, (pattern.ruleRange!!.second as RuleFamily).rulestring)
+                        assertEquals(minRule, pattern!!.ruleRange!!.minRule.rulestring)
+                        assertEquals(maxRule, pattern.ruleRange!!.maxRule.rulestring)
                     } catch (ignored: IllegalArgumentException) {}
                 }
             }

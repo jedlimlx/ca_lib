@@ -58,7 +58,7 @@ class LRUCache<K, V>(
 
     override fun put(key: K, value: V): V? {
         if (key in map) remove(key)
-        if (map.size > maxSize) remove(head!!.value.first)
+        if (map.size > maxSize - 1) remove(head!!.value.first)
 
         val node = Node(Pair(key, value), tail, null)
         if (head == null) head = node

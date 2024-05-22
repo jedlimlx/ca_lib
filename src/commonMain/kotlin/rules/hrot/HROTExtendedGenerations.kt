@@ -2,10 +2,7 @@ package rules.hrot
 
 import hexagonal
 import moore
-import rules.RuleFamily
-import rules.RuleRange
-import rules.canoniseExtendedGenerations
-import rules.readExtendedGenerations
+import rules.*
 import rules.ruleloader.builders.ruletable
 import simulation.Coordinate
 import vonNeumann
@@ -16,9 +13,9 @@ import kotlin.random.Random
 
 /**
  * Represents a HROT Extended Generations rule
- * @constructor Constructs a HROT Generations rule with the specified rulestring
+ * @constructor Constructs a HROT Extended Generations rule with the specified rulestring
  */
-class HROTExtendedGenerations : BaseHROT {
+class HROTExtendedGenerations : BaseHROT, RuleRangeable<HROTExtendedGenerations> {
     /**
      * The birth transitions of the HROT rule
      */
@@ -198,13 +195,12 @@ class HROTExtendedGenerations : BaseHROT {
 
     override fun fromRulestring(rulestring: String): HROTExtendedGenerations = HROTExtendedGenerations(rulestring)
 
-    override fun between(minRule: RuleFamily, maxRule: RuleFamily): Boolean {
-        if (minRule !is HROTExtendedGenerations || maxRule !is HROTExtendedGenerations) return false
+    override fun between(minRule: HROTExtendedGenerations, maxRule: HROTExtendedGenerations): Boolean {
         return birth.containsAll(minRule.birth) && survival.containsAll(minRule.survival) &&
                 maxRule.birth.containsAll(birth) && maxRule.survival.containsAll(survival)
     }
 
-    override fun ruleRange(transitionsToSatisfy: Iterable<List<Int>>): Pair<HROTExtendedGenerations, HROTExtendedGenerations> {
+    override fun ruleRange(transitionsToSatisfy: Iterable<List<Int>>): RuleRange<HROTExtendedGenerations> {
         val maxCount = weights?.sum() ?: neighbourhood[0].size
 
         // The minimum possible transitions
@@ -229,17 +225,15 @@ class HROTExtendedGenerations : BaseHROT {
             }
         }
 
-        return Pair(
-            newRuleWithTransitions(minBirth, minSurvival),
-            newRuleWithTransitions(maxBirth, maxSurvival),
-        )
+        return newRuleWithTransitions(minBirth, minSurvival) .. newRuleWithTransitions(maxBirth, maxSurvival)
     }
 
-    override fun enumerate(minRule: RuleFamily, maxRule: RuleFamily): Sequence<HROTExtendedGenerations> {
-        require(minRule is HROTExtendedGenerations && maxRule is HROTExtendedGenerations) {
-            "minRule and maxRule must be an instances of HROTExtendedGenerations"
-        }
+    override fun rangeTo(maxRule: HROTExtendedGenerations): RuleRange<HROTExtendedGenerations> = RuleRange(this, maxRule)
 
+    override fun enumerate(
+        minRule: HROTExtendedGenerations,
+        maxRule: HROTExtendedGenerations
+    ): Sequence<HROTExtendedGenerations> {
         // Obtain the difference in the birth conditions
         val birthDiff = maxRule.birth.toMutableList()
         birthDiff.removeAll(minRule.birth)
@@ -272,11 +266,11 @@ class HROTExtendedGenerations : BaseHROT {
         }
     }
 
-    override fun random(minRule: RuleFamily, maxRule: RuleFamily, seed: Int?): Sequence<HROTExtendedGenerations> {
-        require(minRule is HROTExtendedGenerations && maxRule is HROTExtendedGenerations) {
-            "minRule and maxRule must be an instances of HROTGenerations"
-        }
-
+    override fun random(
+        minRule: HROTExtendedGenerations,
+        maxRule: HROTExtendedGenerations,
+        seed: Int?
+    ): Sequence<HROTExtendedGenerations> {
         val random = if (seed != null) Random(seed) else Random
         return generateSequence {
             minRule.newRuleWithTransitions(
@@ -286,14 +280,10 @@ class HROTExtendedGenerations : BaseHROT {
         }
     }
 
-    override fun intersect(ruleRange1: RuleRange, ruleRange2: RuleRange): RuleRange? {
-        require(
-            ruleRange1.minRule is HROTExtendedGenerations &&
-            ruleRange1.maxRule is HROTExtendedGenerations &&
-            ruleRange2.minRule is HROTExtendedGenerations &&
-            ruleRange2.maxRule is HROTExtendedGenerations
-        ) { "minRule and maxRule must be an instances of HROTExtendedGenerations" }
-
+    override fun intersect(
+        ruleRange1: RuleRange<HROTExtendedGenerations>,
+        ruleRange2: RuleRange<HROTExtendedGenerations>
+    ): RuleRange<HROTExtendedGenerations>? {
         val (newMinBirth, newMaxBirth) = intersectTransitionRange(
             ruleRange1.minRule.birth,
             ruleRange1.maxRule.birth,

@@ -118,11 +118,14 @@ actual fun main() {
 //    )
 //    search.search()
 
-    val search = CFind(
-        HROT("R2,C2,S6-9,B7-8,NM"),
-        //INT("B23cjkqy4cjkqtwz5-ei6-ei7c/S2acn3-qy4acknrty5-ejqy6aei7e"),
-        2, 1, 8, symmetry = ShipSymmetry.ASYMMETRIC,
-        verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS
-    )
-    search.search()
+//    val search = CFind(
+//        HROT("R2,C2,S6-9,B7-8,NM"),
+//        2, 1, 8, symmetry = ShipSymmetry.ASYMMETRIC,
+//        verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS
+//    )
+//    search.search()
+
+    for (rule in HROT("B3/S23")..HROT("B345/S23")) {
+        println(rule)
+    }
 }

@@ -1,12 +1,8 @@
 package patterns
 
-import rules.Rule
-import rules.RuleFamily
-import rules.fromRulestring
-import rules.ruleRange
+import rules.*
 import simulation.Coordinate
 import simulation.Grid
-import simulation.DenseGrid
 import simulation.SparseGrid
 import simulation.Rotation
 import simulation.Flip
@@ -50,7 +46,7 @@ open class Spaceship(val dx: Int, val dy: Int, val period: Int, val phases: Arra
     /**
      * The rule that the spaceship operates in
      */
-    val rule = phases[0].rule
+    override val rule = phases[0].rule
 
     /**
      * The spaceship's speed formatted properly as a string
@@ -123,7 +119,7 @@ open class Spaceship(val dx: Int, val dy: Int, val period: Int, val phases: Arra
      * (only works if the spaceship operates in an isotropic rule)
      */
     open val canonPhase by lazy {
-        var output = smallestPhase.deepCopy()
+        val output = smallestPhase.deepCopy()
 
         // Orienting the spaceship to go in the north-west direction
         var dx = dx
@@ -159,7 +155,7 @@ open class Spaceship(val dx: Int, val dy: Int, val period: Int, val phases: Arra
     open val gliderdbEntry by lazy {
         canonPhase.updateBounds()
         val size = canonPhase.bounds.endInclusive - canonPhase.bounds.start
-        "$name:$discoverer:${ruleRange!!.first}:${ruleRange!!.second}:$period:${size.x}:${size.y}:${minOf(abs(dx),abs(dy))}:${maxOf(abs(dx),abs(dy))}:$canonPhase"
+        "$name:$discoverer:${ruleRange!!.minRule}:${ruleRange!!.maxRule}:$period:${size.x}:${size.y}:${minOf(abs(dx),abs(dy))}:${maxOf(abs(dx),abs(dy))}:$canonPhase"
     }
 
     override val information: Map<String, String> by lazy {
@@ -178,7 +174,7 @@ open class Spaceship(val dx: Int, val dy: Int, val period: Int, val phases: Arra
         map
     }
 
-    override val ruleRange: Pair<Rule, Rule>? by lazy {
+    override val ruleRange: RuleRange<*>? by lazy {
         val newPhases = phases.toMutableList()
         newPhases.add(newPhases[newPhases.size - 1].deepCopy().step())
 

@@ -1,6 +1,8 @@
 package patterns
 
+import rules.PLACEHOLDER_RULE
 import rules.Rule
+import rules.RuleRange
 
 /**
  * Represents a special pattern in cellular automaton
@@ -17,9 +19,14 @@ abstract class Pattern {
     open var discoverer: String = ""
 
     /**
+     * The rule the pattern can be found in
+     */
+    abstract val rule: Rule
+
+    /**
      * The rule range in which the pattern functions
      */
-    open val ruleRange: Pair<Rule, Rule>? = null
+    open val ruleRange: RuleRange<*>? = null
 
     /**
      * Some information about the pattern to display

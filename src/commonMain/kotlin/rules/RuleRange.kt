@@ -3,7 +3,8 @@ package rules
 /**
  * Represents a range of rules between the minimum and maximum rules
  */
-class RuleRange(val minRule: RuleFamily, val maxRule: RuleFamily): Sequence<RuleFamily> {
+class RuleRange<R>(val minRule: R, val maxRule: R) : Sequence<RuleFamily>
+        where R : RuleFamily, R : RuleRangeable<R> {
     private val enumerationIterator = minRule.enumerate(minRule, maxRule).iterator()
 
     /**
@@ -25,14 +26,14 @@ class RuleRange(val minRule: RuleFamily, val maxRule: RuleFamily): Sequence<Rule
      * @param ruleFamily The rule to check
      * @return Returns true if the rule is within the rule range, false otherwise
      */
-    operator fun contains(ruleFamily: RuleFamily): Boolean = ruleFamily.between(minRule, maxRule)
+    operator fun contains(ruleFamily: R): Boolean = ruleFamily.between(minRule, maxRule)
 
     /**
      * Computes the intersection between 2 rule ranges
      * @param ruleRange The other rule range to compute the intersection with
      * @return Returns the intersection between the 2 rule ranges
      */
-    infix fun intersect(ruleRange: RuleRange): RuleRange? = minRule.intersect(this, ruleRange)
+    infix fun intersect(ruleRange: RuleRange<R>): RuleRange<R>? = minRule.intersect(this, ruleRange)
 
     override fun iterator(): Iterator<RuleFamily> = enumerationIterator
 }

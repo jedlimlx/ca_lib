@@ -3,10 +3,19 @@ package rules
 import rules.hrot.HROT
 import rules.hrot.HROTGenerations
 import rules.hrot.HROTExtendedGenerations
+import rules.nontotalistic.rules.DeficientINT
 import rules.nontotalistic.rules.INT
+import rules.nontotalistic.rules.INTGenerations
 import simulation.Grid
 
-private val RULE_FAMILIES = listOf(HROT(), HROTGenerations(), HROTExtendedGenerations(), INT())
+private val RULE_FAMILIES = listOf(
+    HROT(),
+    HROTGenerations(),
+    HROTExtendedGenerations(),
+    INT(),
+    INTGenerations(),
+    DeficientINT()
+)
 
 /**
  * Creates a rule given its rulestring
@@ -27,7 +36,7 @@ fun fromRulestring(rulestring: String): RuleFamily {
  * The range of rules in which the provided evolution of patterns works in
  * @return Returns a pair of rules, the first is the minimum rule and the second is the maximum rule
  */
-fun ruleRange(phases: List<Grid>): Pair<RuleFamily, RuleFamily> {
+fun ruleRange(phases: List<Grid>): RuleRange<*> {
     // Obtain the transitions at the min and max rule must satisfy
     val transitionsToSatisfy = HashSet<List<Int>>(phases.fold(0) { acc, value -> acc + value.population })
     for (i in 0 until phases.size - 1) {
@@ -52,15 +61,17 @@ fun ruleRange(phases: List<Grid>): Pair<RuleFamily, RuleFamily> {
         }
     }
 
-    require(phases[0].rule is RuleFamily) { "Rule of the specified pattern does not support rule range" }
-    return (phases[0].rule as RuleFamily).ruleRange(transitionsToSatisfy)
+    require(phases[0].rule is RuleFamily && phases[0].rule is RuleRangeable<*>) {
+        "Rule of the specified pattern does not support rule range"
+    }
+    return (phases[0].rule as RuleRangeable<*>).ruleRange(transitionsToSatisfy)
 }
 
 /**
  * The range of rules in which the provided evolution of patterns works in
  * @return Returns a pair of rules, the first is the minimum rule and the second is the maximum rule
  */
-fun ruleRange(phases: Array<Grid>): Pair<RuleFamily, RuleFamily> = ruleRange(phases.toList())
+fun ruleRange(phases: Array<Grid>): RuleRange<*> = ruleRange(phases.toList())
 
 /**
  * The range of rules in which the provided evolution of patterns works in
@@ -68,7 +79,7 @@ fun ruleRange(phases: Array<Grid>): Pair<RuleFamily, RuleFamily> = ruleRange(pha
  * @param maxRule The maximum rule of the rule range to enumerate
  * @return Returns a sequence of all rules within the rule range
  */
-fun enumerateRules(minRule: RuleFamily, maxRule: RuleFamily): Sequence<RuleFamily> {
+fun <R> enumerateRules(minRule: R, maxRule: R): Sequence<R> where R : RuleFamily, R : RuleRangeable<R> {
     return minRule.enumerate(minRule, maxRule)
 }
 
@@ -78,7 +89,7 @@ fun enumerateRules(minRule: RuleFamily, maxRule: RuleFamily): Sequence<RuleFamil
  * @param maxRule The maximum rule of the rule range to enumerate
  * @return Returns an infinite sequence of random rules within the rule range
  */
-fun randomRules(minRule: RuleFamily, maxRule: RuleFamily, seed: Int? = null): Sequence<RuleFamily> {
+fun <R> randomRules(minRule: R, maxRule: R, seed: Int? = null): Sequence<R> where R : RuleFamily, R : RuleRangeable<R> {
     return minRule.random(minRule, maxRule, seed)
 }
 
@@ -88,6 +99,6 @@ fun randomRules(minRule: RuleFamily, maxRule: RuleFamily, seed: Int? = null): Se
  * @param maxRule The maximum rule of the rule range to enumerate
  * @return Returns a random rule within the rule range
  */
-fun randomRule(minRule: RuleFamily, maxRule: RuleFamily, seed: Int? = null): RuleFamily {
+fun <R> randomRule(minRule: R, maxRule: R, seed: Int? = null): R where R : RuleFamily, R : RuleRangeable<R> {
     return minRule.random(minRule, maxRule, seed).take(1).toList()[0]
 }

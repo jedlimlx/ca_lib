@@ -2,9 +2,7 @@ package rules.nontotalistic
 
 import PLATFORM
 import readResource
-import rules.RuleFamily
 import rules.enumerateRules
-import rules.nontotalistic.rules.INT
 import rules.nontotalistic.rules.INTGenerations
 import rules.randomRules
 import simulation.SparseGrid
@@ -105,8 +103,8 @@ class GenerationsINTTest {
                         val pattern = grid.identify()
 
                         assertEquals(type, pattern.toString())
-                        assertEquals(minRule, (pattern!!.ruleRange!!.first as RuleFamily).rulestring)
-                        assertEquals(maxRule, (pattern.ruleRange!!.second as RuleFamily).rulestring)
+                        assertEquals(minRule, pattern!!.ruleRange!!.minRule.rulestring)
+                        assertEquals(maxRule, pattern.ruleRange!!.maxRule.rulestring)
                     } catch (ignored: IllegalArgumentException) {}
                 }
             }
@@ -116,14 +114,17 @@ class GenerationsINTTest {
     @Test
     fun enumerate_all_rules() {
         if (PLATFORM != "JS")
-            assertEquals(16384, enumerateRules(INTGenerations("B3/S23"), INTGenerations("B2n3/S234")).count())
+            assertEquals(
+                16,
+                enumerateRules(INTGenerations("23/3/3"), INTGenerations("234ace/2n3/3")).count()
+            )
     }
 
     @Test
     fun check_deterministic() {
         assertEquals(
-            randomRules(INTGenerations("B2n3/S23-q"), INTGenerations("B2aen34-q/S2367e8"), 10).take(100).map { it.toString() }.toList(),
-            randomRules(INTGenerations("B2n3/S23-q"), INTGenerations("B2aen34-q/S2367e8"), 10).take(100).map { it.toString() }.toList()
+            randomRules(INTGenerations("B2n3/S23-q/G3"), INTGenerations("B2aen34-q/S2367e8/G3"), 10).take(100).map { it.toString() }.toList(),
+            randomRules(INTGenerations("B2n3/S23-q/G3"), INTGenerations("B2aen34-q/S2367e8/G3"), 10).take(100).map { it.toString() }.toList()
         )
     }
 }

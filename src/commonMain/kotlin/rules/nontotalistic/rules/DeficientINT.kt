@@ -1,8 +1,5 @@
 package rules.nontotalistic.rules
 
-import rules.RuleFamily
-import rules.RuleRange
-import rules.nontotalistic.transitions.DoubleLetterTransitions
 import rules.nontotalistic.transitions.INTTransitions
 import rules.ruleloader.builders.ruletable
 import simulation.Coordinate
@@ -133,98 +130,6 @@ class DeficientINT : BaseINT {
 
     override fun fromRulestring(rulestring: String): DeficientINT = DeficientINT(rulestring)
 
-    override fun between(minRule: RuleFamily, maxRule: RuleFamily): Boolean {
-        if (minRule !is DeficientINT || maxRule !is DeficientINT) return false
-        return birth.containsAll(minRule.birth) && survival.containsAll(minRule.survival) &&
-                maxRule.birth.containsAll(birth) && maxRule.survival.containsAll(survival)
-    }
-
-    override fun ruleRange(transitionsToSatisfy: Iterable<List<Int>>): Pair<RuleFamily, RuleFamily> {
-        // The minimum transitions
-        val minBirth = hashSetOf<String>()
-        val minSurvival = hashSetOf<String>()
-
-        // The maximum transitions
-        val maxTransition = parseTransition((0 .. neighbourhood[0].size).map {
-            if (birth is DoubleLetterTransitions) it.toString() + "x" else it
-        }.joinToString())
-        val maxBirth = maxTransition.transitionStrings.toHashSet()
-        val maxSurvival = maxTransition.transitionStrings.toHashSet()
-        
-        transitionsToSatisfy.forEach {
-            val transition = it.subList(2, it.size)
-            val string = birth.stringFromTransition(transition)
-
-            when {
-                it[0] == 0 && it[1] == 0 -> maxBirth.remove(string)  // No birth
-                it[0] == 0 && it[1] == 1 -> minBirth.add(string)  // Birth
-                it[0] == 1 && it[1] == 0 -> maxSurvival.remove(string)  // No survival
-                it[0] == 1 && it[1] == 1 -> minSurvival.add(string) // Survival
-            }
-        }
-
-        val minRule = DeficientINT(
-            fromStringTransitions(neighbourhoodString, minBirth),
-            fromStringTransitions(neighbourhoodString, minSurvival),
-            neighbourhoodString,
-            permanentDeficiency
-        )
-        val maxRule = DeficientINT(
-            fromStringTransitions(neighbourhoodString, maxBirth),
-            fromStringTransitions(neighbourhoodString, maxSurvival),
-            neighbourhoodString,
-            permanentDeficiency
-        )
-
-        return Pair(minRule, maxRule)
-    }
-
-    override fun enumerate(minRule: RuleFamily, maxRule: RuleFamily): Sequence<RuleFamily> {
-        require(minRule is DeficientINT && maxRule is DeficientINT) { "minRule and maxRule must be an instance of INT" }
-
-        // Get the difference between the birth and survival transitions of the min and max rules
-        val birthDiff = (maxRule.birth.transitionStrings - minRule.birth.transitionStrings).toList()
-        val survivalDiff = (maxRule.survival.transitionStrings - minRule.survival.transitionStrings).toList()
-
-        val stack = arrayListOf(Pair(minRule, 0))  // Emulate a recursion stack
-        return sequence {
-            while (stack.isNotEmpty()) {
-                val (rule, index) = stack.removeAt(stack.lastIndex)
-
-                if (index == birthDiff.size + survivalDiff.size) yield(rule)  // Base case
-                else {
-                    // Add the transition to the rule
-                    val newRule = if (index < birthDiff.size)
-                        DeficientINT(rule.birth + setOf(birthDiff[index]), rule.survival, neighbourhoodString, permanentDeficiency)
-                    else
-                        DeficientINT(
-                            rule.birth, rule.survival + setOf(survivalDiff[index - birthDiff.size]),
-                            neighbourhoodString, permanentDeficiency
-                        )
-
-                    // 2 cases -> transition added and transition not added
-                    stack.add(Pair(newRule, index + 1))
-                    stack.add(Pair(rule, index + 1))
-                }
-            }
-        }
-    }
-
-    override fun random(minRule: RuleFamily, maxRule: RuleFamily, seed: Int?): Sequence<RuleFamily> {
-        require(minRule is DeficientINT && maxRule is DeficientINT) { "minRule and maxRule must be an instance of DeficientINT" }
-
-        return generateSequence {
-            val randomBirth = randomTransition(minRule.birth, maxRule.birth, seed)
-            val randomSurvival = randomTransition(minRule.survival, maxRule.survival, seed)
-
-            DeficientINT(randomBirth, randomSurvival, neighbourhoodString, permanentDeficiency)
-        }
-    }
-
-    override fun intersect(ruleRange1: RuleRange, ruleRange2: RuleRange): RuleRange? {
-        TODO("Not yet implemented")
-    }
-    
     override fun generateRuletable() = ruletable {
         name = rulestring.replace("/", "_")
         table(neighbourhood = neighbourhood[0], background = background) {
