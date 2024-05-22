@@ -16,10 +16,13 @@ import rules.RuleRangeable
  * @param lst A list of spaceships to initialise the database with.
  */
 class GliderDB<R>(lst: List<Spaceship>): PatternCollection<Spaceship>() where R : RuleFamily, R : RuleRangeable<R> {
+    /**
+     * The list containing all the spaceships.
+     */
     val lst = ArrayList(lst)
 
     /**
-     * Builds the GliderDB database from a string
+     * Builds the GliderDB database from a string.
      */
     constructor(string: String): this(string.split("! ").map { fromGliderDBEntry(it) })
 
@@ -57,7 +60,7 @@ class GliderDB<R>(lst: List<Spaceship>): PatternCollection<Spaceship>() where R 
 
     /**
      * Searches for spaceships moving at ([dx], [dy])c/[period].
-     * @param higher_periods Should ships of the same speed but higher period be returned?
+     * @param higherPeriod Should ships of the same speed but higher period be returned?
      */
     fun searchBySpeed(dx: Int, dy: Int, period: Int, higherPeriod: Boolean = false): GliderDB<R> {
         if (higherPeriod) {
@@ -77,12 +80,19 @@ class GliderDB<R>(lst: List<Spaceship>): PatternCollection<Spaceship>() where R 
         }
     }
 
+    /**
+     * Searches for spaceships moving at [speed].
+     * @param higherPeriod Should ships of the same speed but higher period be returned?
+     */
     fun searchBySpeed(speed: String, higherPeriod: Boolean = false): GliderDB<R> {
         val (displacement, period) = parseSpeed(speed)
         val (dx, dy) = displacement
         return searchBySpeed(dx, dy, period, higherPeriod)
     }
 
+    /**
+     * Searches for spaceships moving along the slope ([dx], [dy]).
+     */
     fun searchBySlope(dx: Int, dy: Int): GliderDB<R> {
         require(dx != 0 || dy != 0) { "(0, 0) is not a valid slope." }
         return GliderDB(
@@ -94,19 +104,54 @@ class GliderDB<R>(lst: List<Spaceship>): PatternCollection<Spaceship>() where R 
         )
     }
 
-    fun searchByRule(rule: RuleFamily) = GliderDB<R>(
-        this.filter { rule in it.ruleRange!! }
+    /**
+     * Searches for ships that work in [rule].
+     */
+    fun searchByRule(rule: R) = GliderDB<R>(
+        this.filter { rule.between(it.ruleRange!!.minRule as R, it.ruleRange!!.maxRule as R) }
     )
 
+    /**
+     * Searches for ships that work in [ruleRange].
+     */
     fun searchByRule(ruleRange: RuleRange<R>) = GliderDB<R>(
         this.filter { 
             ruleRange intersect (it.ruleRange!! as RuleRange<R>) != null
         }
     )
 
-    // Redundancy check
-    fun checkRedundant(): List<Spaceship> {
-        TODO("Not yet implemented")
+    /**
+     * Checks if a given [spaceship] is redundant or makes another redundant and
+     * outputs the other spaceship.
+     */
+    fun checkRedundant(spaceship: Spaceship): List<Pair<Spaceship, Spaceship>> {
+        val output = ArrayList<Pair<Spaceship, Spaceship>>()
+        for (i in lst.indices) {
+            if (lst[i].simplifiedSpeed == spaceship.simplifiedSpeed) {
+                // Check if the rule ranges are the same
+                if (lst[i].ruleRange!! == spaceship.ruleRange!!) {
+                    if (lst[i].canonPhase.bounds.area > spaceship.canonPhase.bounds.area)
+                        output.add(Pair(lst[i], spaceship))
+                    else
+                        output.add(Pair(spaceship, lst[i]))
+                } else {
+                    // Check if either rule range contains the other
+                    val intersection =
+                        lst[i].ruleRange!! as RuleRange<R> intersect spaceship.ruleRange!! as RuleRange<R>
+                    if (intersection == lst[i].ruleRange) {
+                        // The ship is only redundant if it covers both a smaller rule range and has a smaller bounding box
+                        if (lst[i].canonPhase.bounds.area < spaceship.canonPhase.bounds.area)
+                            output.add(Pair(lst[i], spaceship))
+                    } else if (intersection == spaceship.ruleRange) {
+                        // The ship is only redundant if it covers both a smaller rule range and has a smaller bounding box
+                        if (lst[i].canonPhase.bounds.area > spaceship.canonPhase.bounds.area)
+                            output.add(Pair(lst[i], spaceship))
+                    }
+                }
+            }
+        }
+
+        return output
     }
 
     // Reading and writing database to and from a string

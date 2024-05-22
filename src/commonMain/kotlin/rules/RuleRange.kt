@@ -36,4 +36,15 @@ class RuleRange<R>(val minRule: R, val maxRule: R) : Sequence<RuleFamily>
     infix fun intersect(ruleRange: RuleRange<R>): RuleRange<R>? = minRule.intersect(this, ruleRange)
 
     override fun iterator(): Iterator<RuleFamily> = enumerationIterator
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is RuleRange<*>) return false
+
+        return minRule == other.minRule && maxRule == other.maxRule
+    }
+
+    override fun toString(): String {
+        return "$minRule - $maxRule"
+    }
 }

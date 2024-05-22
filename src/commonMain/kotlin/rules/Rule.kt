@@ -101,7 +101,7 @@ abstract class Rule {
      * The lookup table for 2x2 tiles
      */
     @OptIn(ExperimentalUnsignedTypes::class)
-    protected val lookup2x2 = ULongArray(2.0.pow(17).toInt()) { ULong.MAX_VALUE }
+    protected val lookup2x2 = ULongArray(2.0.pow(1).toInt()) { ULong.MAX_VALUE }
 
     /**
      * The possible successor cell states of each cell state

@@ -406,4 +406,20 @@ class HROTGenerations : BaseHROT, RuleRangeable<HROTGenerations> {
 
     private fun newRuleWithTransitions(birth: Iterable<Int>, survival: Iterable<Int>): HROTGenerations =
         HROTGenerations(birth, survival, numStates, neighbourhood[0], weights, stateWeights)
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || this::class != other::class) return false
+
+        other as HROTGenerations
+
+        if (birth != other.birth) return false
+        if (survival != other.survival) return false
+        if (numStates != other.numStates) return false
+        if (!neighbourhood.contentEquals(other.neighbourhood)) return false
+        if (!weights.contentEquals(other.weights)) return false
+        if (!stateWeights.contentEquals(other.stateWeights)) return false
+
+        return true
+    }
 }

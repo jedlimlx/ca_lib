@@ -14,20 +14,21 @@ import kotlin.math.abs
 fun fromGliderDBEntry(entry: String): Spaceship {
     val tokens = entry.split(":")
     
-    val period = tokens[4].toInt()
+    val period = tokens[4].split("/").first().toInt()
     val dx = tokens[5].toInt()
     val dy = tokens[6].toInt()
 
     val grid = SparseGrid(tokens.last(), rule=fromRulestring(tokens[2]))
     val phases = Array(period+1) { grid.step(1).deepCopy() }
 
-    val spaceship = Spaceship(period, dx, dy, phases)
+    val spaceship = Spaceship(dx, dy, period, phases)
+
     // TODO fix this
-    // require((spaceship.ruleRange!!.first as RuleFamily).rulestring == tokens[2]) { 
-    //     "Incorrect minimum rule! Got ${tokens[2]} instead of ${(spaceship.ruleRange!!.first as RuleFamily).rulestring} for ${tokens.last()}" 
+    // require((spaceship.ruleRange!!.first as RuleFamily).rulestring == tokens[2]) {
+    //     "Incorrect minimum rule! Got ${tokens[2]} instead of ${(spaceship.ruleRange!!.first as RuleFamily).rulestring} for ${tokens.last()}"
     // }
-    // require((spaceship.ruleRange!!.second as RuleFamily).rulestring == tokens[3]) { 
-    //     "Incorrect maximum rule! Got ${tokens[3]} instead of ${(spaceship.ruleRange!!.second as RuleFamily).rulestring} for ${tokens.last()}" 
+    // require((spaceship.ruleRange!!.second as RuleFamily).rulestring == tokens[3]) {
+    //     "Incorrect maximum rule! Got ${tokens[3]} instead of ${(spaceship.ruleRange!!.second as RuleFamily).rulestring} for ${tokens.last()}"
     // }
 
     spaceship.name = tokens[0]
@@ -60,6 +61,26 @@ open class Spaceship(val dx: Int, val dy: Int, val period: Int, val phases: Arra
             dx == dy -> "${if (dx != 1) dx else ""}c/${period}d"
             else -> "($dx, $dy)c/$period"
         }
+    }
+
+    /**
+     * The spaceship's simplified speed outputted as a tuple of (dx, dy, p)
+     */
+    val simplifiedSpeed by lazy {
+        fun gcd(a: Int, b: Int): Int {
+            var num1 = a
+            var num2 = b
+            while (num2 != 0) {
+                val temp = num2
+                num2 = num1 % num2
+                num1 = temp
+            }
+
+            return num1
+        }
+
+        val factor = gcd(gcd(abs(dx), abs(dy)), period)
+        return@lazy Pair(Pair(minOf(abs(dx), abs(dy)) / factor, maxOf(abs(dx), abs(dy)) / factor), period / factor)
     }
 
     /**
@@ -189,7 +210,7 @@ open class Spaceship(val dx: Int, val dy: Int, val period: Int, val phases: Arra
 
     /**
      * Checks if 2 spaceships are the same
-     * @param The other spaceship
+     * @param other The other spaceship
      * @return Returns true if the spaceships are the same, false otherwise
      */
     override fun equals(other: Any?): Boolean {

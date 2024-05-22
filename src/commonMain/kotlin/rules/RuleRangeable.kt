@@ -1,5 +1,8 @@
 package rules
 
+/**
+ * Represents rule families on which rule ranges can be defined. Should only be implemented by a RuleFamily [R].
+ */
 interface RuleRangeable<R> where R : RuleFamily, R : RuleRangeable<R> {
     /**
      * Checks if a rule is between 2 other rules
