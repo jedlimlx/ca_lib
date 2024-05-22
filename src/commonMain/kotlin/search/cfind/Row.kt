@@ -69,6 +69,9 @@ class Row(
         } else reverseHash
     }
 
+    // information about how the cells are read from the row
+    val useArray = search!!.rule.numStates == 2 && search!!.width < 31
+
     // information about the row and its position within the larger ship
     var depth = 0
     val prunedDepth: Int
@@ -99,8 +102,13 @@ class Row(
 //            println("crap $depth $index $offset ${(index - offset).mod(search!!.spacing)}")
 //            return 0
 //        }
-        if (search!!.spacing == 1) return cells[index]
-        else return cells[index / search!!.spacing]
+        if (useArray) {
+            if (search!!.spacing == 1) return cells[index / search!!.spacing]
+            else return (hash and (1 shl (index / search!!.spacing))) shr (index / search!!.spacing)
+        } else {
+            if (search!!.spacing == 1) return cells[index]
+            else return cells[index / search!!.spacing]
+        }
     }
 
     fun getPredecessor(n: Int): Row? {  // TODO take width into account when getting the predecessor

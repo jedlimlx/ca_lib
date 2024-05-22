@@ -8,18 +8,23 @@ data class Node(
     val numStates: Int,
     val singleBaseCoordinate: Boolean = false
 ) {
-    val completeRow: IntArray? by lazy {
-        var count = depth - 1
-        var tempNode: Node? = this
-        val temp = IntArray(depth) { 0 }
-        while (count >= 0) {
-            temp[count--] = tempNode!!.prevCell
-            tempNode = tempNode.predecessor
-        }
+    var _completeRow: IntArray? = null
+    val completeRow: IntArray
+        get() {
+            if (_completeRow == null) {
+                var tempNode: Node? = this
+                val temp = IntArray(depth) {
+                    val output = tempNode!!.prevCell
+                    tempNode = tempNode?.predecessor
 
-        temp
-        //predecessor?.completeRow?.plus(intArrayOf(prevCell)) ?: intArrayOf()
-    }
+                    output
+                }
+
+                _completeRow = temp.reversedArray()
+            }
+
+            return _completeRow!!
+        }
 
     fun applyOnPredecessor(f: (Node) -> Boolean) {
         if (f(this)) predecessor?.applyOnPredecessor(f)

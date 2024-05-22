@@ -42,7 +42,7 @@ class CFind(
     val partialFrequency: Int = 1000,
     val backupFrequency: Int = 60*15,
     val backupName: String = "dump",
-    transpositionTableSize: Int = 1 shl 20,
+    transpositionTableSize: Int = 1 shl 25,
     val maxTimePerRound: Int = 5*60,
     val numThreads: Int = 8,
     val stdin: Boolean = false,
@@ -168,6 +168,7 @@ class CFind(
     val centralHeight: Int = -neighbourhood.minOf { it.minOf { it.y } }
 
     val baseCoordinates: List<Coordinate> = neighbourhood[0].filter { it.y == -centralHeight }.sortedBy { it.x }
+    val inBaseCoordinates: BooleanArray = BooleanArray(neighbourhood[0].size) { neighbourhood[0][it] in baseCoordinates }
     val baseCoordinateMap: IntArray = baseCoordinates.map { neighbourhood[0].indexOf(it) }.toIntArray()
     val continuousBaseCoordinates: Boolean = (baseCoordinates.maxOf { it.x } -
             baseCoordinates.minOf { it.x } + 1) == baseCoordinates.size
@@ -185,6 +186,7 @@ class CFind(
         neighbourhood[0].count { it.y == y } == 0 && y != 0
     }.map { it - neighbourhood[0].minBy { it.y }.y }
     val notSkippedRows = (0..height).filter { y -> y !in skippedRows }
+    val needIndexToRow = skippedRows.isNotEmpty()
     val indexToRowMap = Array(height) { notSkippedRows.indexOf(it) }
 
     val widthsByHeight: IntArray = IntArray(notSkippedRows.size) { it ->
@@ -418,9 +420,6 @@ class CFind(
     val additionalDepthArray = IntArray(spacing) {
         ((rawAdditionalDepth - 1) + (offsets[(it + 1).mod(spacing)] - offsets[it])) / spacing + 1
     }
-    val maxWidth: Int = widthsByHeight.slice(
-        0 .. minOf(this.lookaheadDepth.max(), widthsByHeight.size - 1)
-    ).maxOf { it }
 
     // Computing neighbourhoods to be memorised for lookahead
     val memorisedlookaheadNeighbourhood: List<Pair<Coordinate, Int>> = run {
@@ -447,6 +446,9 @@ class CFind(
     val cacheWidths: IntArray = IntArray(widthsByHeight.size) {
         pow(numEquivalentStates, widthsByHeight[it] - (if (it == 0) 1 else 0))
     }
+    val maxWidth: Int = widthsByHeight.slice(
+        0 .. minOf(this.lookaheadDepth.max(), widthsByHeight.size - 1)
+    ).maxOf { it }
 
     val successorTable: Array<IntArray> = run {
         println("Generating successor lookup table...", verbosity = 0)
@@ -640,7 +642,7 @@ class CFind(
 
         println("Generating approximate lookahead table...")
 
-        if ((rule.numStates + 1.0).pow(neighbourhood[0].size + 1) < 2.0.pow(31)) {
+        if ((rule.numStates + 1.0).pow(neighbourhood[0].size + 1) < Int.MAX_VALUE) {
             IntArray(
                 pow(rule.numStates + 1, neighbourhood[0].size + 1)
             ) {
@@ -701,6 +703,7 @@ class CFind(
     // Check if any saved state was loaded into the search
     var loadedState = false
 
+    @OptIn(ExperimentalUnsignedTypes::class)
     override fun search() {
         // Clear the lookup table outputs
         if (verbosity >= 0 && !stdin) {
@@ -916,7 +919,11 @@ class CFind(
                     }
 
                     // Printing out the partials
-                    printPartials(bold("\nQueue Size: $queueSize / $maxQueueSize"))
+                    printPartials(
+                        bold(
+                            "\nQueue Size: $queueSize / $maxQueueSize"
+                        )
+                    )
                 }
 
                 if (shipsFound == numShips) break
@@ -1322,6 +1329,17 @@ class CFind(
 
         val hash = rows.map { it.hashCode() }.hashCode()
         val reverseHash = rows.map { it.reverseHashCode() }.hashCode()
+        fun addState() {
+            val temp = rows.map { it.hash.toUShort() }.toUShortArray()
+            equivalentStates.put(hash, temp)
+            if (isotropic && (symmetry == ShipSymmetry.GLIDE || symmetry == ShipSymmetry.ASYMMETRIC)) {
+                equivalentStates.put(
+                    reverseHash,
+                    rows.map { it.reverseHash.toUShort() }.toUShortArray()
+                )
+            }
+        }
+
         if (hash in equivalentStates.keys) {
             var equivalent = true
             val state = equivalentStates.get(hash)!!
@@ -1332,7 +1350,10 @@ class CFind(
                 }
             }
 
-            if (!equivalent) return false
+            if (!equivalent) {
+                addState()
+                return false
+            }
         } else if (
             isotropic &&
             (symmetry == ShipSymmetry.GLIDE || symmetry == ShipSymmetry.ASYMMETRIC) &&
@@ -1347,16 +1368,12 @@ class CFind(
                 }
             }
 
-            if (!equivalent) return false
-        } else {
-            val temp = rows.map { it.hash.toUShort() }.toUShortArray()
-            equivalentStates.put(hash, temp)
-            if (isotropic && (symmetry == ShipSymmetry.GLIDE || symmetry == ShipSymmetry.ASYMMETRIC)) {
-                equivalentStates.put(
-                    reverseHash,
-                    rows.map { it.reverseHash.toUShort() }.toUShortArray()
-                )
+            if (!equivalent) {
+                addState()
+                return false
             }
+        } else {
+            addState()
             return false
         }
 
@@ -1526,6 +1543,7 @@ class CFind(
         // Check what are the possible successor states for the current row
         // TODO fix this optimisation for diagonal ships
         val possibleSuccessorMemo = IntArray(width) { -1 }
+        val storeNeighbourhood = successorLookahead[originalPhase][lookaheadDepth] == lookaheadDepth + 1
         fun possibleSuccessors(it: Int): Int {
             if (possibleSuccessorMemo[it] == -1) {
                 if (successorLookahead[originalPhase][lookaheadDepth] > 0) {
@@ -1543,13 +1561,14 @@ class CFind(
                         var power = 1
                         var key2 = 0
                         var power2 = 1
-                        neighbourhood[0].forEach {
-                            val temp = it + coordinate
-                            val state = row[temp, 0, null, depth]
+
+                        var state: Int
+                        neighbourhood[0].forEachIndexed { index, it ->
+                            state = row[it + coordinate, 0, null, depth]
                             key += (if (state == -1) rule.numStates else state) * power
                             power *= (rule.numStates + 1)
 
-                            if (it !in baseCoordinates) {
+                            if (!inBaseCoordinates[index]) {
                                 key2 += (if (state == -1) 0 else state) * power2
                                 power2 *= rule.numStates
                             }
@@ -1559,7 +1578,7 @@ class CFind(
                         key += cellState * power
                         key2 += cellState * power2
 
-                        if (successorLookahead[originalPhase][lookaheadDepth] == lookaheadDepth + 1)
+                        if (storeNeighbourhood)
                             _lookaheadMemo2!![it + additionalDepthArray[depth.mod(spacing)]] = key2
 
                         possibleSuccessorMemo[it] = approximateLookaheadTable[key]
@@ -1590,12 +1609,6 @@ class CFind(
 
         // Running another type of approximate lookahead
         val approximateLookaheadRows: Array<Row?>
-        val lookaheadDepthDiff = if (lookaheadDepth < this.lookaheadDepth[originalPhase]) {
-            if (lookaheadDepth >= 1)
-                lookaheadIndices[originalPhase][lookaheadDepth - 1][0] - lookaheadIndices[originalPhase][lookaheadDepth][0]
-            else indices[originalPhase][0] - lookaheadIndices[originalPhase][0][0]
-        } else 0
-
         val approximateDepthDiff = if (approximateLookahead[originalPhase][lookaheadDepth] > 0) {
             approximateLookaheadRows = lookaheadRows[
                 approximateLookaheadIndex[originalPhase][lookaheadDepth] - lookaheadDepth
@@ -1630,7 +1643,7 @@ class CFind(
                 if ((it + coordinate).x >= 0) // TODO consider different backgrounds
                     key += getDigit(
                         row,
-                        pow(numEquivalentStates, (it.x + minX) / spacing),
+                        pow(numEquivalentStates, -(it.x + minX) / spacing),
                         numEquivalentStates
                     ) * p
             }
@@ -1705,43 +1718,6 @@ class CFind(
             }
         }
 
-        // Prunes nodes that will reach a deadend
-        fun pruneNodes(node: Node, newKey: Int): Boolean {
-            var pruned = false
-            for (i in 0..if (approximateLookahead[originalPhase][lookaheadDepth] > 0) 1 else 0) {
-                if (table[i][node.depth + 1][newKey.mod(cacheWidths[i])] == 0) {
-                    pruned = true
-                    break
-                }
-            }
-
-            return pruned
-        }
-
-        // Indicates that this node leads to a deadend
-        fun deadendNode(node: Node, x: Int) {
-            val num = cacheWidths[x]
-            node.applyOnPredecessor {
-                val temp = it.cells.mod(num)
-                if (table[x][it.depth][temp] == -1) {
-                    table[x][it.depth][temp] = 0
-                    true
-                } else true
-            }
-        }
-
-        // Indicates that this node can reach a completion
-        fun completedNode(node: Node) {
-            for (i in 0..if (approximateLookahead[originalPhase][lookaheadDepth] > 0) 1 else 0)
-                node.applyOnPredecessor {
-                    val temp = it.cells.mod(cacheWidths[i])
-                    if (table[i][it.depth][temp] != 1) {
-                        table[i][it.depth][temp] = 1
-                        true
-                    } else true
-                }
-        }
-
         // Computing the initial key for the inner lookup table
         val key = 0  //encodeKey(-lastBaseCoordinate)
 
@@ -1778,29 +1754,28 @@ class CFind(
                     lookaheadDepth < this.lookaheadDepth[originalPhase] &&
                     !approximateLookahead(node.depth, node.cells.mod(cacheWidths[1]))
                 ) {
-                    deadendNode(node, 1)
+                    deadendNode(node, 1, table)
                     continue
                 }
             }
 
             // Check extra boundary conditions at the start
-            if (node.depth == 1 && bcDepth == 1 && filteredRightBCs.isNotEmpty() &&
+            if (node.depth == 1 && bcDepth == 1 &&
                 !checkBoundaryCondition(node, filteredRightBCs)) continue
 
             // Stuff that is done at the end of the search
             if (node.depth == width) {
                 // Telling algorithm which branches can be pruned and which branches can jump to the end
-                completedNode(node.predecessor!!)
+                completedNode(node.predecessor!!, table)
 
                 // Checking the right boundary conditions if it has not already been done
                 if (
-                    bcDepth != 1 && filteredRightBCs.isNotEmpty() &&
-                    !checkBoundaryCondition(node, filteredRightBCs)
+                    bcDepth > 1 && !checkBoundaryCondition(node, filteredRightBCs)
                 ) continue
 
                 if (checkBoundaryCondition(node, filteredLeftBCs, offset=Coordinate(width * spacing - 1, 0))) {
                     // Running the lookahead
-                    val row = Row(currentRow, node.completeRow!!, this)
+                    val row = Row(currentRow, node.completeRow, this)
                     row.depth = depth
                     if (lookaheadDepth < this.lookaheadDepth[originalPhase]) {
                         // Replaces the unknown rows within the lookahead with the current row value
@@ -1811,6 +1786,12 @@ class CFind(
                             val tempIndices = lookaheadIndices[originalPhase][index + lookaheadDepth]
                             Array(_row.size) { if (tempIndices[it] == currentRowIndex) row else _row[it] }
                         }
+
+                        // Computes the difference in depth
+                        val lookaheadDepthDiff = if (lookaheadDepth >= 1)
+                            lookaheadIndices[originalPhase][lookaheadDepth - 1][0] -
+                                    lookaheadIndices[originalPhase][lookaheadDepth][0]
+                        else indices[originalPhase][0] - lookaheadIndices[originalPhase][0][0]
 
                         // Runs the lookahead
                         val memoriseLookahead =
@@ -1855,7 +1836,7 @@ class CFind(
                 val newKey = shifted + rule.equivalentStates[i]
                 if (
                     ((stateMask shr i) and 0b1) == 1 &&
-                    (node.depth + 1 == width || !pruneNodes(node, newKey))
+                    (node.depth + 1 == width || !pruneNodes(node, newKey, table))
                 ) {
                     // Adding the new nodes to the stack
                     deadend = false
@@ -1872,7 +1853,7 @@ class CFind(
             }
 
             // Telling the algorithm to prune these branches if they are ever seen again
-            if (deadend) deadendNode(node, 0)
+            if (deadend) deadendNode(node, 0, table)
         }
 
         // Add each row's successor num
@@ -1883,9 +1864,46 @@ class CFind(
     /**
      * Translates the [coordinate] at [depth] from the internal representation to the actual coordinate on the integer lattice
      */
-    private fun translate(coordinate: Coordinate, depth: Int): Coordinate {
+    private inline fun translate(coordinate: Coordinate, depth: Int): Coordinate {
         if (spacing == 1) return coordinate
         else return Coordinate(coordinate.x * spacing + offsets[depth.mod(offsets.size)], coordinate.y)
+    }
+
+    // Prunes nodes that will reach a deadend
+    private inline fun pruneNodes(node: Node, newKey: Int, table: Array<Array<IntArray>>): Boolean {
+        var pruned = false
+        for (i in table.indices) {
+            if (table[i][node.depth + 1][newKey.mod(cacheWidths[i])] == 0) {
+                pruned = true
+                break
+            }
+        }
+
+        return pruned
+    }
+
+    // Indicates that this node leads to a deadend
+    private inline fun deadendNode(node: Node, x: Int, table: Array<Array<IntArray>>) {
+        val num = cacheWidths[x]
+        node.applyOnPredecessor {
+            val temp = it.cells.mod(num)
+            if (table[x][it.depth][temp] == -1) {
+                table[x][it.depth][temp] = 0
+                true
+            } else true
+        }
+    }
+
+    // Indicates that this node can reach a completion
+    private inline fun completedNode(node: Node, table: Array<Array<IntArray>>) {
+        for (i in table.indices)
+            node.applyOnPredecessor {
+                val temp = it.cells.mod(cacheWidths[i])
+                if (table[i][it.depth][temp] != 1) {
+                    table[i][it.depth][temp] = 1
+                    true
+                } else true
+            }
     }
 
     private operator fun Array<out Row?>.get(
@@ -1918,7 +1936,9 @@ class CFind(
         }
         return if (coordinate.y > 0 && coordinate.y < indexToRowMap.size) {
             if (generation == 0) {
-                if (indexToRowMap[coordinate.y] != -1) {
+                if (!needIndexToRow) {
+                    this[coordinate.y - 1]?.get(coordinate.x) ?: -1
+                } else if (indexToRowMap[coordinate.y] != -1) {
                     this[indexToRowMap[coordinate.y] - 1]?.get(coordinate.x) ?: -1
                 } else {  // TODO optimise this
                     mostRecentRow!!.getPredecessor(coordinate.y * period - 1)?.get(coordinate.x) ?: -1
@@ -1983,10 +2003,14 @@ expect fun multithreadedDfs(cfind: CFind): Int
 
 expect fun multithreadedPriorityQueue(cfind: CFind)
 
-private fun getDigit(number: Int, power: Int, base: Int) = number.floorDiv(power).mod(base)
+private fun getDigit(number: Int, power: Int, base: Int): Int {
+    if (base == 2) return if (number and power == 0) 0 else 1
+    return number.floorDiv(power).mod(base)
+}
 
 private fun pow(base: Int, exponent: Int): Int {
-    if (exponent == 0) return 1
+    if (base == 2 && exponent >= 0) return 1 shl exponent
+    if (exponent <= 0) return 1
     val temp = pow(base, exponent / 2)
     return if (exponent % 2 == 0) temp * temp else base * temp * temp
 }
