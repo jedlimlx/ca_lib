@@ -63,11 +63,18 @@ class CFind(
 
     // Rotate the direction of the neighbour so the ship will go north
     val basisVectors = Pair(Coordinate(direction.y, -direction.x), direction)
-    val neighbourhood: Array<Array<Coordinate>> = rule.neighbourhood.map {
+    val originalNeighbourhood: Array<Array<Coordinate>> = rule.neighbourhood.map {
         it.map {
             basisVectors.first * it.x + basisVectors.second * it.y
         }.toTypedArray()
     }.toTypedArray()
+
+    // Re-order neighbourhood
+    val neighbourhood = originalNeighbourhood.map {
+        println(it.sortedBy { it.y * 30 + it.x })
+        it.sortedBy { it.y * 30 + it.x }.toTypedArray()
+    }.toTypedArray()
+    val ordering = neighbourhood[0].map { coordinate -> originalNeighbourhood[0].indexOf(coordinate) }
 
     // Compute statistics about the periodicity of the integer lattice (for oblique and diagonal searches)
     // TODO Figure out why oblique searches don't work
@@ -462,7 +469,7 @@ class CFind(
             var power = 1
             for (i in lst.indices) {
                 if (i !in baseCoordinateMap) {
-                    lst[i] = getDigit(it, power, rule.numStates)
+                    lst[ordering[i]] = getDigit(it, power, rule.numStates)
                     power *= rule.numStates
                 }
             }
@@ -479,7 +486,7 @@ class CFind(
                 var power = 1
                 for (c in reversedBaseCoordinate) {
                     if (c in baseCoordinates)
-                        lst[baseCoordinateMap[baseCoordinates.indexOf(c)]] = getDigit(it, power, numEquivalentStates)
+                        lst[ordering[baseCoordinateMap[baseCoordinates.indexOf(c)]]] = getDigit(it, power, numEquivalentStates)
 
                     power *= numEquivalentStates
                 }
@@ -487,7 +494,7 @@ class CFind(
                 // Output will be represented in binary with the ith digit representing if state i can be used
                 var output = 0
                 for (i in 0 ..< rule.numStates) {
-                    lst[baseCoordinateMap.last()] = i
+                    lst[ordering[baseCoordinateMap.last()]] = i
                     if (newState == rule.transitionFunc(lst, currentState, 0, Coordinate(0, 0))) {
                         output += pow(2, i)
                     }
@@ -652,7 +659,7 @@ class CFind(
                 var power = 1
                 for (i in lst.indices) {
                     val digit = getDigit(it, power, rule.numStates + 1)
-                    lst[i] = if (digit == rule.numStates) -1 else digit
+                    lst[ordering[i]] = if (digit == rule.numStates) -1 else digit
                     power *= (rule.numStates + 1)
                 }
 
