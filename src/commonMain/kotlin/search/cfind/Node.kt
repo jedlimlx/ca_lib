@@ -2,6 +2,7 @@ package search.cfind
 
 data class Node(
     var predecessor: Node?,
+    var stackPredecessor: Node?,
     val cells: Int,
     val prevCell: Int,
     val depth: Int,
@@ -12,23 +13,19 @@ data class Node(
     val completeRow: IntArray
         get() {
             if (_completeRow == null) {
+                var count = depth - 1
                 var tempNode: Node? = this
-                val temp = IntArray(depth) {
-                    val output = tempNode!!.prevCell
-                    tempNode = tempNode?.predecessor
-
-                    output
+                val temp = IntArray(depth) { 0 }
+                while (count >= 0) {
+                    temp[count--] = tempNode!!.prevCell
+                    tempNode = tempNode.predecessor
                 }
 
-                _completeRow = temp.reversedArray()
+                _completeRow = temp
             }
 
             return _completeRow!!
         }
-
-    fun applyOnPredecessor(f: (Node) -> Boolean) {
-        if (f(this)) predecessor?.applyOnPredecessor(f)
-    }
 
     override fun hashCode(): Int {
         return cells + depth * 100

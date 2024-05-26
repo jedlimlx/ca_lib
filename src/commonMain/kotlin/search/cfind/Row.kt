@@ -38,8 +38,7 @@ class Row(
     // unique id for each row
     val id = counter++
 
-    // TODO think harder about if this is actually correct
-    val depthPeriod = lcm(search!!.spacing, if (gcd(search!!.period, search!!.k) > 1) search!!.period else 1)
+    val depthPeriod = search!!.spacing
 
     val hash = run {
         if (hash == null) {
@@ -61,8 +60,11 @@ class Row(
                 search!!.isotropic &&
                 (search!!.symmetry == ShipSymmetry.GLIDE || search!!.symmetry == ShipSymmetry.ASYMMETRIC)
             ) {
-                for (i in cells.indices)
-                    _hash += cells[cells.size - i - 1] * pow(search!!.rule.numStates, i)
+                var p = 1
+                for (i in cells.indices) {
+                    _hash += cells[cells.size - i - 1] * p
+                    p *= search!!.rule.numStates
+                }
             }
 
             _hash
@@ -102,12 +104,28 @@ class Row(
 //            println("crap $depth $index $offset ${(index - offset).mod(search!!.spacing)}")
 //            return 0
 //        }
-        if (useArray) {
-            if (search!!.spacing == 1) return cells[index / search!!.spacing]
-            else return (hash and (1 shl (index / search!!.spacing))) shr (index / search!!.spacing)
+        return if (useArray) {
+            if (search!!.spacing == 1) (hash and (1 shl index)) shr index
+            else (hash and (1 shl (index / search!!.spacing))) shr (index / search!!.spacing)
         } else {
-            if (search!!.spacing == 1) return cells[index]
-            else return cells[index / search!!.spacing]
+            if (search!!.spacing == 1) cells[index]
+            else cells[index / search!!.spacing]
+        }
+    }
+
+    operator fun get(_startIndex: Int, _endIndex: Int): Int {
+        return if (search!!.spacing == 1) {
+            val startIndex = maxOf(_startIndex, 0)
+            val endIndex = minOf(_endIndex, search!!.width - 1)
+            val mask = ((1 shl (endIndex - startIndex + 1)) - 1) shl startIndex
+            if (_startIndex < 0) (hash and mask) shl -_startIndex
+            else (hash and mask) shr _startIndex
+        } else {
+            val startIndex = maxOf(_startIndex, 0) / search!!.spacing
+            val endIndex = minOf(_endIndex, search!!.width * search!!.spacing - 1) / search!!.spacing
+            val mask = ((1 shl (endIndex - startIndex + 1)) - 1) shl startIndex
+            if (_startIndex < 0) (hash and mask) shl -(_startIndex / search!!.spacing)
+            else (hash and mask) shr startIndex
         }
     }
 

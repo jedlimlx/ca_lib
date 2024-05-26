@@ -9,12 +9,14 @@ import patterns.Spaceship
 import patterns.gliderdb.GliderDB
 import rules.hrot.HROT
 import rules.hrot.HROTGenerations
+import rules.nontotalistic.rules.INT
 import simulation.DenseGrid
 import simulation.SparseGrid
 import simulation.Coordinate
 import search.cfind.CFind
 import search.cfind.ShipSymmetry
 import search.cfind.SearchStrategy
+import kotlin.random.Random
 
 actual fun main() {
 //     val gliderdb = GliderDB<HROTGenerations>(
@@ -133,10 +135,17 @@ actual fun main() {
     // B2-ei3cjkr4cektyz5-cnr6-ik78/S01e2-ae3cnqry4cqrtwyz5-ain6ekn7e
     // B2ac3anr4-ijkz5cjkry6-cn7c8/S12i3aejy4nqtw5ceny6-kn7c
     // HROT("R2,C2,S6-11,B4,9-11,NW0020003330230320333000200")
-   val search = CFind(
-       HROT("R2,C2,S6-11,B9-11,NW0010003330130310333000100"), 4, 1, 8, ShipSymmetry.ODD,
-       verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS, numThreads = 8,
-       //direction = Coordinate(1, 1), lookaheadDepth = 3
-   )
-   search.search()
+//   val search = CFind(
+//       HROT("R2,C2,S7-10,B7-8,NW1111111111111111111111111"), 2, 1, 8, ShipSymmetry.ASYMMETRIC,
+//       verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS, numThreads = 8,
+//       //direction = Coordinate(1, 1), lookaheadDepth = 3
+//   )
+    //R2,C2,S6-9,B7-8,NM
+    val search = CFind(
+        INT("B2n3/S23-q"), 3, 1, 12, ShipSymmetry.ODD,
+        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, numShips = 1
+        //numThreads = 8, direction = Coordinate(1, 1), lookaheadDepth = 3
+    )
+
+    search.search()
 }

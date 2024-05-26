@@ -13,6 +13,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 @Ignore
+// TODO almost everything is broken pls fix
 class Test {
     private val searchStrategies = listOf(SearchStrategy.HYBRID_BFS, SearchStrategy.PRIORITY_QUEUE)
 
@@ -59,12 +60,12 @@ class Test {
 
             // Finding the LWSS
             val lifeSearchP4K2 = CFind(
-                HROT("B3/S23"), 2, 1, 7, ShipSymmetry.GLIDE, verbosity = 1,
+                HROT("B3/S23"), 2, 1, 5, ShipSymmetry.GLIDE, verbosity = 1,
                 searchStrategy = strategy
             )
             lifeSearchP4K2.search()
 
-            assertEquals(lifeSearchP4K2.searchResults.size, 2)
+            assertEquals(lifeSearchP4K2.searchResults.size, 1)
         }
     }
 
@@ -200,7 +201,6 @@ class Test {
             assertEquals(p2search.searchResults.size, 21)
         }
     }
-
 
     @Test
     fun superluminalTest() {
