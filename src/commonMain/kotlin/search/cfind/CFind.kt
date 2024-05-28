@@ -101,15 +101,13 @@ class CFind(
 
     // Computing the backOff array to be used when gcd(k, period) > 1
     val backOff = IntArray(period) { -1 }.apply {
-        println(ordering)
-
         this[0] = k
         if (period == 1) return@apply
 
         var count = 0
         for (i in 0..<period-1) {
             var index = if (k == 0) 1 else 0
-            while (this[(count + index + k).mod(period)] != -1) { index++ }
+            while (this[(count + index + k).mod(period)] != -1 || (index + k).mod(period) == 0) { index++ }
 
             this[count.mod(period)] = (index + k).mod(backoffPeriod)
             count += this[count.mod(period)]
@@ -217,8 +215,6 @@ class CFind(
             val range = Pair(temp.minOf { it.x } - lastBaseCoordinate.x, temp.maxOf { it.x } - lastBaseCoordinate.x)
             lst.add(Pair(power, range))
         }
-
-        println(lst)
 
         lst.toTypedArray()
     }
@@ -376,7 +372,7 @@ class CFind(
         val lst = listOf(indices[phase]) + tempIndices[phase]
         var count = 0
         lst.subList(0, this.lookaheadDepth[phase] + 1).map {
-            if (smallNeighbourhoodOptimisation) return@map -1
+            //if (smallNeighbourhoodOptimisation) return@map -1
 
             val target = it[0] - indices[0][0]
             val known = setOf(0) + tempIndices[phase].slice(0..<count++).map {
@@ -440,6 +436,17 @@ class CFind(
         }
     }.toTypedArray()
 
+    val lookaheadIndices = if (this.lookaheadDepth.max() == 0) Array(period) {
+        (successorLookaheadIndices[it] + approximateLookaheadIndices[it]).toTypedArray()
+    }
+    else tempIndices.mapIndexed { phase, it ->
+        (
+            it.slice(0 ..< this.lookaheadDepth[phase]) +
+            successorLookaheadIndices[phase] +
+            approximateLookaheadIndices[phase]
+        ).toTypedArray()
+    }.toTypedArray()
+
     val approximateDepthDiff = Array(period) { originalPhase ->
         Array(this.lookaheadDepth[originalPhase]) { lookaheadDepth ->
             if (approximateLookahead[originalPhase][lookaheadDepth] > 0) {
@@ -451,17 +458,6 @@ class CFind(
             } else 0
         }
     }
-
-    val lookaheadIndices = if (this.lookaheadDepth.max() == 0) Array(period) {
-        (successorLookaheadIndices[it] + approximateLookaheadIndices[it]).toTypedArray()
-    }
-    else tempIndices.mapIndexed { phase, it ->
-        (
-            it.slice(0 ..< this.lookaheadDepth[phase]) +
-            successorLookaheadIndices[phase] +
-            approximateLookaheadIndices[phase]
-        ).toTypedArray()
-    }.toTypedArray()
 
     val rawAdditionalDepth: Int = when (indices[0].indexOf(indices[0].min())) {
         0 -> {
@@ -703,18 +699,17 @@ class CFind(
 
         println("Generating approximate lookahead table...")
 
-        if ((rule.numStates + 1.0).pow(neighbourhood[0].size + 1) < 10) { //Int.MAX_VALUE) {
+        if ((rule.numStates + 1.0).pow(originalNeighbourhood[0].size + 1) < Int.MAX_VALUE) {
             IntArray(
-                pow(rule.numStates + 1, neighbourhood[0].size + 1)
+                pow(rule.numStates + 1, originalNeighbourhood[0].size + 1)
             ) {
                 val lst = IntArray(originalNeighbourhood[0].size) { 0 }
 
                 // Populating the list
                 var power = 1
-                for (i in neighbourhood[0].indices) {
+                for (i in originalNeighbourhood[0].indices) {
                     val digit = getDigit(it, power, rule.numStates + 1)
-                    if (ordering[i] >= 0)
-                        lst[ordering[i]] = if (digit == rule.numStates) -1 else digit
+                    lst[i] = if (digit == rule.numStates) -1 else digit
                     power *= (rule.numStates + 1)
                 }
 
@@ -1688,7 +1683,7 @@ class CFind(
         // Check what are the possible successor states for the current row
         // TODO fix this optimisation for diagonal ships
         val possibleSuccessorMemo = IntArray(width) { -1 }
-        val storeNeighbourhood = successorLookahead[originalPhase][lookaheadDepth] == lookaheadDepth + 1
+        val storeNeighbourhood = !smallNeighbourhoodOptimisation && successorLookahead[originalPhase][lookaheadDepth] == lookaheadDepth + 1
         fun possibleSuccessors(it: Int): Int {
             if (possibleSuccessorMemo[it] == -1) {
                 if (successorLookahead[originalPhase][lookaheadDepth] > 0) {
@@ -1708,12 +1703,12 @@ class CFind(
                         var power2 = 1
 
                         var state: Int
-                        neighbourhood[0].forEachIndexed { index, it ->
+                        originalNeighbourhood[0].forEachIndexed { index, it ->
                             state = row[it + coordinate, 0, null, depth]
                             key += (if (state == -1) rule.numStates else state) * power
                             power *= (rule.numStates + 1)
 
-                            if (!inBaseCoordinates[index]) {
+                            if (storeNeighbourhood && !inBaseCoordinates[index]) {
                                 key2 += (if (state == -1) 0 else state) * power2
                                 power2 *= rule.numStates
                             }

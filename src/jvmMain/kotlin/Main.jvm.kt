@@ -140,10 +140,10 @@ actual fun main() {
 //       verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS, numThreads = 8,
 //       //direction = Coordinate(1, 1), lookaheadDepth = 3
 //   )
-    //R2,C2,S6-9,B7-8,NM
+    // R2,C2,S6-9,B7-8,NM
     val search = CFind(
-        HROT("R2,C2,S6-9,B7-8,NM"), 3, 3, 10, ShipSymmetry.EVEN,
-        verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS, numShips = 1,
+        HROT("B345/S23"), 3, 1, 13, ShipSymmetry.ODD,
+        verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS,
         //lookaheadDepth = 0
         //numThreads = 8, direction = Coordinate(1, 1), lookaheadDepth = 3
     )
