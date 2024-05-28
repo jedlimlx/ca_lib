@@ -116,13 +116,13 @@ class Row(
     operator fun get(_startIndex: Int, _endIndex: Int): Int {
         return if (search!!.spacing == 1) {
             val startIndex = maxOf(_startIndex, 0)
-            val endIndex = minOf(_endIndex, search!!.width - 1)
+            val endIndex = minOf(maxOf(_endIndex, 0), search!!.width - 1)
             val mask = ((1 shl (endIndex - startIndex + 1)) - 1) shl startIndex
             if (_startIndex < 0) (hash and mask) shl -_startIndex
             else (hash and mask) shr _startIndex
         } else {
             val startIndex = maxOf(_startIndex, 0) / search!!.spacing
-            val endIndex = minOf(_endIndex, search!!.width * search!!.spacing - 1) / search!!.spacing
+            val endIndex = minOf(maxOf(_endIndex, 0), search!!.width * search!!.spacing - 1) / search!!.spacing
             val mask = ((1 shl (endIndex - startIndex + 1)) - 1) shl startIndex
             if (_startIndex < 0) (hash and mask) shl -(_startIndex / search!!.spacing)
             else (hash and mask) shr startIndex
