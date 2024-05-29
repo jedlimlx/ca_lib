@@ -1600,7 +1600,7 @@ class CFind(
                     key += rule.equivalentStates[rows[it + coordinate, 0, node, depth]] * power
                     power *= numEquivalentStates
                 }
-
+                
                 return key
             } else {
                 val len = reversedBaseCoordinate.size
@@ -1609,11 +1609,7 @@ class CFind(
                     (1 shl (minOf(len * spacing + start, width * spacing - 1) / spacing)) - 1
                 ) shl maxOf(start / spacing, 0)
 
-                var output = reverseDigits(
-                    if (start > 0) (node.cells and mask) shr (start / spacing)
-                    else (node.cells and mask),
-                    length=minOf(len * spacing + start, width * spacing - 1)
-                )
+                var output = (node.cells and mask) shr maxOf(start / spacing, 0)
 
                 // Now, consider the symmetries
                 if (coordinate.x + lastBaseCoordinate.x > width) {
@@ -1642,14 +1638,13 @@ class CFind(
                         }
                     }
 
-                    val power = if (symmetry == ShipSymmetry.GUTTER) 
-                        minOf(len * spacing + start, width * spacing - 1) + 1
-                    else minOf(len * spacing + start, width * spacing - 1)
+                    val power = if (symmetry == ShipSymmetry.GUTTER) -start + 1 else -start
 
                     val mask = ((1 shl ((end2 - start2) / spacing + 1)) - 1) shl maxOf(start2 / spacing, 0)
-                    output += (node.cells and mask) shl (power - start2 / spacing)
-
-                    //println("$start $len $start2 $end2 $power ${output.toString(2)} ${((node.cells and mask) shl power).toString(2)}")
+                    output = (output shl power) + reverseDigits(
+                        (node.cells and mask) shr maxOf(start2 / spacing, 0),
+                        length=-start
+                    )
                 }
 
                 return output
