@@ -1609,11 +1609,14 @@ class CFind(
                     (1 shl (minOf(len * spacing + start, width * spacing - 1) / spacing)) - 1
                 ) shl maxOf(start / spacing, 0)
 
-                var output = if (start < 0) (node.cells and mask) shl -(start / spacing)
-                else (node.cells and mask) shr (start / spacing)
+                var output = reverseDigits(
+                    if (start > 0) (node.cells and mask) shr (start / spacing)
+                    else (node.cells and mask),
+                    length=minOf(len * spacing + start, width * spacing - 1)
+                )
 
                 // Now, consider the symmetries
-                if (start + len >= width) {
+                if (coordinate.x + lastBaseCoordinate.x > width) {
                     val start2: Int
                     val end2: Int
                     when (symmetry) {
@@ -1626,26 +1629,27 @@ class CFind(
                             end2 = 0
                         }
                         ShipSymmetry.EVEN -> {
-                            start2 = 2 * width * spacing - (start + len) - 1
-                            end2 = width * spacing - 1
+                            start2 = 0
+                            end2 = -start - 1
                         }
                         ShipSymmetry.ODD -> {
-                            start2 = 2 * width * spacing - (start + len) - 2
-                            end2 = width * spacing - 2
+                            start2 = 1
+                            end2 = -start
                         }
                         ShipSymmetry.GUTTER -> {
-                            start2 = 2 * width * spacing - (start + len)
-                            end2 = width * spacing - 1
+                            start2 = 0
+                            end2 = -start - 2
                         }
                     }
 
-                    val power = if (symmetry == ShipSymmetry.GUTTER)
-                            ((width * spacing - start) - start2) / spacing + 1
-                    else ((width * spacing - start) - start2) / spacing
+                    val power = if (symmetry == ShipSymmetry.GUTTER) 
+                        minOf(len * spacing + start, width * spacing - 1) + 1
+                    else minOf(len * spacing + start, width * spacing - 1)
 
-                    val mask = ((1 shl end2 / spacing) - 1) shl maxOf(start2 / spacing, 0)
-                    output += if (power > 0) (node.cells and mask) shl power
-                    else (node.cells and mask) shr power
+                    val mask = ((1 shl ((end2 - start2) / spacing + 1)) - 1) shl maxOf(start2 / spacing, 0)
+                    output += (node.cells and mask) shl (power - start2 / spacing)
+
+                    //println("$start $len $start2 $end2 $power ${output.toString(2)} ${((node.cells and mask) shl power).toString(2)}")
                 }
 
                 return output
@@ -2110,13 +2114,16 @@ class CFind(
                 ShipSymmetry.ASYMMETRIC -> 0
                 ShipSymmetry.GLIDE -> 0
                 ShipSymmetry.EVEN -> reverseDigits(
-                    this[index]!![2 * width * spacing - endIndex - 1, width * spacing - 1]
+                    this[index]!![2 * width * spacing - endIndex - 1, width * spacing - 1],
+                    length = endIndex / spacing - width + 1
                 ) shl (width - startIndex / spacing)
                 ShipSymmetry.ODD -> reverseDigits(
-                    this[index]!![2 * width * spacing - endIndex - 2, width * spacing - 2]
+                    this[index]!![2 * width * spacing - endIndex - 2, width * spacing - 2],
+                    length = endIndex / spacing - width + 1
                 ) shl (width - startIndex / spacing)
                 ShipSymmetry.GUTTER -> reverseDigits(
-                    this[index]!![2 * width * spacing - endIndex, width * spacing - 1]
+                    this[index]!![2 * width * spacing - endIndex, width * spacing - 1],
+                    length = endIndex / spacing - width
                 ) shl (width - startIndex / spacing + 1)
             }
         }
@@ -2171,14 +2178,16 @@ expect fun multithreadedDfs(cfind: CFind): Int
 
 expect fun multithreadedPriorityQueue(cfind: CFind)
 
-private fun reverseDigits(x: Int, base: Int = 2): Int {
+private fun reverseDigits(x: Int, base: Int = 2, length: Int = -1): Int {
     var temp = 0
     var x = x
     if (base == 2) {
+        if (length != -1) x += 1 shl length
         while (x != 0) {
             temp = (temp shl 1) + (x and 1)
             x = x shr 1
         }
+        if (length != -1) temp = temp shr 1
     } else {
         while (x != 0) {
             temp = temp * base + x.mod(base)
