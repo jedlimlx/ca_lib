@@ -13,15 +13,22 @@ data class Node(
     val completeRow: IntArray
         get() {
             if (_completeRow == null) {
-                var count = depth - 1
-                var tempNode: Node? = this
-                val temp = IntArray(depth) { 0 }
-                while (count >= 0) {
-                    temp[count--] = tempNode!!.prevCell
-                    tempNode = tempNode.predecessor
-                }
+                if (numStates == 2) {
+                    _completeRow = IntArray(depth) {
+                        val temp = 1 shl (depth - it - 1)
+                        if (cells and temp == 0) 0 else 1
+                    }
+                } else {
+                    var count = depth - 1
+                    var tempNode: Node? = this
+                    val temp = IntArray(depth) { 0 }
+                    while (count >= 0) {
+                        temp[count--] = tempNode!!.prevCell
+                        tempNode = tempNode.predecessor
+                    }
 
-                _completeRow = temp
+                    _completeRow = temp
+                }
             }
 
             return _completeRow!!

@@ -1,17 +1,10 @@
 package simulation
 
-import kotlin.math.abs
-
 /**
  * Represents a coordinate (x, y) in the grid
  * @constructor Constructs coordinate (x, y)
  */
 class Coordinate(val x: Int = 0, val y: Int = 0) : Comparable<Coordinate> {
-    /**
-     * The manhattan distance from (0, 0) of this coordinate
-     */
-    val manhattan: Int = abs(x) + abs(y)
-
     /**
      * Adds the coordinates together and returns a new coordinate
      * @param other The other coordinate to add to this coordinate

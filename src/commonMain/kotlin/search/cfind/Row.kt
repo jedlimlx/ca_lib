@@ -4,33 +4,8 @@ import simulation.Coordinate
 import simulation.Grid
 import simulation.SparseGrid
 
-fun lcm(a: Int, b: Int): Int {
-    val maxLcm = a * b
-    val larger = if (a > b) a else b
-
-    var lcm = larger
-    while (lcm <= maxLcm) {
-        if (lcm % a == 0 && lcm % b == 0) return lcm
-        lcm += larger
-    }
-
-    return maxLcm
-}
-
-fun gcd(a: Int, b: Int): Int {
-    var num1 = a
-    var num2 = b
-    while (num2 != 0) {
-        val temp = num2
-        num2 = num1 % num2
-        num1 = temp
-    }
-
-    return num1
-}
-
 class Row(
-    val predecessor: Row?, val cells: IntArray, var search: CFind? = null,
+    val predecessor: Row?, val cells: IntArray, val search: CFind,
     hash: Int? = null, reverseHash: Int? = null
 ): Comparable<Row> {
     companion object { var counter: Long = 0L }
@@ -38,7 +13,7 @@ class Row(
     // unique id for each row
     val id = counter++
 
-    val depthPeriod = search!!.spacing
+    val depthPeriod = search.spacing
 
     val hash = run {
         if (hash == null) {
@@ -46,7 +21,7 @@ class Row(
             var p = 1
             for (i in cells.indices) {
                 _hash += cells[i] * p
-                p *= search!!.rule.numStates
+                p *= search.rule.numStates
             }
 
             _hash
@@ -57,13 +32,13 @@ class Row(
         if (reverseHash == null) {
             var _hash = 0
             if (
-                search!!.isotropic &&
-                (search!!.symmetry == ShipSymmetry.GLIDE || search!!.symmetry == ShipSymmetry.ASYMMETRIC)
+                search.isotropic &&
+                (search.symmetry == ShipSymmetry.GLIDE || search.symmetry == ShipSymmetry.ASYMMETRIC)
             ) {
                 var p = 1
                 for (i in cells.indices) {
                     _hash += cells[cells.size - i - 1] * p
-                    p *= search!!.rule.numStates
+                    p *= search.rule.numStates
                 }
             }
 
@@ -72,7 +47,7 @@ class Row(
     }
 
     // information about how the cells are read from the row
-    val useArray = search!!.rule.numStates == 2 && search!!.width < 31
+    val useArray = search.rule.numStates == 2 && search.width < 31
 
     // information about the row and its position within the larger ship
     var depth = 0
@@ -80,11 +55,9 @@ class Row(
         get() = depth + (successorSequence?.size ?: 0)
 
     val phase: Int
-        get() { return depth.mod(search!!.period) }
+        get() { return depth.mod(search.period) }
 
-    val offset: Int by lazy {
-        search!!.offsets[depth.mod(search!!.offsets.size)]
-    }
+    val offset: Int = search.offsets[depth.mod(search.offsets.size)]
 
     // information about the row in relation to its siblings in the tree
     var successorSequence: IntArray? = null
@@ -100,31 +73,31 @@ class Row(
     }
 
     operator fun get(index: Int): Int {
-//        if (search!!.spacing != 1 && (index - offset).mod(search!!.spacing) != 0) {
-//            println("crap $depth $index $offset ${(index - offset).mod(search!!.spacing)}")
+//        if (search.spacing != 1 && (index - offset).mod(search.spacing) != 0) {
+//            println("crap $depth $index $offset ${(index - offset).mod(search.spacing)}")
 //            return 0
 //        }
         return if (useArray) {
-            if (search!!.spacing == 1) (hash and (1 shl index)) shr index
-            else (hash and (1 shl (index / search!!.spacing))) shr (index / search!!.spacing)
+            if (search.spacing == 1) (hash and (1 shl index)) shr index
+            else (hash and (1 shl (index / search.spacing))) shr (index / search.spacing)
         } else {
-            if (search!!.spacing == 1) cells[index]
-            else cells[index / search!!.spacing]
+            if (search.spacing == 1) cells[index]
+            else cells[index / search.spacing]
         }
     }
 
     operator fun get(_startIndex: Int, _endIndex: Int): Int {
-        return if (search!!.spacing == 1) {
+        return if (search.spacing == 1) {
             val startIndex = maxOf(_startIndex, 0)
-            val endIndex = minOf(maxOf(_endIndex, 0), search!!.width - 1)
+            val endIndex = minOf(maxOf(_endIndex, 0), search.width - 1)
             val mask = ((1 shl (endIndex - startIndex + 1)) - 1) shl startIndex
             if (_startIndex < 0) (hash and mask) shl -_startIndex
             else (hash and mask) shr _startIndex
         } else {
-            val startIndex = maxOf(_startIndex, 0) / search!!.spacing
-            val endIndex = minOf(maxOf(_endIndex, 0), search!!.width * search!!.spacing - 1) / search!!.spacing
+            val startIndex = maxOf(_startIndex, 0) / search.spacing
+            val endIndex = minOf(maxOf(_endIndex, 0), search.width * search.spacing - 1) / search.spacing
             val mask = ((1 shl (endIndex - startIndex + 1)) - 1) shl startIndex
-            if (_startIndex < 0) (hash and mask) shl -(_startIndex / search!!.spacing)
+            if (_startIndex < 0) (hash and mask) shl -(_startIndex / search.spacing)
             else (hash and mask) shr startIndex
         }
     }
@@ -146,7 +119,7 @@ class Row(
             if (depth - n == predecessor.depth) break
 
             list.add(
-                if (deepCopy) Row(null, predecessor.cells, search!!, predecessor.hash, predecessor.reverseHash)
+                if (deepCopy) Row(null, predecessor.cells, search, predecessor.hash, predecessor.reverseHash)
                 else predecessor
             )
             predecessor = predecessor.predecessor
@@ -180,14 +153,14 @@ class Row(
         var counter = this.offset
         while (true) {
             predecessor.cells.forEachIndexed { index, state ->
-                grid[translate(index * search!!.spacing + predecessor.offset, -counter)] = state
+                grid[translate(index * search.spacing + predecessor.offset, -counter)] = state
                 when(symmetry) {
-                    ShipSymmetry.EVEN -> grid[translate(2 * predecessor.cells.size * search!!.spacing - 1 -
-                            (index * search!!.spacing + predecessor.offset), -counter)] = state
-                    ShipSymmetry.ODD -> grid[translate(2 * predecessor.cells.size * search!!.spacing - 2 -
-                            (index * search!!.spacing + predecessor.offset), -counter)] = state
-                    ShipSymmetry.GUTTER -> grid[translate(2 * predecessor.cells.size * search!!.spacing -
-                            (index * search!!.spacing + predecessor.offset), -counter)] = state
+                    ShipSymmetry.EVEN -> grid[translate(2 * predecessor.cells.size * search.spacing - 1 -
+                            (index * search.spacing + predecessor.offset), -counter)] = state
+                    ShipSymmetry.ODD -> grid[translate(2 * predecessor.cells.size * search.spacing - 2 -
+                            (index * search.spacing + predecessor.offset), -counter)] = state
+                    ShipSymmetry.GUTTER -> grid[translate(2 * predecessor.cells.size * search.spacing -
+                            (index * search.spacing + predecessor.offset), -counter)] = state
                     else -> {}
                 }
             }
@@ -209,8 +182,8 @@ class Row(
 
     private fun translate(y: Int, x: Int): Coordinate {
         return Coordinate(
-            (-x * search!!.direction.x + y * search!!.direction.y) / search!!.spacing,
-            (y * search!!.direction.x + x * search!!.direction.y) / search!!.spacing
+            (-x * search.direction.x + y * search.direction.y) / search.spacing,
+            (y * search.direction.x + x * search.direction.y) / search.spacing
         )
     }
 
@@ -238,11 +211,5 @@ class Row(
         if (!cells.contentEquals(other.cells)) return false
 
         return true
-    }
-
-    private fun pow(base: Int, exponent: Int): Int {
-        if (exponent == 0) return 1
-        val temp = pow(base, exponent / 2)
-        return if (exponent % 2 == 0) temp * temp else base * temp * temp
     }
 }
