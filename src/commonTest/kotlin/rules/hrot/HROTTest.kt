@@ -1,7 +1,6 @@
 package rules.hrot
 
 import readResource
-import rules.RuleFamily
 import rules.enumerateRules
 import rules.randomRules
 import simulation.SparseGrid
@@ -87,7 +86,7 @@ class HROTTest {
                 !line.startsWith("#") -> {
                     val grid = SparseGrid(initial, HROT(rulestring))
                     grid.step(generations)
-                    assertEquals(final, grid.toRLE())
+                    assertEquals(final, grid.toRLE(maxLineLength = Int.MAX_VALUE))
                 }
             }
         }

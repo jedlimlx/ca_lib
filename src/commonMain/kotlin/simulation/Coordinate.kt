@@ -79,9 +79,19 @@ class CoordinateRange(
     val end get() = endInclusive
 
     /**
+     * The width of the coordinate range
+     */
+    val width get() = (endInclusive.x - start.x + 1)
+
+    /**
+     * The height of the coordinate range
+     */
+    val height get() = (endInclusive.y - start.y + 1)
+
+    /**
      * The area covered by the coordinate range
      */
-    val area get() = (endInclusive.x - start.x + 1) * (endInclusive.y - start.y + 1)
+    val area get() = width * height
 
     override fun iterator(): Iterator<Coordinate> = CoordinateIterator(start, endInclusive)
 

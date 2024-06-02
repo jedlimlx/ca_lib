@@ -1,3 +1,5 @@
+import com.github.ajalt.mordant.rendering.AnsiLevel
+import com.github.ajalt.mordant.terminal.Terminal
 import it.skrape.core.htmlDocument
 import it.skrape.fetcher.HttpFetcher
 import it.skrape.fetcher.response
@@ -7,145 +9,189 @@ import it.skrape.selects.html5.a
 import it.skrape.selects.html5.body
 import patterns.Spaceship
 import patterns.gliderdb.GliderDB
-import rules.hrot.HROT
 import rules.hrot.HROTGenerations
-import rules.nontotalistic.rules.INT
 import simulation.DenseGrid
-import simulation.SparseGrid
-import simulation.Coordinate
+import com.github.ajalt.mordant.rendering.TextColors.*
+import com.github.ajalt.mordant.rendering.TextStyles.*
+import rules.hrot.HROT
 import search.cfind.CFind
-import search.cfind.ShipSymmetry
 import search.cfind.SearchStrategy
-import kotlin.random.Random
+import search.cfind.ShipSymmetry
+import simulation.Coordinate
+import simulation.SparseGrid
+import java.io.File
 
 actual fun main() {
-//     val gliderdb = GliderDB<HROTGenerations>(
-//         skrape(HttpFetcher) {
-//             request {
-//                 url = "https://raw.githubusercontent.com/jedlimlx/gliderdb-reader/main/public/R1-C3-NM-gliders.db.txt"
-//             }
-//             response {
-//                 htmlDocument { body { findFirst { text } } }
-//             }
-//         }
-//     )
-// //    println(gliderdb.searchByRule(HROTGenerations("/2/3")).map {
-// //        "x = 0, y = 0, rule = ${it.ruleRange!!.minRule}\n${it.canonPhase}"
-// //    }.joinToString("\n\n"))
+    val t = Terminal(interactive = true, ansiLevel = AnsiLevel.TRUECOLOR)
 
-//     val rules = skrape(HttpFetcher) {
-//         request { url = "https://catagolue.hatsya.com/rules/generations" }
-//         response { htmlDocument { a { findAll { eachHref } } } }
-//     }.filter { Regex("/census/g3b[0-8]+s[0-8]+").matches(it) }.map { it.split("/").last() }
-//     for (rulestring in rules) {
-//         val rule = HROTGenerations(rulestring)
-//         val symmetries = skrape(HttpFetcher) {
-//             request { url = "https://catagolue.hatsya.com/census/$rulestring" }
-//             response { htmlDocument { a { findAll { eachHref } } } }
-//         }.filter { "/census/$rulestring" in it }.map { it.split("/").last() }
-
-//         for (symmetry in symmetries) {
-//             val list: List<String> = skrape(HttpFetcher) {
-//                 request { url = "https://catagolue.hatsya.com/census/$rulestring/$symmetry" }
-//                 response { htmlDocument { a { findAll { eachHref } } } }
-//             }.filter { Regex("/census/$rulestring/$symmetry/xq[0-9]+").containsMatchIn(it) }
-
-//             val ships = list.map {
-//                 "https://catagolue.hatsya.com/textcensus/$rulestring/$symmetry/" + it.split("/").last()
-//             }.map {
-//                 skrape(HttpFetcher) {
-//                     request { url = it }
-//                     response { htmlDocument { body { findFirst { text } } } }
-//                 }.split(" ")
-//             }.map {
-//                 it.subList(1, it.size).map {
-//                     it.split(",").first().replace("\"", "")
-//                 }.filter { it[0] == 'x' }
-//             }.map {
-//                 it.map { DenseGrid(rule=rule, pattern=it).identify() as Spaceship }
-//             }.flatten()
-
-//             println("Checking $rulestring...")
-//             println("-".repeat(30))
-
-//             val smallerDB = gliderdb.searchByRule(rule)
-//             smallerDB.forEach { println("$it, ${it.ruleRange}") }
-//             println()
-
-//             for (ship in ships) {
-//                 val output = smallerDB.checkRedundant(ship)
-//                 if (output.isEmpty()) {
-//                     println("Added $ship, ${ship.ruleRange}")
-//                     gliderdb.add(ship)
-//                     smallerDB.add(ship)
-//                 }
-//             }
-
-//             println()
-//         }
-//     }
-
-    // val rule = HROT("R2,C2,S6-9,14-20,B7-8,15-24,NM")
-    // val rulestring = "r2bffc0c0s0fe1e0"
-    // val symmetry = "cfind_stdin"
-
-    // val list: List<String> = skrape(HttpFetcher) {
-    //     request {
-    //         url = "https://catagolue.hatsya.com/census/$rulestring/$symmetry"
-    //     }
-    //     response {
-    //         htmlDocument {
-    //             a {
-    //                 findAll {
-    //                     eachHref
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
-
-    // val output = list.filter { Regex("/census/$rulestring/$symmetry/(.*?)").containsMatchIn(it) }.map {
-    //     "https://catagolue.hatsya.com/textcensus/$rulestring/$symmetry/" + it.split("/").last()
-    // }.map {
-    //     skrape(HttpFetcher) {
-    //         request { url = it }
-    //         response { htmlDocument { body { findFirst { text } } } }
-    //     }.split(" ")
-    // }.map {
-    //     it.subList(1, it.size).map { it.split(",").first().replace("\"", "") }.filter { it[0] == 'x' }
-    // }.map {
-    //     it.map {
-    //         DenseGrid(rule=rule, pattern=it).identify() as Spaceship
-    //     }
-    // }.flatten().filter { it.dx != 0 || it.dy != 0 }
-
-    // val transitions: MutableList<List<Int>> = arrayListOf()
-    // val weights = arrayOf(3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2)
-    // for (i in 0..<(1 shl 12)) {
-    //     val string = i.toString(2).padStart(12, '0')
-    //     val cells = string.map { it.digitToInt() }
-
-    //     val sum = cells.mapIndexed { index, it -> weights[index] * it }.sum()
-    //     if (sum in 9 .. 11 || sum == 4)
-    //         transitions.add(cells)
-    // }
-
-    // println(R2VonNeumannINT(transitions).transitionString)
-
-    // B2-ei3cjkr4cektyz5-cnr6-ik78/S01e2-ae3cnqry4cqrtwyz5-ain6ekn7e
-    // B2ac3anr4-ijkz5cjkry6-cn7c8/S12i3aejy4nqtw5ceny6-kn7c
-    // HROT("R2,C2,S6-11,B4,9-11,NW0020003330230320333000200")
-//   val search = CFind(
-//       HROT("R2,C2,S7-10,B7-8,NW1111111111111111111111111"), 2, 1, 8, ShipSymmetry.ASYMMETRIC,
-//       verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS, numThreads = 8,
-//       //direction = Coordinate(1, 1), lookaheadDepth = 3
-//   )
-    // R2,C2,S6-9,B7-8,NM
-    val search = CFind(
-        HROT("R2,C2,S6-9,B7-8,NM"),
-        2, 1, 9, ShipSymmetry.EVEN,
-        verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS, numShips = 1
+    val gliderdb = GliderDB<HROTGenerations>(
+        skrape(HttpFetcher) {
+            request {
+                url = "https://raw.githubusercontent.com/jedlimlx/HROT-Glider-DB/master/R1-C3-NM-gliders.db.txt"
+            }
+            response {
+                htmlDocument { body { findFirst { text } } }
+            }
+        }
     )
 
-    search.search()
+//    val rules = listOf("r2b7t8s7t10")
+//    skrape(HttpFetcher) {
+//        request { url = "https://catagolue.hatsya.com/rules/ltl" }
+//        response { htmlDocument { a { findAll { eachHref } } } }
+//    }.filter { Regex("/census/r2b\\d+t\\d+s\\d+t\\d+").matches(it) }.map { it.split("/").last() }
+//    for (rulestring in rules) {
+//        if (rulestring == "r2b4t4s10t17") // && ship.period == 119)
+//            continue
+//
+//        val rule = HROT(rulestring)
+//        val symmetries = skrape(HttpFetcher) {
+//            request { url = "https://catagolue.hatsya.com/census/$rulestring" }
+//            response { htmlDocument { a { findAll { eachHref } } } }
+//        }.filter { "/census/$rulestring" in it }.map { it.split("/").last() }.filter {
+//            "r2" !in it
+//        }
+//
+//        t.println(bold(red("Checking $rulestring...")))
+//        t.println(bold(red("-".repeat(30))))
+//
+//        val smallerDB = gliderdb.searchByRule(rule).searchByArea(1000000)
+//        val originalShips = smallerDB.lst.toSet()
+//        smallerDB.forEach { println("$it, ${it.ruleRange}") }
+//        println()
+//
+//        for (symmetry in symmetries) {
+//            val list: List<String> = skrape(HttpFetcher) {
+//                request { url = "https://catagolue.hatsya.com/census/$rulestring/$symmetry" }
+//                response { htmlDocument { a { findAll { eachHref } } } }
+//            }.filter { Regex("/census/$rulestring/$symmetry/xq[0-9]+").containsMatchIn(it) }
+//
+//            val ships = list.map {
+//                "https://catagolue.hatsya.com/textcensus/$rulestring/$symmetry/" + it.split("/").last()
+//            }.map {
+//                skrape(HttpFetcher) {
+//                    request { url = it }
+//                    response { htmlDocument { body { findFirst { text } } } }
+//                }.split(" ")
+//            }.map {
+//                it.subList(1, it.size).map {
+//                    it.split(",").first().replace("\"", "")
+//                }.filter { it[0] == 'x' }
+//            }.map {
+//                it.map {
+//                    val temp = SparseGrid(rule=rule, pattern=it)
+//                    if (temp.bounds.area < 15000) temp.identify() as Spaceship
+//                    else null
+//                }.filter { it != null }.map { it!! }
+//            }.flatten()
+//
+//            val newShips = HashSet<Spaceship>()
+//            val removedShips = HashSet<Spaceship>()
+//            for (ship in ships) {
+//                val output = smallerDB.checkRedundant(ship)
+//
+//                if (output.isEmpty()) {
+//                    gliderdb.add(ship)
+//                    smallerDB.add(ship)
+//                    newShips.add(ship)
+//                    println("added $ship, ${ship.ruleRange}, ${ship.canonPhase.toRLE(maxLineLength = Int.MAX_VALUE)}")
+//                } else {
+//                    var added = false
+//                    output.map { (redundant, it) ->
+//                        if (redundant in newShips)
+//                            println("removed $redundant, $it, " +
+//                                    "${redundant.canonPhase.toRLE(maxLineLength = Int.MAX_VALUE)}, " +
+//                                    "${it.canonPhase.toRLE(maxLineLength = Int.MAX_VALUE)}")
+//
+//                        smallerDB.lst.remove(redundant)
+//                        gliderdb.lst.remove(redundant)
+//                        removedShips.remove(redundant)
+//                        newShips.remove(redundant)
+//
+//                        if (added) return@map
+//                        if (it == ship) {
+//                            gliderdb.add(ship)
+//                            smallerDB.add(ship)
+//                            newShips.add(ship)
+//                            println("added $ship, ${ship.canonPhase.toRLE(maxLineLength = Int.MAX_VALUE)}")
+//
+//                            added = true
+//                        }
+//                    }
+//                }
+//            }
+//
+//            // Printing out ships that were removed and added
+//            for (ship in newShips) {
+//                println(bold("Added $ship, ${ship.ruleRange} " +
+//                        "from https://catagolue.hatsya.com/census/$rulestring/$symmetry"))
+//                println("x = 0, y = 0, rule = $rule\n${ship.canonPhase}\n")
+//            }
+//
+//            for (ship in removedShips) {
+//                if (ship in originalShips) {
+//                    println(bold("Removed $ship, ${ship.ruleRange}"))
+//                    println("x = 0, y = 0, rule = $rule\n${ship.canonPhase}\n")
+//                }
+//            }
+//        }
+//    }
+//
+//    File("new-gliders.txt").writeText(gliderdb.toString())
+
+    val speeds = arrayListOf(Pair(2, 3))
+    val symmetries = listOf(ShipSymmetry.ODD, ShipSymmetry.EVEN, ShipSymmetry.ASYMMETRIC)//, ShipSymmetry.GLIDE)
+
+    for (rule in HROTGenerations("1/2/3")..HROTGenerations("1345678/2345678/3")) {
+        t.println(red(bold("Searching for ships in $rule")))
+        t.println(red(bold("------------------------------------")))
+
+        for (speed in speeds) {
+            if (gliderdb.searchByRule(rule as HROTGenerations).searchBySpeed(speed.first, 0, speed.second).isNotEmpty())
+                continue
+
+            var shipFound = false
+            var impossible = true
+            for (width in 12 .. 18) {
+                if (shipFound) break
+                for (symmetry in symmetries) {
+                    val search = CFind(
+                        rule, speed.second, speed.first, width, symmetry,
+                        verbosity = -1, lookaheadDepth = 3, numShips = 1,
+                        transpositionTableSize = 1 shl 30,
+                        searchStrategy = SearchStrategy.HYBRID_BFS,
+                        //direction = Coordinate(1, 1)
+                    )
+                    search.search()
+
+                    if (search.searchResults.isNotEmpty()) {
+                        println()
+                        println(bold("Ship found, works in ${green("${(search.searchResults[0] as Spaceship).ruleRange}")}!"))
+                        println(blue("x = 0, y = 0, rule = $rule"))
+                        println(blue((search.searchResults[0] as Spaceship).canonPhase.toString()))
+
+                        gliderdb.add(search.searchResults[0] as Spaceship)
+
+                        File("new-gliders-2.txt").writeText(gliderdb.toString())
+
+                        shipFound = true
+                        break
+                    } else {
+                        println(
+                            bold(
+                                "No ${green("${speed.first}c/${speed.second}")} ship found for " +
+                                "${green("$symmetry")} symmetry at width ${green("$width")}, " +
+                                "max depth ${green("${search.maxDepth}")}."
+                            )
+                        )
+
+                        if (search.maxDepth >= 2 * search.period + 1) impossible = false
+                    }
+                }
+
+                println()
+                if (impossible) break
+            }
+        }
+    }
 }

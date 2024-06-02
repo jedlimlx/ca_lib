@@ -1,8 +1,8 @@
 package search.cfind
 
 import com.github.ajalt.mordant.rendering.TextStyles
-import java.io.File
 import java.util.concurrent.Semaphore
+import kotlin.math.max
 import kotlin.random.Random
 import kotlin.time.TimeSource
 
@@ -77,6 +77,7 @@ actual fun multithreadedDfs(cfind: CFind): Int {
                             if (cfind.tail!!.id == internalRow.id) cfind.tail = internalRow.prev
 
                             internalRow.pop()
+                            cfind.maxDepth = max(internalRow.depth, cfind.maxDepth)
 
                             cfind.queueSize--
                             prunedCount++
@@ -217,9 +218,15 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
                         if (cfind.priorityQueue.isEmpty()) {
                             emptyQueue = true
                             row = Row(null, intArrayOf(0), cfind)
-                        } else row = cfind.priorityQueue.poll()
+                        } else {
+                            row = cfind.priorityQueue.poll()
+                            cfind.maxDepth = max(row.depth, cfind.maxDepth)
+                        }
                         anyProcessing.release()
-                    } else synchronized(mutex) { row = cfind.priorityQueue.poll() }
+                    } else synchronized(mutex) {
+                        row = cfind.priorityQueue.poll()
+                        cfind.maxDepth = max(row.depth, cfind.maxDepth)
+                    }
                 }
 
                 if (emptyQueue) break

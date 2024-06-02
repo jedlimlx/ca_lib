@@ -472,9 +472,9 @@ abstract class Grid : MutableIterable<Pair<Coordinate, Int>> {
      * Converts the entire grid to an RLE
      * @return Returns the RLE
      */
-    open fun toRLE(): String {
+    open fun toRLE(maxLineLength: Int = 70): String {
         updateBounds()
-        return toRLE(bounds)
+        return toRLE(bounds, maxLineLength = maxLineLength)
     }
 
     /**
@@ -482,7 +482,7 @@ abstract class Grid : MutableIterable<Pair<Coordinate, Int>> {
      * @param range The range of coordinates to convert to RLE
      * @return Returns the RLE
      */
-    open fun toRLE(range: CoordinateRange): String {
+    open fun toRLE(range: CoordinateRange, maxLineLength: Int = 70): String {
         val (startCoordinate, endCoordinate) = range
 
         // First, add characters to a string
@@ -532,7 +532,19 @@ abstract class Grid : MutableIterable<Pair<Coordinate, Int>> {
         rleString = rleString.replace(Regex("[0-9.$]*$"), "")
 
         if (rule.numStates == 2) rleString = rleString.replace(".", "b").replace("A", "o")
-        return "$rleString!"
+
+        // Adding new lines
+        return StringBuilder().apply {
+            var delay = 0
+            val string = rleString
+            for (i in string.indices) {
+                append(string[i])
+                if ((i - delay).mod(maxLineLength) == 0 && i != 0) {
+                    if (string[i].isDigit()) delay++
+                    else append("\n")
+                }
+            }
+        }.toString() + "!"
     }
 
     /**

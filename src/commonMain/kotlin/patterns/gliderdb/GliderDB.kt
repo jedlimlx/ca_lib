@@ -121,7 +121,28 @@ class GliderDB<R>(lst: List<Spaceship>): PatternCollection<Spaceship>() where R 
     )
 
     /**
-     * Checks if a given [spaceship] is redundant or makes another redundant and
+     * Searches for ships with population less than the given [population]
+     */
+    fun searchByPopulation(population: Int) = GliderDB<R>(
+        this.filter { it.smallestPhase.population < population }
+    )
+
+    /**
+     * Searches for ships whose area is less than the given [area]
+     */
+    fun searchByArea(area: Int) = GliderDB<R>(
+        this.filter { it.canonPhase.bounds.area < area }
+    )
+
+    /**
+     * Searches for ships with a smaller width and height than the given [width] and [height]
+     */
+    fun searchByBoundingBox(width: Int, height: Int) = GliderDB<R>(
+        this.filter { it.canonPhase.bounds.width < width && it.canonPhase.bounds.width < height }
+    )
+
+    /**
+     * Checks if a given [spaceship] is redundant or makes another ship redundant and
      * outputs the other spaceship.
      */
     fun checkRedundant(spaceship: Spaceship): List<Pair<Spaceship, Spaceship>> {
@@ -132,20 +153,27 @@ class GliderDB<R>(lst: List<Spaceship>): PatternCollection<Spaceship>() where R 
                 if (lst[i].ruleRange!! == spaceship.ruleRange!!) {
                     if (lst[i].canonPhase.bounds.area > spaceship.canonPhase.bounds.area)
                         output.add(Pair(lst[i], spaceship))
+                    else if (lst[i].canonPhase.bounds.area < spaceship.canonPhase.bounds.area)
+                        output.add(Pair(spaceship, lst[i]))
+                    else if (lst[i].canonPhase.population > spaceship.canonPhase.population)
+                        output.add(Pair(lst[i], spaceship))
                     else
                         output.add(Pair(spaceship, lst[i]))
                 } else {
                     // Check if either rule range contains the other
                     val intersection =
                         lst[i].ruleRange!! as RuleRange<R> intersect spaceship.ruleRange!! as RuleRange<R>
+//                    println("${lst[i].ruleRange} ${spaceship.ruleRange} $intersection " +
+//                            "${lst[i].canonPhase.bounds.area} ${spaceship.canonPhase.bounds.area}" +
+//                            "${spaceship.canonPhase.toRLE(maxLineLength = Int.MAX_VALUE)}")
                     if (intersection == lst[i].ruleRange) {
-                        // The ship is only redundant if it covers both a smaller rule range and has a smaller bounding box
-                        if (lst[i].canonPhase.bounds.area < spaceship.canonPhase.bounds.area)
-                            output.add(Pair(lst[i], spaceship))
-                    } else if (intersection == spaceship.ruleRange) {
-                        // The ship is only redundant if it covers both a smaller rule range and has a smaller bounding box
+                        // The ship is only redundant if it covers both a smaller rule range and has a larger bounding box
                         if (lst[i].canonPhase.bounds.area > spaceship.canonPhase.bounds.area)
                             output.add(Pair(lst[i], spaceship))
+                    } else if (intersection == spaceship.ruleRange) {
+                        // The ship is only redundant if it covers both a smaller rule range and has a larger bounding box
+                        if (lst[i].canonPhase.bounds.area < spaceship.canonPhase.bounds.area)
+                            output.add(Pair(spaceship, lst[i]))
                     }
                 }
             }

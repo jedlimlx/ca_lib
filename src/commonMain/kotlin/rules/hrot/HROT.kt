@@ -36,9 +36,11 @@ class HROT : BaseHROT, RuleRangeable<HROT> {
 
     override val regex: List<Regex> = listOf(
         Regex("R[0-9]+,C[02],S${transitionRegex},B${transitionRegex}${neighbourhoodRegex}"),
+        Regex("[Rr][0-9+][Bb][0-9a-fA-f]+[Ss][0-9a-fA-f]+z?"),
+        Regex("[Rr][0-9+][Bb][0-9]+t[0-9]+[Ss][0-9]+t[0-9]+?"),
         Regex("([BSbs][0-8]*/?[BSbs][0-8]*|[BSbs]?[0-8]*/[BSbs]?[0-8]*)"),
         Regex("([BSbs][0-4]*/?[BSbs][0-4]*?|[BSbs]?[0-4]*/[BSbs]?[0-4]*)V"),
-        Regex("([BSbs][0-6]*/?[BSbs][0-6]*|[BSbs]?[0-6]*/[BSbs]?[0-6]*)H")
+        Regex("([BSbs][0-6]*/?[BSbs][0-6]*|[BSbs]?[0-6]*/[BSbs]?[0-6]*)H"),
     )
 
     /**
@@ -92,6 +94,46 @@ class HROT : BaseHROT, RuleRangeable<HROT> {
                 birth = readTransition(birthString)
                 survival = readTransition(survivalString)
             }
+            rulestring.matches(regex[1]) -> {
+                val range = Regex("^[Rr]([0-9]+)").find(rulestring)!!.groupValues[1].toInt()
+                neighbourhood = arrayOf(moore(range))
+                weights = null
+
+                // Loading birth and survival conditions
+                var birthBinary = Regex("[Bb]([0-9a-fA-f]+)").find(rulestring)!!.groupValues[1].toInt(16)
+                var survivalBinary = Regex("[Ss]([0-9a-fA-f]+)").find(rulestring)!!.groupValues[1].toInt(16)
+
+                birth = hashSetOf()
+                survival = hashSetOf()
+                if ("z" in rulestring) survival.add(0)
+
+                var count = 1
+                while (birthBinary > 0 || survivalBinary > 0) {
+                    if (birthBinary and 0b1 == 1) birth.add(count)
+                    if (survivalBinary and 0b1 == 1) survival.add(count)
+
+                    birthBinary /= 2
+                    survivalBinary /= 2
+                    count++
+                }
+            }
+            rulestring.matches(regex[2]) -> {
+                val range = Regex("^[Rr]([0-9]+)").find(rulestring)!!.groupValues[1].toInt()
+                neighbourhood = arrayOf(moore(range))
+                weights = null
+
+                // Loading birth and survival conditions
+                var temp = Regex("[Bb](\\d+)t(\\d+)").find(rulestring)!!
+                val minBirth = temp.groupValues[1].toInt()
+                val maxBirth = temp.groupValues[2].toInt()
+
+                temp = Regex("[Ss](\\d+)t(\\d+)").find(rulestring)!!
+                val minSurvival = temp.groupValues[1].toInt() - 1
+                val maxSurvival = temp.groupValues[2].toInt() - 1
+
+                birth = (minBirth .. maxBirth).toHashSet()
+                survival = (minSurvival .. maxSurvival).toHashSet()
+            }
             else -> {
                 if ("b" in rulestring.lowercase()) {
                     val birthToken = Regex("[Bb]([0-8]*)").findAll(rulestring).map { it.groupValues[1] }.toList()
@@ -110,9 +152,9 @@ class HROT : BaseHROT, RuleRangeable<HROT> {
 
                 // Load neighbourhood
                 neighbourhood = when {
-                    rulestring.matches(regex[1]) -> arrayOf(moore(1))
-                    rulestring.matches(regex[2]) -> arrayOf(vonNeumann(1))
-                    rulestring.matches(regex[3]) -> arrayOf(hexagonal(1))
+                    rulestring.matches(regex[3]) -> arrayOf(moore(1))
+                    rulestring.matches(regex[4]) -> arrayOf(vonNeumann(1))
+                    rulestring.matches(regex[5]) -> arrayOf(hexagonal(1))
                     else -> throw IllegalArgumentException("Rulestring is not valid!")
                 }
 
@@ -328,4 +370,19 @@ class HROT : BaseHROT, RuleRangeable<HROT> {
 
     private fun newRuleWithTransitions(birth: Iterable<Int>, survival: Iterable<Int>): HROT =
         HROT(birth, survival, neighbourhood[0], weights)
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || this::class != other::class) return false
+
+        other as HROT
+
+        if (birth != other.birth) return false
+        if (survival != other.survival) return false
+        if (numStates != other.numStates) return false
+        if (!neighbourhood[0].contentEquals(other.neighbourhood[0])) return false
+        if (!weights.contentEquals(other.weights)) return false
+
+        return true
+    }
 }

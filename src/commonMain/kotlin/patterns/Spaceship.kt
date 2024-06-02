@@ -19,17 +19,17 @@ fun fromGliderDBEntry(entry: String): Spaceship {
     val dy = tokens[6].toInt()
 
     val grid = SparseGrid(tokens.last(), rule=fromRulestring(tokens[2]))
-    val phases = Array(period+1) { grid.step(1).deepCopy() }
+    val phases = Array(period+3) { grid.step(1).deepCopy() }
 
     val spaceship = Spaceship(dx, dy, period, phases)
 
     // TODO fix this
-    // require((spaceship.ruleRange!!.first as RuleFamily).rulestring == tokens[2]) {
-    //     "Incorrect minimum rule! Got ${tokens[2]} instead of ${(spaceship.ruleRange!!.first as RuleFamily).rulestring} for ${tokens.last()}"
-    // }
-    // require((spaceship.ruleRange!!.second as RuleFamily).rulestring == tokens[3]) {
-    //     "Incorrect maximum rule! Got ${tokens[3]} instead of ${(spaceship.ruleRange!!.second as RuleFamily).rulestring} for ${tokens.last()}"
-    // }
+//    if (spaceship.ruleRange!!.minRule.rulestring != tokens[2]) {
+//        println("Incorrect minimum rule! Got ${tokens[2]} instead of ${spaceship.ruleRange!!.minRule.rulestring} for ${tokens.last()}")
+//    }
+//    if (spaceship.ruleRange!!.maxRule.rulestring != tokens[3]) {
+//        println("Incorrect maximum rule! Got ${tokens[3]} instead of ${spaceship.ruleRange!!.maxRule.rulestring} for ${tokens.last()}")
+//    }
 
     spaceship.name = tokens[0]
     spaceship.discoverer = tokens[1]
@@ -141,6 +141,7 @@ open class Spaceship(val dx: Int, val dy: Int, val period: Int, val phases: Arra
      */
     open val canonPhase by lazy {
         val output = smallestPhase.deepCopy()
+        output.updateBounds()
 
         // Orienting the spaceship to go in the north-west direction
         var dx = dx
@@ -176,7 +177,7 @@ open class Spaceship(val dx: Int, val dy: Int, val period: Int, val phases: Arra
     open val gliderdbEntry by lazy {
         canonPhase.updateBounds()
         val size = canonPhase.bounds.endInclusive - canonPhase.bounds.start
-        "$name:$discoverer:${ruleRange!!.minRule}:${ruleRange!!.maxRule}:$period:${size.x}:${size.y}:${minOf(abs(dx),abs(dy))}:${maxOf(abs(dx),abs(dy))}:$canonPhase"
+        "$name:$discoverer:${ruleRange!!.minRule}:${ruleRange!!.maxRule}:$period:${minOf(abs(dx),abs(dy))}:${maxOf(abs(dx),abs(dy))}:${size.x}:${size.y}:${canonPhase.toRLE(Int.MAX_VALUE)}"
     }
 
     override val information: Map<String, String> by lazy {
@@ -215,7 +216,15 @@ open class Spaceship(val dx: Int, val dy: Int, val period: Int, val phases: Arra
      */
     override fun equals(other: Any?): Boolean {
         if (other !is Spaceship) return false
-        return phases.contentEquals(other.phases) && period == other.period && dx == other.dx && dy == other.dy
+        return if (ruleRange != null) {
+            ruleRange == other.ruleRange &&
+                    phases.map { it == other.phases[0] }.count() == 1 &&
+                    period == other.period && dx == other.dx && dy == other.dy
+        } else {
+            rule == other.rule &&
+                    phases.map { it == other.phases[0] }.count() == 1 &&
+                    period == other.period && dx == other.dx && dy == other.dy
+        }
     }
 
     /**

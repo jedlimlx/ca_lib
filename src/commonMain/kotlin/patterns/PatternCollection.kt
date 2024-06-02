@@ -1,8 +1,5 @@
 package patterns
 
-import rules.Rule
-import rules.RuleRange
-
 /**
  * Represents a collection of patterns
  */

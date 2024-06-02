@@ -18,6 +18,7 @@ import rules.RuleFamily
 import search.SearchProgram
 import simulation.Coordinate
 import simulation.Grid
+import kotlin.math.max
 import kotlin.math.pow
 import kotlin.random.Random
 import kotlin.time.TimeSource
@@ -761,6 +762,10 @@ class CFind(
     // Check if any saved state was loaded into the search
     var loadedState = false
 
+    // Statistics which an external caller may want to use
+    var maxDepth = -1
+    var timeTaken = -1.0
+
     override fun search() {
         // Clear the lookup table outputs
         if (verbosity >= 0 && !stdin) {
@@ -878,8 +883,6 @@ class CFind(
         var clearPartial = false
         var clearLines = 0
 
-        val numSuccessors = HashMap<Int, Int>()
-
         // Some common functions
         fun processSuccessors(successors: List<Row>): List<Row> = if (currentRow.successorSequence != null) {
             // This optimisation is possible because of the nature of depth-first search
@@ -928,10 +931,11 @@ class CFind(
                 // BFS round runs until the queue size exceeds the maximum queue size
                 clearPartial = false
                 while (queueSize < maxQueueSize) {
+                    timeTaken = (timeSource.markNow() - startTime).inWholeMilliseconds / 1000.0
                     if (queueSize == 0) {
                         println(
                             bold(
-                                "\nSearch terminated in ${green("${(timeSource.markNow() - startTime).inWholeMilliseconds / 1000.0}s")}. " +
+                                "\nSearch terminated in ${green("${timeTaken}s")}. " +
                                         "${green("$shipsFound")} ship${if (shipsFound == 1) "" else "s"} found."
                             )
                         )
@@ -950,6 +954,7 @@ class CFind(
 
                     // Removes the row from the linked list
                     currentRow.pop()
+                    maxDepth = max(currentRow.depth, maxDepth)
                     queueSize--
 
                     // Check if the ship is completed
@@ -1106,7 +1111,7 @@ class CFind(
                     stack.add(row)
 
                     // Decide what depth we should reach
-                    val maxDepth = row.prunedDepth + minDeepeningIncrement
+                    val maxDepth2 = row.prunedDepth + minDeepeningIncrement
 
                     do {
                         // Check if stack is empty
@@ -1117,19 +1122,20 @@ class CFind(
 
                         // Get the current row that is going to be analysed
                         currentRow = stack.removeLast()
-                        if (currentRow.depth == maxDepth) {
+                        maxDepth = max(currentRow.depth, maxDepth2)
+                        if (currentRow.depth == maxDepth2) {
                             pruning *= 0.99
 
                             // Compute the predecessors
                             val predecessors = currentRow.getAllPredecessors(
-                                maxDepth - row.depth, deepCopy = false
+                                maxDepth2 - row.depth, deepCopy = false
                             ).reversed()
 
                             // Decide how many rows to add to the priority queue
                             var rowsAdded = 0
                             var finalDepth = -1
                             val maxRowsAdded = (maxQueueSize / ((priorityQueue.size + 0.0001) * (1.0 - pruning))).toInt()
-                            for (depth in row.depth + 1..maxDepth) {
+                            for (depth in row.depth + 1..maxDepth2) {
                                 val lst = stack.filter { it.depth == depth }
                                 rowsAdded += lst.size
 
@@ -1139,8 +1145,8 @@ class CFind(
                                 } else break
                             }
 
-                            if (finalDepth == -1) finalDepth = maxDepth
-                            val temp = currentRow.getPredecessor(maxDepth - finalDepth)!!
+                            if (finalDepth == -1) finalDepth = maxDepth2
+                            val temp = currentRow.getPredecessor(maxDepth2 - finalDepth)!!
 
                             // Adding the successor sequence to the row
                             if (currentRow.depth > temp.depth)
@@ -1179,7 +1185,7 @@ class CFind(
                             printPartials(
                                 bold(
                                     "\nPriority Queue Size: ${priorityQueue.size} / $maxQueueSize" +
-                                            "\nStack Size: ${stack.size}, Depth: ${currentRow.depth} / $maxDepth"
+                                            "\nStack Size: ${stack.size}, Depth: ${currentRow.depth} / $maxDepth2"
                                 ), numLines = 4
                             )
                         }
@@ -1196,9 +1202,10 @@ class CFind(
             }
         }
 
+        timeTaken = (timeSource.markNow() - startTime).inWholeMilliseconds / 1000.0
         println(
             bold(
-                "\nSearch terminated in ${green("${(timeSource.markNow() - startTime).inWholeMilliseconds / 1000.0}s")}. " +
+                "\nSearch terminated in ${green("${timeTaken}s")}. " +
                         "${green("$shipsFound")} ship${if (shipsFound == 1) "" else "s"} found."
             )
         )
@@ -2139,21 +2146,8 @@ class CFind(
         print: Boolean = true,
         write: Boolean = true
     ): Int {
-        var newLines = 1
-        val rle = StringBuilder().apply {
-            var delay = 0
-            val string = grid.toRLE()
-            for (i in string.indices) {
-                append(string[i])
-                if ((i - delay).mod(70) == 0 && i != 0) {
-                    if (string[i].isDigit()) delay++
-                    else {
-                        if (!stdin) append("\n")
-                        newLines++
-                    }
-                }
-            }
-        }.toString()
+        val rle = grid.toRLE()
+        val newLines = rle.split("\n").size
 
         if (rle == "!" && stdin) return 0
         if (verbosity <= this.verbosity && print) {

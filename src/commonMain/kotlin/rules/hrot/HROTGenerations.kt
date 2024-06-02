@@ -416,7 +416,7 @@ class HROTGenerations : BaseHROT, RuleRangeable<HROTGenerations> {
         if (birth != other.birth) return false
         if (survival != other.survival) return false
         if (numStates != other.numStates) return false
-        if (!neighbourhood.contentEquals(other.neighbourhood)) return false
+        if (!neighbourhood[0].contentEquals(other.neighbourhood[0])) return false
         if (!weights.contentEquals(other.weights)) return false
         if (!stateWeights.contentEquals(other.stateWeights)) return false
 
