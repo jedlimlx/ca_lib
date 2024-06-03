@@ -218,12 +218,12 @@ open class Spaceship(val dx: Int, val dy: Int, val period: Int, val phases: Arra
         if (other !is Spaceship) return false
         return if (ruleRange != null) {
             ruleRange == other.ruleRange &&
-                    phases.map { it == other.phases[0] }.count() == 1 &&
-                    period == other.period && dx == other.dx && dy == other.dy
+            canonPhase == other.canonPhase &&
+            period == other.period && dx == other.dx && dy == other.dy
         } else {
             rule == other.rule &&
-                    phases.map { it == other.phases[0] }.count() == 1 &&
-                    period == other.period && dx == other.dx && dy == other.dy
+            canonPhase == other.canonPhase &&
+            period == other.period && dx == other.dx && dy == other.dy
         }
     }
 
@@ -235,7 +235,7 @@ open class Spaceship(val dx: Int, val dy: Int, val period: Int, val phases: Arra
         result = 31 * result + dy
         result = 31 * result + period
         result = 31 * result + phases.contentHashCode()
-        result = 31 * result + rule.hashCode()
+        result = 31 * result + ruleRange.hashCode()
         return result
     }
 
