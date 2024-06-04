@@ -22,18 +22,18 @@ import simulation.SparseGrid
 import java.io.File
 
 actual fun main() {
-    val t = Terminal(interactive = true, ansiLevel = AnsiLevel.TRUECOLOR)
+    // val t = Terminal(interactive = true, ansiLevel = AnsiLevel.TRUECOLOR)
 
-    val gliderdb = GliderDB<HROTGenerations>(
-        skrape(HttpFetcher) {
-            request {
-                url = "https://raw.githubusercontent.com/jedlimlx/HROT-Glider-DB/master/R1-C3-NM-gliders.db.txt"
-            }
-            response {
-                htmlDocument { body { findFirst { text } } }
-            }
-        }
-    )
+    // val gliderdb = GliderDB<HROTGenerations>(
+    //     skrape(HttpFetcher) {
+    //         request {
+    //             url = "https://raw.githubusercontent.com/jedlimlx/HROT-Glider-DB/master/R1-C3-NM-gliders.db.txt"
+    //         }
+    //         response {
+    //             htmlDocument { body { findFirst { text } } }
+    //         }
+    //     }
+    // )
 
     // val rules = skrape(HttpFetcher) {
     //     request { url = "https://catagolue.hatsya.com/rules/ltl" }
@@ -144,59 +144,67 @@ actual fun main() {
 
     // File("new-gliders.txt").writeText(gliderdb.toString())
 
-    val speeds = arrayListOf(Pair(3, 4))
-    val symmetries = listOf(ShipSymmetry.ODD, ShipSymmetry.EVEN) //, ShipSymmetry.ASYMMETRIC)//, ShipSymmetry.GLIDE)
+    // val speeds = arrayListOf(Pair(3, 4))
+    // val symmetries = listOf(ShipSymmetry.ODD, ShipSymmetry.EVEN) //, ShipSymmetry.ASYMMETRIC)//, ShipSymmetry.GLIDE)
 
-    for (rule in HROTGenerations("13/2/3")..HROTGenerations("1345678/2345678/3")) {
-        t.println(red(bold("Searching for ships in $rule")))
-        t.println(red(bold("------------------------------------")))
+    // for (rule in HROTGenerations("13/2/3")..HROTGenerations("1345678/2345678/3")) {
+    //     t.println(red(bold("Searching for ships in $rule")))
+    //     t.println(red(bold("------------------------------------")))
 
-        for (speed in speeds) {
-            if (gliderdb.searchByRule(rule as HROTGenerations).searchBySpeed(speed.first, 0, speed.second).isNotEmpty())
-                continue
+    //     for (speed in speeds) {
+    //         if (gliderdb.searchByRule(rule as HROTGenerations).searchBySpeed(speed.first, 0, speed.second).isNotEmpty())
+    //             continue
 
-            var shipFound = false
-            var impossible = true
-            for (width in 13 .. 19) {
-                if (shipFound) break
-                for (symmetry in symmetries) {
-                    val search = CFind(
-                        rule, speed.second, speed.first, width, symmetry,
-                        verbosity = -1, lookaheadDepth = 3, numShips = 1,
-                        transpositionTableSize = 1 shl 30,
-                        searchStrategy = SearchStrategy.HYBRID_BFS,
-                        //direction = Coordinate(1, 1)
-                    )
-                    search.search()
+    //         var shipFound = false
+    //         var impossible = true
+    //         for (width in 13 .. 19) {
+    //             if (shipFound) break
+    //             for (symmetry in symmetries) {
+    //                 val search = CFind(
+    //                     rule, speed.second, speed.first, width, symmetry,
+    //                     verbosity = -1, lookaheadDepth = 3, numShips = 1,
+    //                     transpositionTableSize = 1 shl 30,
+    //                     searchStrategy = SearchStrategy.HYBRID_BFS,
+    //                     //direction = Coordinate(1, 1)
+    //                 )
+    //                 search.search()
 
-                    if (search.searchResults.isNotEmpty()) {
-                        println()
-                        println(bold("Ship found, works in ${green("${(search.searchResults[0] as Spaceship).ruleRange}")}!"))
-                        println(blue("x = 0, y = 0, rule = $rule"))
-                        println(blue((search.searchResults[0] as Spaceship).canonPhase.toString()))
+    //                 if (search.searchResults.isNotEmpty()) {
+    //                     println()
+    //                     println(bold("Ship found, works in ${green("${(search.searchResults[0] as Spaceship).ruleRange}")}!"))
+    //                     println(blue("x = 0, y = 0, rule = $rule"))
+    //                     println(blue((search.searchResults[0] as Spaceship).canonPhase.toString()))
 
-                        gliderdb.add(search.searchResults[0] as Spaceship)
+    //                     gliderdb.add(search.searchResults[0] as Spaceship)
 
-                        File("new-gliders-2.txt").writeText(gliderdb.toString())
+    //                     File("new-gliders-2.txt").writeText(gliderdb.toString())
 
-                        shipFound = true
-                        break
-                    } else {
-                        println(
-                            bold(
-                                "No ${green("${speed.first}c/${speed.second}")} ship found for " +
-                                "${green("$symmetry")} symmetry at width ${green("$width")}, " +
-                                "max depth ${green("${search.maxDepth}")}."
-                            )
-                        )
+    //                     shipFound = true
+    //                     break
+    //                 } else {
+    //                     println(
+    //                         bold(
+    //                             "No ${green("${speed.first}c/${speed.second}")} ship found for " +
+    //                             "${green("$symmetry")} symmetry at width ${green("$width")}, " +
+    //                             "max depth ${green("${search.maxDepth}")}."
+    //                         )
+    //                     )
 
-                        if (search.maxDepth >= 2 * search.period + 1) impossible = false
-                    }
-                }
+    //                     if (search.maxDepth >= 2 * search.period + 1) impossible = false
+    //                 }
+    //             }
 
-                println()
-                if (impossible) break
-            }
-        }
-    }
+    //             println()
+    //             if (impossible) break
+    //         }
+    //     }
+    // }
+
+    val search = CFind(
+        HROT("B34/S34"), 3, 1, 6, ShipSymmetry.ODD,
+        verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS,
+        direction = Coordinate(1, 1), lookaheadDepth = 3,
+        transpositionTableSize = 1 shl 31
+    )
+    search.search()
 }

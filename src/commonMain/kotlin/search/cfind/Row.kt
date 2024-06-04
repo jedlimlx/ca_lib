@@ -57,7 +57,8 @@ class Row(
     val phase: Int
         get() { return depth.mod(search.period) }
 
-    val offset: Int = search.offsets[depth.mod(search.offsets.size)]
+    val offset: Int
+        get() { return search.offsets[depth.mod(search.offsets.size)] }
 
     // information about the row in relation to its siblings in the tree
     var successorSequence: IntArray? = null

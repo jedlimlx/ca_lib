@@ -93,7 +93,7 @@ class CFind(
     }.toTypedArray()
 
     // TODO fix this optimisation for cases where spacing != 1 and numStates > 2
-    val smallNeighbourhoodOptimisation = rule.numStates == 2 && spacing == 1 && _neighbourhood[0].size <= 25
+    val smallNeighbourhoodOptimisation = spacing == 1 && rule.numStates == 2 && _neighbourhood[0].size <= 25
     val neighbourhood = run {
         if (smallNeighbourhoodOptimisation) _neighbourhood
         else originalNeighbourhood
@@ -700,17 +700,18 @@ class CFind(
 
         println("Generating approximate lookahead table...")
 
-        if ((rule.numStates + 1.0).pow(originalNeighbourhood[0].size + 1) < Int.MAX_VALUE) {
+        if ((rule.numStates + 1.0).pow(neighbourhood[0].size + 1) < Int.MAX_VALUE) {
             IntArray(
-                pow(rule.numStates + 1, originalNeighbourhood[0].size + 1)
+                pow(rule.numStates + 1, neighbourhood[0].size + 1)
             ) {
                 val lst = IntArray(originalNeighbourhood[0].size) { 0 }
 
                 // Populating the list
                 var power = 1
-                for (i in originalNeighbourhood[0].indices) {
+                for (i in neighbourhood[0].indices) {
                     val digit = getDigit(it, power, rule.numStates + 1)
-                    lst[i] = if (digit == rule.numStates) -1 else digit
+                    if (ordering[i] != -1)
+                        lst[ordering[i]] = if (digit == rule.numStates) -1 else digit
                     power *= (rule.numStates + 1)
                 }
 
@@ -1600,7 +1601,7 @@ class CFind(
 
         // Encodes the key used to query the inner lookup table
         fun encodeKey(coordinate: Coordinate, node: Node? = null): Int {
-            if (rule.numStates > 2 || spacing != 1 || node == null) {
+            if (rule.numStates > 2 || node == null) {
                 var key = 0
                 var power = 1
                 for (it in reversedBaseCoordinate) {
@@ -1633,24 +1634,24 @@ class CFind(
                         }
                         ShipSymmetry.EVEN -> {
                             start2 = 0
-                            end2 = -start - 1
+                            end2 = -start / spacing - 1
                         }
                         ShipSymmetry.ODD -> {
                             start2 = 1
-                            end2 = -start
+                            end2 = -start / spacing
                         }
                         ShipSymmetry.GUTTER -> {
                             start2 = 0
-                            end2 = -start - 2
+                            end2 = -start / spacing - 2
                         }
                     }
 
-                    val power = if (symmetry == ShipSymmetry.GUTTER) -start + 1 else -start
+                    val power = if (symmetry == ShipSymmetry.GUTTER) -start / spacing + 1 else -start / spacing
 
                     val mask = ((1 shl ((end2 - start2) / spacing + 1)) - 1) shl maxOf(start2 / spacing, 0)
                     output = (output shl power) + reverseDigits(
                         (node.cells and mask) shr maxOf(start2 / spacing, 0),
-                        length=-start
+                        length=-start / spacing
                     )
                 }
 
@@ -1709,14 +1710,43 @@ class CFind(
                         var power2 = 1
 
                         var state: Int
-                        originalNeighbourhood[0].forEachIndexed { index, it ->
-                            state = row[it + coordinate, 0, null, depth]
-                            key += (if (state == -1) rule.numStates else state) * power
-                            power *= (rule.numStates + 1)
+                        if (smallNeighbourhoodOptimisation) {
+                            val translatedIndex = (coordinate + lastBaseCoordinate).x
 
-                            if (storeNeighbourhood && !inBaseCoordinates[index]) {
-                                key2 += (if (state == -1) 0 else state) * power2
-                                power2 *= rule.numStates
+                            key = power * (rule.numStates + 1) - 1
+                            power = pow(rule.numStates + 1, baseCoordinates.size)
+                            for (i in neighbourhoodByRows.indices) {
+                                var temp = row[
+                                    i, neighbourhoodByRows[i].second.first + translatedIndex,
+                                    neighbourhoodByRows[i].second.second + translatedIndex
+                                ]
+                                
+                                if (temp >= 0) {
+                                    var count = 0
+                                    for (j in neighbourhoodByRows[i].second.first .. neighbourhoodByRows[i].second.second) {
+                                        key += (temp and 1) * power
+                                        temp = temp shr 1
+                                        power *= (rule.numStates + 1)
+                                    }
+                                } else {
+                                    for (j in neighbourhoodByRows[i].second.first .. neighbourhoodByRows[i].second.second) {
+                                        key += if (j + translatedIndex >= 0 && j + translatedIndex < width) 
+                                            rule.numStates * power
+                                        else 0
+                                        power *= (rule.numStates + 1)
+                                    }
+                                }
+                            }
+                        } else {
+                            neighbourhood[0].forEachIndexed { index, it ->
+                                state = row[it + coordinate, 0, null, depth]
+                                key += (if (state == -1) rule.numStates else state) * power
+                                power *= (rule.numStates + 1)
+    
+                                if (storeNeighbourhood && !inBaseCoordinates[index]) {
+                                    key2 += (if (state == -1) 0 else state) * power2
+                                    power2 *= rule.numStates
+                                }
                             }
                         }
 
@@ -2110,9 +2140,10 @@ class CFind(
     private inline operator fun Array<out Row?>.get(
         index: Int, startIndex: Int, endIndex: Int
     ): Int {
+        if (this[index] == null) return -1
+
         var output = this[index]!![startIndex, endIndex]
         if (endIndex >= width * spacing) {
-            //println("$startIndex $endIndex ${2 * width * spacing - endIndex - 1} ${width * spacing - 1} ${width - startIndex / spacing}")
             output += when (symmetry) {
                 ShipSymmetry.ASYMMETRIC -> 0
                 ShipSymmetry.GLIDE -> 0
