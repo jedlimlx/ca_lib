@@ -206,8 +206,8 @@ actual fun main() {
 //    }
 
     val search = CFind(
-        HROT("R2,C2,S6-11,B9-11,NW0010003330130310333000100"), 3, 1, 6, ShipSymmetry.GUTTER,
-        verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS,
+        HROT("B246/S256"), 4, 3, 21, ShipSymmetry.EVEN,
+        verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS, numShips = 1, lookaheadDepth = 2,
         //direction = Coordinate(1, 1), lookaheadDepth = 3,
         transpositionTableSize = 1 shl 31
     )

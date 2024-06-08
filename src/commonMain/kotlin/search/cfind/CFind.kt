@@ -99,6 +99,7 @@ class CFind(
         else originalNeighbourhood
     }
     val ordering = neighbourhood[0].map { coordinate -> originalNeighbourhood[0].indexOf(coordinate) }
+    val reverseOrdering = originalNeighbourhood[0].map { coordinate -> neighbourhood[0].indexOf(coordinate) }
 
     // Computing the backOff array to be used when gcd(k, period) > 1
     val backOff = IntArray(period) { -1 }.apply {
@@ -373,8 +374,6 @@ class CFind(
         val lst = listOf(indices[phase]) + tempIndices[phase]
         var count = 0
         lst.subList(0, this.lookaheadDepth[phase] + 1).map {
-            if (smallNeighbourhoodOptimisation) return@map -1
-
             val target = it[0] - indices[0][0]
             val known = setOf(0) + tempIndices[phase].slice(0..<count++).map {
                 it[0] - indices[phase][0]
@@ -1709,8 +1708,8 @@ class CFind(
                         if (spacing == 1 && smallNeighbourhoodOptimisation) {
                             val translatedIndex = (coordinate + lastBaseCoordinate).x
 
-                            key = power * (rule.numStates + 1) - 1
                             power = pow(rule.numStates + 1, baseCoordinates.size)
+                            key = power * (rule.numStates + 1) - 1
                             for (i in neighbourhoodByRows.indices) {
                                 var temp = row[
                                     i, neighbourhoodByRows[i].second.first + translatedIndex,
@@ -1718,7 +1717,6 @@ class CFind(
                                 ]
                                 
                                 if (temp >= 0) {
-                                    var count = 0
                                     for (j in neighbourhoodByRows[i].second.first .. neighbourhoodByRows[i].second.second) {
                                         key += (temp and 1) * power
                                         temp = temp shr 1
@@ -1726,9 +1724,7 @@ class CFind(
                                     }
                                 } else {
                                     for (j in neighbourhoodByRows[i].second.first .. neighbourhoodByRows[i].second.second) {
-                                        key += if (j + translatedIndex >= 0 && j + translatedIndex < width) 
-                                            rule.numStates * power
-                                        else 0
+                                        key += if (j + translatedIndex in 0..<width) rule.numStates * power else 0
                                         power *= (rule.numStates + 1)
                                     }
                                 }
@@ -1755,9 +1751,42 @@ class CFind(
 
                         possibleSuccessorMemo[it] = approximateLookaheadTable[key]
                     } else {
-                        val neighbours = IntArray(originalNeighbourhood[0].size) {
+                        val neighbours = if (spacing == 1 && smallNeighbourhoodOptimisation) {
+                            val translatedIndex = (coordinate + lastBaseCoordinate).x
+
+                            var index = baseCoordinates.size
+                            val tempArray = IntArray(originalNeighbourhood[0].size) {
+                                if (reverseOrdering[it] < baseCoordinates.size) -1 else 0
+                            }
+                            for (i in neighbourhoodByRows.indices) {
+                                var temp = row[
+                                    i, neighbourhoodByRows[i].second.first + translatedIndex,
+                                    neighbourhoodByRows[i].second.second + translatedIndex
+                                ]
+                                if (temp >= 0) {
+                                    for (j in neighbourhoodByRows[i].second.first .. neighbourhoodByRows[i].second.second) {
+                                        if (ordering[index] >= 0)
+                                            tempArray[ordering[index]] = temp and 1
+
+                                        index++
+                                        temp = temp shr 1
+                                    }
+                                } else {
+                                    for (j in neighbourhoodByRows[i].second.first .. neighbourhoodByRows[i].second.second) {
+                                        if (ordering[index] >= 0)
+                                            tempArray[ordering[index]] = if (j + translatedIndex in 0..<width) -1
+                                            else 0
+
+                                        index++
+                                    }
+                                }
+                            }
+
+                            tempArray
+                        } else IntArray(originalNeighbourhood[0].size) {
                             row[originalNeighbourhood[0][it] + coordinate, 0, null, depth]
                         }
+
                         val cellState = row[coordinate, 0, null, depth]
 
                         possibleSuccessorMemo[it] = rule.transitionFuncWithUnknowns(

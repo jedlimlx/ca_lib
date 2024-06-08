@@ -13,7 +13,7 @@ internal inline fun reverseDigits(x: Int, base: Int = 2, length: Int = -1): Int 
     } else {
         while (x != 0) {
             temp = temp * base + x.mod(base)
-            x = x / base
+            x /= base
         }
     }
 
