@@ -98,7 +98,7 @@ class Row(
             val startIndex = maxOf(_startIndex, 0) / search.spacing
             val endIndex = minOf(maxOf(_endIndex, 0), search.width * search.spacing - 1) / search.spacing
             val mask = ((1 shl (endIndex - startIndex + 1)) - 1) shl startIndex
-            if (_startIndex < 0) (hash and mask) shl -(_startIndex / search.spacing)
+            if (_startIndex < 0) (hash and mask) shl ((-_startIndex + search.spacing - 1) / search.spacing)
             else (hash and mask) shr startIndex
         }
     }

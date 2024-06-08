@@ -93,7 +93,7 @@ class CFind(
     }.toTypedArray()
 
     // TODO fix this optimisation for cases where spacing != 1 and numStates > 2
-    val smallNeighbourhoodOptimisation = spacing == 1 && rule.numStates == 2 && _neighbourhood[0].size <= 25
+    val smallNeighbourhoodOptimisation = rule.numStates == 2 && _neighbourhood[0].size <= 25
     val neighbourhood = run {
         if (smallNeighbourhoodOptimisation) _neighbourhood
         else originalNeighbourhood
@@ -373,7 +373,7 @@ class CFind(
         val lst = listOf(indices[phase]) + tempIndices[phase]
         var count = 0
         lst.subList(0, this.lookaheadDepth[phase] + 1).map {
-            //if (smallNeighbourhoodOptimisation) return@map -1
+            if (smallNeighbourhoodOptimisation) return@map -1
 
             val target = it[0] - indices[0][0]
             val known = setOf(0) + tempIndices[phase].slice(0..<count++).map {
@@ -612,12 +612,12 @@ class CFind(
         val coordinate = memorisedBCs[it]
         println("Generating boundary condition lookup table for $coordinate...")
 
-        val newNeighbourhood = neighbourhood[0].map { it - coordinate }
+        val newNeighbourhood = originalNeighbourhood[0].map { it - coordinate }
         val bcNeighbourhood = newNeighbourhood.filter {
             it.y != 0 && if (coordinate.x < baseCoordinates.last().x) it.x <= 0 else it.x >= 0
         }
         val inverseBcNeighbourhood = newNeighbourhood.filter {
-            it.y == 0 && (if (coordinate.x < baseCoordinates.last().x) it.x <= 0 else it.x >= 0)
+            it.y == 0 && if (coordinate.x < baseCoordinates.last().x) it.x <= 0 else it.x >= 0
         }
 
         this.bcNeighbourhood.add(bcNeighbourhood)
@@ -642,8 +642,7 @@ class CFind(
             var power = 1
             for (i in lst.indices) {
                 if (i !in removedCoordinateIndexes) {
-                    if (ordering[i] >= 0)
-                        lst[ordering[i]] = getDigit(it, power, rule.numStates)
+                    lst[i] = getDigit(it, power, rule.numStates)
                     power *= rule.numStates
                 }
             }
@@ -666,8 +665,7 @@ class CFind(
             val output = BooleanArray(pow(numEquivalentStates, removedCoordinateIndexes2.size)) {
                 var power = 1
                 for (i in removedCoordinateIndexes2) {
-                    if (ordering[i] >= 0)
-                        lst[ordering[i]] = getDigit(it, power, numEquivalentStates)
+                    lst[i] = getDigit(it, power, numEquivalentStates)
                     power *= numEquivalentStates
                 }
 
@@ -1577,11 +1575,10 @@ class CFind(
 
                 key += rows[coordinate, 1, row, depth] * power
             } else {
-                var power = 0
+                var power = 1
                 bcNeighbourhood[memorisedBCsMap[bcCoordinate]!!].forEachIndexed { index, it ->
-                    power = maxOf(power, pow(rule.numStates, index))
-                    key += rows[it + bcCoordinate + coordinate, 0, row, depth, currentRow] *
-                            pow(rule.numStates, index)
+                    key += rows[it + bcCoordinate + coordinate, 0, row, depth, currentRow] * power
+                    power *= rule.numStates
                 }
 
                 // Adding current cell state & next cell state if needed
@@ -1646,8 +1643,7 @@ class CFind(
                         }
                     }
 
-                    val power = if (symmetry == ShipSymmetry.GUTTER) -start / spacing + 1 else -start / spacing
-
+                    val power = -start / spacing
                     val mask = ((1 shl ((end2 - start2) / spacing + 1)) - 1) shl maxOf(start2 / spacing, 0)
                     output = (output shl power) + reverseDigits(
                         (node.cells and mask) shr maxOf(start2 / spacing, 0),
@@ -1710,7 +1706,7 @@ class CFind(
                         var power2 = 1
 
                         var state: Int
-                        if (smallNeighbourhoodOptimisation) {
+                        if (spacing == 1 && smallNeighbourhoodOptimisation) {
                             val translatedIndex = (coordinate + lastBaseCoordinate).x
 
                             key = power * (rule.numStates + 1) - 1
@@ -2144,21 +2140,24 @@ class CFind(
 
         var output = this[index]!![startIndex, endIndex]
         if (endIndex >= width * spacing) {
+//            println("$startIndex $endIndex ${2 * width * spacing - endIndex} ${width * spacing - 1} " +
+//                    "${endIndex / spacing - width + 1} ${width - startIndex / spacing}")
             output += when (symmetry) {
                 ShipSymmetry.ASYMMETRIC -> 0
                 ShipSymmetry.GLIDE -> 0
                 ShipSymmetry.EVEN -> reverseDigits(
-                    this[index]!![2 * width * spacing - endIndex - 1, width * spacing - 1],
+                    this[index]!![2 * width - endIndex - 1, width - 1],
                     length = endIndex / spacing - width + 1
                 ) shl (width - startIndex / spacing)
                 ShipSymmetry.ODD -> reverseDigits(
-                    this[index]!![2 * width * spacing - endIndex - 2, width * spacing - 2],
+                    this[index]!![2 * width * spacing - endIndex - 2, width * spacing - 2 - endIndex % spacing],
                     length = endIndex / spacing - width + 1
                 ) shl (width - startIndex / spacing)
-                ShipSymmetry.GUTTER -> reverseDigits(
+                ShipSymmetry.GUTTER -> if (endIndex == width * spacing) 0
+                else reverseDigits(  // (8 9) (10 11) (12* 13) (14 15)
                     this[index]!![2 * width * spacing - endIndex, width * spacing - 1],
-                    length = endIndex / spacing - width
-                ) shl (width - startIndex / spacing + 1)
+                    length = endIndex / spacing - width + 1
+                ) shl (width - startIndex / spacing)
             }
         }
 
