@@ -1709,7 +1709,7 @@ class CFind(
                             val translatedIndex = (coordinate + lastBaseCoordinate).x
 
                             power = pow(rule.numStates + 1, baseCoordinates.size)
-                            key = power * (rule.numStates + 1) - 1
+                            key = power - 1
                             for (i in neighbourhoodByRows.indices) {
                                 var temp = row[
                                     i, neighbourhoodByRows[i].second.first + translatedIndex,
@@ -1724,7 +1724,7 @@ class CFind(
                                     }
                                 } else {
                                     for (j in neighbourhoodByRows[i].second.first .. neighbourhoodByRows[i].second.second) {
-                                        key += if (j + translatedIndex in 0..<width) rule.numStates * power else 0
+                                        key += if (j + translatedIndex >= 0) rule.numStates * power else 0
                                         power *= (rule.numStates + 1)
                                     }
                                 }
@@ -1744,10 +1744,6 @@ class CFind(
 
                         val cellState = row[coordinate, 0, null, depth]
                         key += cellState * power
-                        key2 += cellState * power2
-
-                        if (storeNeighbourhood)
-                            _lookaheadMemo2!![it + additionalDepthArray[depth.mod(spacing)]] = key2
 
                         possibleSuccessorMemo[it] = approximateLookaheadTable[key]
                     } else {
@@ -1774,7 +1770,7 @@ class CFind(
                                 } else {
                                     for (j in neighbourhoodByRows[i].second.first .. neighbourhoodByRows[i].second.second) {
                                         if (ordering[index] >= 0)
-                                            tempArray[ordering[index]] = if (j + translatedIndex in 0..<width) -1
+                                            tempArray[ordering[index]] = if (j + translatedIndex >= 0) -1
                                             else 0
 
                                         index++
@@ -2025,8 +2021,12 @@ class CFind(
                         // Add the row to completed rows if lookahead succeeds,
                         // if not set the minimum depth where the lookahead failed
                         if (lookaheadOutput.isEmpty()) depthToCheck = temp
-                        else completedRows.add(row)
+                        else {
+                            row.successorNum = completedRows.size
+                            completedRows.add(row)
+                        }
                     } else {
+                        row.successorNum = completedRows.size
                         completedRows.add(row)
                         if (this.lookaheadDepth[originalPhase] != 0) return Pair(completedRows, maxDepth)
                     }
@@ -2063,7 +2063,6 @@ class CFind(
         }
 
         // Add each row's successor num
-        completedRows.forEachIndexed { index, it -> it.successorNum = index }
         return Pair(completedRows, maxDepth)
     }
 
@@ -2183,7 +2182,7 @@ class CFind(
                     length = endIndex / spacing - width + 1
                 ) shl (width - startIndex / spacing)
                 ShipSymmetry.GUTTER -> if (endIndex == width * spacing) 0
-                else reverseDigits(  // (8 9) (10 11) (12* 13) (14 15)
+                else reverseDigits(
                     this[index]!![2 * width * spacing - endIndex, width * spacing - 1],
                     length = endIndex / spacing - width + 1
                 ) shl (width - startIndex / spacing)
