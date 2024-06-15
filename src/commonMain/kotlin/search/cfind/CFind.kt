@@ -1644,10 +1644,12 @@ class CFind(
 
                     val power = -start / spacing
                     val mask = ((1 shl ((end2 - start2) / spacing + 1)) - 1) shl maxOf(start2 / spacing, 0)
-                    output = (output shl power) + reverseDigits(
-                        (node.cells and mask) shr maxOf(start2 / spacing, 0),
-                        length=-start / spacing
-                    )
+                    if (symmetry != ShipSymmetry.ASYMMETRIC && symmetry != ShipSymmetry.GLIDE) {
+                        output = (output shl power) + reverseDigits(
+                            (node.cells and mask) shr maxOf(start2 / spacing, 0),
+                            length=-start / spacing
+                        )
+                    } else output = output shl power
                 }
 
                 return output
