@@ -1,10 +1,41 @@
 package rules.ruleloader.ruletree
 
-import moore
-import rules.ruleloader.ColourDirective
+import Utils
+import neighbourhoodFromString
 import rules.ruleloader.RuleDirective
-import rules.ruleloader.ruletable.convertWithIndex
 import simulation.Coordinate
+
+private val TWO_NEIGHBOURS = arrayOf(
+    Coordinate(-1, 0),
+    Coordinate(1, 0)
+)
+
+private val FOUR_NEIGHBOURS = arrayOf(
+    Coordinate(0, -1),
+    Coordinate(-1, 0),
+    Coordinate(1, 0),
+    Coordinate(0, 1)
+)
+
+private val SIX_NEIGHBOURS = arrayOf(
+    Coordinate(0, -1),
+    Coordinate(1, 0),
+    Coordinate(1, 1),
+    Coordinate(0, 1),
+    Coordinate(-1, 0),
+    Coordinate(-1, -1)
+)
+
+private val EIGHT_NEIGHBOURS = arrayOf(
+    Coordinate(-1, -1),
+    Coordinate(1, -1),
+    Coordinate(-1, 1),
+    Coordinate(1, 1),
+    Coordinate(0, -1),
+    Coordinate(-1, 0),
+    Coordinate(1, 0),
+    Coordinate(0, 1)
+)
 
 /**
  * Constructs a @TREE directive given the [contents] found in a ruletable under that directive
@@ -12,22 +43,27 @@ import simulation.Coordinate
 fun ruletreeDirectiveFromString(contents: String): RuletreeDirective {
     var numStates = 2
     var nodes = Array(0) { intArrayOf() }
-    val neighbourhood = arrayOf(
-        Coordinate(-1, -1),
-        Coordinate(1, -1),
-        Coordinate(-1, 1),
-        Coordinate(1, 1),
-        Coordinate(0, -1),
-        Coordinate(-1, 0),
-        Coordinate(1, 0),
-        Coordinate(0, 1)
-    )
 
     var count = 0
-    contents.split("\n").forEach {
+    var neighbourhood: Array<Coordinate> = EIGHT_NEIGHBOURS
+    Regex("(\r\n|\r|\n)").split(contents).forEach {
         when {
             it.startsWith("num_states") -> numStates = it.split("=").last().toInt()
-            //it.startsWith("num_neighbours") || it.startsWith("num_neighbors") -> neighbourhood = it.split("=").last()
+            it.startsWith("num_neighbours") || it.startsWith("num_neighbors") -> {
+                val temp = it.split("=").last()
+                neighbourhood = if (temp.toIntOrNull() != null) {
+                    when (temp.toInt()) {
+                        2 -> TWO_NEIGHBOURS
+                        4 -> FOUR_NEIGHBOURS
+                        6 -> SIX_NEIGHBOURS
+                        8 -> EIGHT_NEIGHBOURS
+                        else -> throw IllegalArgumentException("Invalid number of neighbours, only 2, 4, 6, 8 allowed!")
+                    }
+                } else {
+                    val tempNeighbourhood = neighbourhoodFromString(temp)
+                    tempNeighbourhood.copyOfRange(0, tempNeighbourhood.size-2)
+                }
+            }
             it.startsWith("num_nodes") -> nodes = Array(it.split("=").last().toInt()) { intArrayOf() }
             it.isNotEmpty() && it[0].isDigit() -> nodes[count++] = it.split(" ").map { it.toInt() }.toIntArray()
         }

@@ -15,6 +15,7 @@ import com.github.ajalt.mordant.rendering.TextColors.*
 import com.github.ajalt.mordant.rendering.TextStyles.*
 import rules.hrot.HROT
 import rules.nontotalistic.rules.INT
+import rules.ruleloader.ruletableFromFile
 import search.cfind.CFind
 import search.cfind.SearchStrategy
 import search.cfind.ShipSymmetry
@@ -206,9 +207,9 @@ actual fun main() {
 //    }
 
     val search = CFind(
-        HROT("R2,C2,S6-9,B7-8,NM"), 2, 1, 8,
-        ShipSymmetry.ASYMMETRIC, verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS,
-        transpositionTableSize = 1 shl 31
+        HROT("R2,C2,S24-36,B20-31,NG"), 2, 1, 9, ShipSymmetry.ODD,
+        verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS,
+        transpositionTableSize = 1 shl 31, lookaheadDepth = 1, //direction = Coordinate(1, 1)
     )
     search.search()
 }

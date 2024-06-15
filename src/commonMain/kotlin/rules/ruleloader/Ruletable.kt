@@ -5,7 +5,6 @@ import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.readString
 import rules.Rule
-import rules.RuleFamily
 import rules.ruleloader.ruletree.ruletreeDirectiveFromString
 import simulation.Coordinate
 
@@ -23,7 +22,7 @@ fun ruletableFromFile(filePath: String): Ruletable {
     var name = ""
     var currentDirective = ""
     val stringBuilder = StringBuilder()
-    contents.split("\n").forEach {
+    Regex("(\r\n|\r|\n)").split(contents).forEach {
         if (it.startsWith("@")) {
             // Adding new directive
             val content = stringBuilder.toString()

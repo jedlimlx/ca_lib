@@ -282,3 +282,10 @@ fun prettyPrintNeighbourhood(neighbourhood: Array<Coordinate>): String = StringB
         append("\n")
     }
 }.toString()
+
+/**
+ * Loads the neighbourhood from the string.
+ */
+fun neighbourhoodFromString(string: String): Array<Coordinate> = Regex("\\((-?\\d+),\\s+(-?\\d+)\\)").findAll(string).map {
+    Coordinate(it.groupValues[1].toInt(), it.groupValues[2].toInt())
+}.toList().toTypedArray()
