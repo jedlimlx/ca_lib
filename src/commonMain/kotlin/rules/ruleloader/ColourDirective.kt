@@ -7,8 +7,9 @@ import Colour
  */
 fun colourDirectiveFromString(contents: String): ColourDirective {
     return ColourDirective(
-        colours = contents.split("\n").map {
-            val tokens = it.split(" ")
+        colours = Regex("(\r\n|\n|\r)").split(contents).map {
+            it.split(" ")
+        }.filter { it.size == 4 }.map { tokens ->
             Colour(tokens[1].toInt(), tokens[2].toInt(), tokens[3].toInt())
         }.toTypedArray()
     )

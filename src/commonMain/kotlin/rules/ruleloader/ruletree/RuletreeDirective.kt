@@ -65,7 +65,9 @@ fun ruletreeDirectiveFromString(contents: String): RuletreeDirective {
                 }
             }
             it.startsWith("num_nodes") -> nodes = Array(it.split("=").last().toInt()) { intArrayOf() }
-            it.isNotEmpty() && it[0].isDigit() -> nodes[count++] = it.split(" ").map { it.toInt() }.toIntArray()
+            it.isNotEmpty() && it[0].isDigit() -> nodes[count++] = it.split(" ").map {
+                it.toIntOrNull()
+            }.filterNotNull().map { it }.toIntArray()
         }
     }
 

@@ -60,6 +60,9 @@ class Row(
     val offset: Int
         get() { return search.offsets[depth.mod(search.offsets.size)] }
 
+    val background: Int
+        get() { return search.background[depth.mod(search.background.size)] }
+
     // information about the row in relation to its siblings in the tree
     var successorSequence: IntArray? = null
     var successorNum: Int = -1
@@ -92,14 +95,28 @@ class Row(
             val startIndex = maxOf(_startIndex, 0)
             val endIndex = minOf(maxOf(_endIndex, 0), search.width - 1)
             val mask = ((1 shl (endIndex - startIndex + 1)) - 1) shl startIndex
-            if (_startIndex < 0) (hash and mask) shl -_startIndex
-            else (hash and mask) shr _startIndex
+
+            if (background == 1) {
+                val output = (1 shl (_endIndex - _startIndex + 1)) - 1
+                if (_startIndex < 0) output - ((hash.inv() and mask) shl -_startIndex)
+                else output - ((hash.inv() and mask) shr _startIndex)
+            } else {
+                if (_startIndex < 0) ((hash and mask) shl -_startIndex)
+                else (hash and mask) shr _startIndex
+            }
         } else {
             val startIndex = maxOf(_startIndex, 0) / search.spacing
             val endIndex = minOf(maxOf(_endIndex, 0), search.width * search.spacing - 1) / search.spacing
             val mask = ((1 shl (endIndex - startIndex + 1)) - 1) shl startIndex
-            if (_startIndex < 0) (hash and mask) shl ((-_startIndex + search.spacing - 1) / search.spacing)
-            else (hash and mask) shr startIndex
+
+            if (background == 1) {
+                val output = (1 shl ((_endIndex - _startIndex) / search.spacing + 1)) - 1
+                if (_startIndex < 0) output - ((hash.inv() and mask) shl -_startIndex)
+                else output - ((hash.inv() and mask) shr _startIndex)
+            } else {
+                if (_startIndex < 0) ((hash and mask) shl -_startIndex)
+                else (hash and mask) shr _startIndex
+            }
         }
     }
 
@@ -137,19 +154,20 @@ class Row(
             predecessor = predecessor.predecessor!!
         }
 
-        getAllPredecessors(-1).forEach {
+        getAllPredecessors(-1, deepCopy = false).forEach {
             if (!it.isEmpty()) return 1
         }
 
         return 2
     }
 
-    fun isEmpty(): Boolean = hash == 0
+    fun isEmpty(): Boolean = hash == repeat(background, search.rule.numStates, search.numStatesPower)
 
     fun toGrid(period: Int, symmetry: ShipSymmetry): Grid {
         val grid = SparseGrid()
         var temp: Row?
         var predecessor = this
+        while (predecessor.background != 0) predecessor = predecessor.predecessor!!
 
         var counter = this.offset
         while (true) {
