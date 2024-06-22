@@ -201,7 +201,7 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
     val threads = arrayListOf<Thread>()
     for (i in 0 ..< cfind.numThreads) {
         val thread = Thread {
-            Thread.sleep(i*1000L)
+            Thread.sleep(i * 50L)
 
             // Begin the search
             var row: Row
