@@ -43,7 +43,7 @@ class CFind(
     val partialFrequency: Int = 1000,
     val backupFrequency: Int = 60*15,
     val backupName: String = "dump",
-    transpositionTableSize: Int = 1 shl 25,
+    val transpositionTableSize: Int = Int.MAX_VALUE,
     val maxTimePerRound: Int = 5*60,
     val numThreads: Int = 8,
     val stdin: Boolean = false,
@@ -471,9 +471,13 @@ class CFind(
             while (count in skippedRows) count++
             neighbourhood[0].filter { it.y == baseCoordinates[0].y + count }.maxOf{ it.x } + 1 - baseCoordinates.last().x
         }
-        indices[0].size - 1 -> neighbourhood[0].filter { it.y == 0 }.maxOf{ it.x } + 1 - baseCoordinates.last().x
+        indices[0].size - 1 -> {
+            if (neighbourhood[0].count { it.y == 0 } == 0) 1 - baseCoordinates.last().x
+            else neighbourhood[0].filter { it.y == 0 }.maxOf{ it.x } + 1 - baseCoordinates.last().x
+        }
         else -> -1
     }
+
     val additionalDepthArray = IntArray(spacing) {
         ((rawAdditionalDepth - 1) + (offsets[(it + 1).mod(spacing)] - offsets[it])) / spacing + 1
     }
@@ -489,7 +493,7 @@ class CFind(
         while (count in skippedRows) count++
         mainNeighbourhood.filter { (it, _) -> it.y == -centralHeight + count }
     }
-    val minX = lookaheadNeighbourhood.minOf { (it, _) -> it.x }
+    val minX = if (lookaheadNeighbourhood.isNotEmpty()) lookaheadNeighbourhood.minOf { (it, _) -> it.x } else 0
 
     // Building lookup tables
     val numEquivalentStates: Int = rule.equivalentStates.distinct().size
@@ -1403,14 +1407,15 @@ class CFind(
     fun checkEquivalentState(row: Row): Boolean {
         val rows = row.getAllPredecessors((height - 1) * period)
 
+        val useReverseHash = isotropic && (symmetry == ShipSymmetry.GLIDE || symmetry == ShipSymmetry.ASYMMETRIC)
+
         val hash = rows.map { it.hashCode() }.hashCode()
-        val reverseHash = rows.map { it.reverseHashCode() }.hashCode()
+        val reverseHash = if (useReverseHash) rows.map { it.reverseHashCode() }.hashCode() else 0
         fun addState() {
             val temp = rows.map { it.hash.toUShort() }.toUShortArray()
             equivalentStates[hash] = temp
-            if (isotropic && (symmetry == ShipSymmetry.GLIDE || symmetry == ShipSymmetry.ASYMMETRIC)) {
+            if (useReverseHash)
                 equivalentStates[reverseHash] = rows.map { it.reverseHash.toUShort() }.toUShortArray()
-            }
         }
 
         if (hash in equivalentStates.keys) {
@@ -1427,11 +1432,7 @@ class CFind(
                 addState()
                 return false
             }
-        } else if (
-            isotropic &&
-            (symmetry == ShipSymmetry.GLIDE || symmetry == ShipSymmetry.ASYMMETRIC) &&
-            reverseHash in equivalentStates.keys
-        ) {
+        } else if (useReverseHash && reverseHash in equivalentStates.keys) {
             var equivalent = true
             val state = equivalentStates[reverseHash]!!
             for (i in state.indices) {
