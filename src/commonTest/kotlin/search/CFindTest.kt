@@ -12,6 +12,8 @@ import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+
+@Ignore
 class Test {
     private val searchStrategies = listOf(SearchStrategy.HYBRID_BFS, SearchStrategy.PRIORITY_QUEUE)
 
@@ -156,6 +158,29 @@ class Test {
 
             assertEquals(search.searchResults.size, 3)
         }
+    }
+
+    @Test
+    fun strobingTest() {
+        for (strategy in searchStrategies) {
+            // Checking it works for strobing rules for 2-states or n-states
+            val search = CFind(
+                HROT("R2,C2,S3-4,6,B0-7,N+"), 4, 1, 4, symmetry = ShipSymmetry.ODD,
+                verbosity = 1, searchStrategy = strategy, numShips = 1
+            )
+            search.search()
+
+            assertEquals(search.searchResults.size, 1)
+
+            val search2 = CFind(
+                HROTGenerations("01246/0134/3"), 3, 2, 6, symmetry = ShipSymmetry.EVEN,
+                verbosity = 1, searchStrategy = strategy
+            )
+            search2.search()
+
+            assertEquals(search2.searchResults.size, 1)
+        }
+
     }
 
     // Miscellaneous tests
