@@ -210,8 +210,8 @@ actual fun main() {
     //INTGenerations("023456/0123456/3"), 3, 1, 7, ShipSymmetry.ODD,
 
     val search = CFind(
-        HROT("R2,C0,S3-4,6,B0-7,N+"), 4, 1, 6, ShipSymmetry.ASYMMETRIC,
-        verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS,
+        HROT("R2,C0,S3-4,6,B0-7,N+"), 4, 1, 6, ShipSymmetry.ODD,
+        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE,
         transpositionTableSize = 1 shl 31, direction = Coordinate(1, 1)
     )
     search.search()

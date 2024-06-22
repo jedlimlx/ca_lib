@@ -92,8 +92,9 @@ class CFind(
         return@map lst.toTypedArray()
     }.toTypedArray()
 
-    // TODO fix this optimisation for cases where numStates > 2 and B0 rules
-    val smallNeighbourhoodOptimisation = false && rule.numStates == 2 && _neighbourhood[0].size <= 25
+    // TODO fix this optimisation for cases where numStates > 2 and diagonal ships in B0 rules
+    val smallNeighbourhoodOptimisation = !(rule.background.sum() != 0 && spacing != 1) &&
+            rule.numStates == 2 && _neighbourhood[0].size <= 25
     val neighbourhood = run {
         if (smallNeighbourhoodOptimisation) _neighbourhood
         else originalNeighbourhood
@@ -1609,7 +1610,7 @@ class CFind(
 
         // Encodes the key used to query the inner lookup table
         fun encodeKey(coordinate: Coordinate, node: Node? = null): Int {
-            if (rule.numStates > 2 || node == null || true) {
+            if (rule.numStates > 2 || node == null || rule.background.sum() != 0) {
                 var key = 0
                 var power = 1
                 for (it in reversedBaseCoordinate) {
