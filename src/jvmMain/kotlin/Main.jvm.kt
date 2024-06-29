@@ -25,19 +25,21 @@ import simulation.SparseGrid
 import java.io.File
 
 actual fun main() {
-//     val t = Terminal(interactive = true, ansiLevel = AnsiLevel.TRUECOLOR)
+//    val t = Terminal(interactive = true, ansiLevel = AnsiLevel.TRUECOLOR)
 //
-//     val gliderdb = GliderDB<HROT>(
-//         skrape(HttpFetcher) {
-//             request {
-//                 url = "https://raw.githubusercontent.com/jedlimlx/HROT-Glider-DB/master/R2-C2-NM-gliders.db.txt"
-//             }
-//             response {
-//                 htmlDocument { body { findFirst { text } } }
-//             }
-//         }
-//     )
-////
+//    val gliderdb = GliderDB<HROTGenerations>(
+//        skrape(HttpFetcher) {
+//            request {
+//                url = "https://raw.githubusercontent.com/jedlimlx/HROT-Glider-DB/master/R1-C3-NM-gliders.db.txt"
+//            }
+//            response {
+//                htmlDocument { body { findFirst { text } } }
+//            }
+//        }
+//    )
+//
+//    File("new-gliders.txt").writeText(gliderdb.toString())
+
 //     val rules = skrape(HttpFetcher) {
 //         request { url = "https://catagolue.hatsya.com/rules/ltl" }
 //         response { htmlDocument { a { findAll { eachHref } } } }
@@ -209,22 +211,23 @@ actual fun main() {
 
     //INTGenerations("023456/0123456/3"), 3, 1, 7, ShipSymmetry.ODD,
 
-    val search = CFind(
-        HROT("R2,C2,S3-4,6,B0-7,N+"), 4, 1, 4, symmetry = ShipSymmetry.ODD,
-        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, numShips = 1
-    )
-    search.search()
-
-    val search2 = CFind(
-        HROTGenerations("01246/0134/3"), 3, 2, 6, symmetry = ShipSymmetry.EVEN,
-        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE
-    )
-    search2.search()
-
 //    val search = CFind(
-//        HROT("B02/S2V"), 4, 1, 13, ShipSymmetry.ODD,
-//        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE,
-//        transpositionTableSize = 1 shl 23, direction = Coordinate(1, 1)
+//        HROT("R2,C2,S3-4,6,B0-7,N+"), 4, 1, 4, symmetry = ShipSymmetry.ODD,
+//        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, numShips = 1
 //    )
 //    search.search()
+//
+//    val search2 = CFind(
+//        HROTGenerations("01246/0134/3"), 3, 2, 6, symmetry = ShipSymmetry.EVEN,
+//        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE
+//    )
+//    search2.search()
+
+    val search = CFind(
+        HROT("B02/S2V"), 4, 1, 11, ShipSymmetry.ODD,
+        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE,
+        transpositionTableSize = 1 shl 23, direction = Coordinate(1, 1),
+        backupFrequency = 600
+    )
+    search.search()
 }

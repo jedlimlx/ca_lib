@@ -164,7 +164,7 @@ class Row(
         return 2
     }
 
-    fun isEmpty(): Boolean = hash == repeat(background, search.rule.numStates, search.numStatesPower)
+    fun isEmpty(): Boolean = hash == search.emptyHash[background]
 
     fun toGrid(period: Int, symmetry: ShipSymmetry): Grid {
         val grid = SparseGrid()
@@ -230,8 +230,6 @@ class Row(
 
         other as Row
 
-        if (!cells.contentEquals(other.cells)) return false
-
-        return true
+        return cells.contentEquals(other.cells)
     }
 }

@@ -206,11 +206,14 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
             // Begin the search
             var row: Row
             var currentRow: Row
-            val stack = arrayListOf<Row>()
+
+            var head: Row?
+            var tail: Row?
+            var stackSize = 1
             while (true) {
                 // Check if the queue is empty
                 var emptyQueue = false
-                synchronized(quitMutex) { 
+                synchronized(quitMutex) {
                     if (cfind.priorityQueue.isEmpty()) {
                         quitProcessing = true
                         anyProcessing.acquire()
@@ -236,8 +239,10 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
                     if (++numProcessing == 1) anyProcessing.acquire()
                 }
 
-                stack.clear()
-                stack.add(row)
+                head = row
+                tail = row
+                row.next = null
+                row.prev = null
 
                 // Decide what depth we should reach
                 val maxDepth = row.prunedDepth + cfind.minDeepeningIncrement
@@ -245,13 +250,16 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
 
                 do {
                     // Check if stack is empty
-                    if (stack.isEmpty()) {
+                    if (tail == null) {
                         pruning = 0.99 * pruning + 0.01
                         break
                     }
 
                     // Get the current row that is going to be analysed
-                    currentRow = stack.removeLast()
+                    currentRow = tail
+                    tail = tail.prev
+                    if (tail == null) head = null
+                    stackSize--
 
                     // Check if we should exit this round
                     if (
@@ -270,7 +278,13 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
                         var finalDepth = -1
                         val maxRowsAdded = (cfind.maxQueueSize / (cfind.priorityQueue.size + 0.0001) * (1.0 - pruning)).toInt()
                         for (depth in row.depth + 1..currentRow.depth) {
-                            val lst = stack.filter { it.depth == depth }
+                            var curr = head
+                            val lst = arrayListOf<Row>()
+                            while (curr != null) {
+                                if (curr.depth == depth) lst.add(curr)
+                                curr = curr.next
+                            }
+
                             rowsAdded += lst.size
 
                             if (rowsAdded < 1.5 * maxRowsAdded || depth == row.depth + 1) {
@@ -313,30 +327,40 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
                     val successors = cfind.nextRow(currentRow, rows, lookaheadRows, depth = currentRow.depth + 1).first
 
                     // Adding the new rows to the stack
-                    stack.addAll(processSuccessors(currentRow, successors))
+                    processSuccessors(currentRow, successors).forEach {
+                        if (tail != null) {
+                            tail!!.next = it
+                            it.prev = tail
+                        } else head = it
+
+                        tail = it
+                        stackSize++
+                    }
 
                     // Printing out the partials
-                    synchronized(printingMutex) {
-                        // Insert some randomness in order to increase variety of partials shown to user
-                        if (currentRow.depth > longestPartialSoFar && Random.nextInt(1, 5) == 1) {
-                            longestPartialSoFar = currentRow.depth
-                            printPartials(
-                                currentRow,
-                                TextStyles.bold("\nDepth: ${currentRow.depth}"),
-                                numLines = 4,
-                                forcePrint = true
-                            )
-                            clearPartial = false
-                            clearLines--
-                        } else {
-                            printPartials(
-                                currentRow,
-                                TextStyles.bold(
-                                    "\nPriority Queue Size: ${cfind.priorityQueue.size} / ${cfind.maxQueueSize}" +
-                                            "\nThread $i / ${numProcessing}, " +
-                                            "Stack Size: ${stack.size}, Depth: ${currentRow.depth} / $maxDepth"
-                                ), numLines = 4
-                            )
+                    if (cfind.verbosity >= 0) {
+                        synchronized(printingMutex) {
+                            // Insert some randomness in order to increase variety of partials shown to user
+                            if (currentRow.depth > longestPartialSoFar && Random.nextInt(1, 5) == 1) {
+                                longestPartialSoFar = currentRow.depth
+                                printPartials(
+                                    currentRow,
+                                    TextStyles.bold("\nDepth: ${currentRow.depth}"),
+                                    numLines = 4,
+                                    forcePrint = true
+                                )
+                                clearPartial = false
+                                clearLines--
+                            } else {
+                                printPartials(
+                                    currentRow,
+                                    TextStyles.bold(
+                                        "\nPriority Queue Size: ${cfind.priorityQueue.size} / ${cfind.maxQueueSize}" +
+                                                "\nThread $i / ${numProcessing}, " +
+                                                "Stack Size: ${stackSize}, Depth: ${currentRow.depth} / $maxDepth"
+                                    ), numLines = 4
+                                )
+                            }
                         }
                     }
                 } while (true)

@@ -60,7 +60,6 @@ class CFind(
         if (searchStrategy == SearchStrategy.HYBRID_BFS) _period
         else _period * 10  // shallow tree with deep leafs :)
     } else minDeepeningIncrement
-    val originalMinDeepening = this.minDeepeningIncrement
 
     // Rotate the direction of the neighbour so the ship will go north
     val basisVectors = Pair(Coordinate(direction.y, -direction.x), direction)
@@ -187,6 +186,7 @@ class CFind(
             index++
         }
     }
+    val emptyHash = background.map { repeat(it, rule.numStates, numStatesPower) }
 
     val backgroundMap = IntArray(rule.numStates) { rule.background.indexOf(it) }
 
@@ -1279,7 +1279,7 @@ class CFind(
         append("${queue.size} $width $rule $symmetry $period $k $direction\n")
         while (queue.isNotEmpty()) {
             val row = queue.poll()
-            append("${row.id} ${row.predecessor?.id ?: -1} ${row.hashCode()}")
+            append("${row.id} ${row.predecessor?.id ?: -1} ${row.hash} ${row.background}")
 
             val output = row.successorSequence?.toList()?.joinToString(",")
             append(if (output == null) " " else " $output ")
@@ -1298,21 +1298,21 @@ class CFind(
         queueSize = 0
         for (i in 1 ..< lines.size) {
             val tokens = lines[i].split(" ")
-            if (tokens.size < 3) continue
+            if (tokens.size < 4) continue
 
             // Loading in the normal row
+            val temp = IntArray(width - params[1].toInt()) { tokens[3][0].digitToInt() }
             val row = Row(
                 rows[tokens[1].toLong()],
-                IntArray(width - params[1].toInt()) { 0 } + tokens[2].toInt().toString(rule.numStates).padStart(
+                temp + tokens[2].toInt().toString(rule.numStates).padStart(
                     params[1].toInt(), '0'
                 ).map { it.digitToInt() }.reversed().toIntArray(),
                 this
             )
             rows[tokens[0].toLong()] = row
-
             // We can only load the successor sequence if the width is the same
             val sequence = tokens.last().split(",")
-            if (tokens.size > 3 && sequence[0].toIntOrNull() != null && width == params[1].toInt())
+            if (tokens.size > 4 && sequence[0].toIntOrNull() != null && width == params[1].toInt())
                 row.successorSequence = sequence.map { it.toInt() }.toIntArray()
 
             // Adding stuff to the queue
@@ -1658,12 +1658,12 @@ class CFind(
 
                     val power = -start / spacing
                     val mask = ((1 shl ((end2 - start2) / spacing + 1)) - 1) shl maxOf(start2 / spacing, 0)
-                    if (symmetry != ShipSymmetry.ASYMMETRIC && symmetry != ShipSymmetry.GLIDE) {
-                        output = (output shl power) + reverseDigits(
+                    output = if (symmetry != ShipSymmetry.ASYMMETRIC && symmetry != ShipSymmetry.GLIDE) {
+                        (output shl power) + reverseDigits(
                             (node.cells and mask) shr maxOf(start2 / spacing, 0),
                             length=-start / spacing
                         )
-                    } else output = output shl power
+                    } else output shl power
                 }
 
                 return output
@@ -2138,18 +2138,16 @@ class CFind(
         depth: Int = 0,
         mostRecentRow: Row? = null
     ): Int {
-        val bg = background[(depth + generation * backOff[depth.mod(period)]).mod(background.size)]
-        if (coordinate.x < 0) return bg
+        if (coordinate.x < 0) return background[(depth + generation * backOff[depth.mod(period)]).mod(background.size)]
         if (coordinate.x >= width * spacing) {
             return when (symmetry) {
-                ShipSymmetry.ASYMMETRIC -> bg
-                ShipSymmetry.GLIDE -> bg
                 ShipSymmetry.EVEN -> this[Coordinate(2 * width * spacing - coordinate.x - 1, coordinate.y), generation, node, depth]
                 ShipSymmetry.ODD -> this[Coordinate(2 * width * spacing - coordinate.x - 2, coordinate.y), generation, node, depth]
                 ShipSymmetry.GUTTER -> {
-                    if (coordinate.x == width * spacing) bg
+                    if (coordinate.x == width * spacing) background[(depth + generation * backOff[depth.mod(period)]).mod(background.size)]
                     else this[Coordinate(2 * width * spacing - coordinate.x, coordinate.y), generation, node, depth]
                 }
+                else -> background[(depth + generation * backOff[depth.mod(period)]).mod(background.size)]
             }
         }
 
@@ -2189,8 +2187,6 @@ class CFind(
         var output = this[index]!![startIndex, endIndex]
         if (endIndex >= width * spacing) {
             val temp = when (symmetry) {
-                ShipSymmetry.ASYMMETRIC -> 0
-                ShipSymmetry.GLIDE -> 0
                 ShipSymmetry.EVEN -> reverseDigits(
                     this[index]!![2 * width - endIndex - 1, width - 1],
                     length = endIndex / spacing - width + 1
@@ -2204,6 +2200,7 @@ class CFind(
                     this[index]!![2 * width * spacing - endIndex, width * spacing - 1],
                     length = endIndex / spacing - width + 1
                 ) shl (width - startIndex / spacing)
+                else -> return output
             }
 
             output = temp + (output and ((1 shl (width - startIndex / spacing)) - 1))
