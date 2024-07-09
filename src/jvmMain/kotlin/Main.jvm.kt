@@ -209,25 +209,11 @@ actual fun main() {
 //        }
 //    }
 
-    //INTGenerations("023456/0123456/3"), 3, 1, 7, ShipSymmetry.ODD,
+    // INT("B2-ei3cjkr4cektyz5-cnr6-ik78/S01e2-ae3cnqry4-aeijkn5-ain6ekn7e"),
 
-//    val search = CFind(
-//        HROT("R2,C2,S3-4,6,B0-7,N+"), 4, 1, 4, symmetry = ShipSymmetry.ODD,
-//        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, numShips = 1
-//    )
-//    search.search()
-//
-//    val search2 = CFind(
-//        HROTGenerations("01246/0134/3"), 3, 2, 6, symmetry = ShipSymmetry.EVEN,
-//        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE
-//    )
-//    search2.search()
-
-    val search = CFind(
-        HROT("B02/S2V"), 4, 1, 11, ShipSymmetry.ODD,
-        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE,
-        transpositionTableSize = 1 shl 23, direction = Coordinate(1, 1),
-        backupFrequency = 600
+    val oblique = CFind(
+        HROT("R2,C2,S2,B3,NN"), 2, 1, 9, ShipSymmetry.ODD,
+        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE
     )
-    search.search()
+    oblique.search()
 }

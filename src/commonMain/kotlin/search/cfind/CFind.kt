@@ -767,7 +767,7 @@ class CFind(
     // For hybrid BFS / pure DFS, we will represent the queue / stack as a linked list
     var head: Row? = null
     var tail: Row? = null
-    var queueSize = 0
+    var linkedListSize = 0
     var numDFSRounds = 0
 
     // The priority queue for the ikpx2 search algorithm
@@ -938,16 +938,16 @@ class CFind(
         if (searchStrategy == SearchStrategy.HYBRID_BFS || searchStrategy == SearchStrategy.DFS) {
             // We will represent the queue as a linked list
             if (!loadedState) {
-                queueSize = 1
+                linkedListSize = 1
                 head = if (searchStrategy != SearchStrategy.DFS) currentRow else null
                 tail = if (searchStrategy != SearchStrategy.DFS) currentRow else null
             }
             while (shipsFound < numShips) {
                 // BFS round runs until the queue size exceeds the maximum queue size
                 clearPartial = false
-                while (queueSize < maxQueueSize) {
+                while (linkedListSize < maxQueueSize) {
                     timeTaken = (timeSource.markNow() - startTime).inWholeMilliseconds / 1000.0
-                    if (queueSize == 0) {
+                    if (linkedListSize == 0) {
                         println(
                             bold(
                                 "\nSearch terminated in ${green("${timeTaken}s")}. " +
@@ -970,7 +970,7 @@ class CFind(
                     // Removes the row from the linked list
                     currentRow.pop()
                     maxDepth = max(currentRow.depth, maxDepth)
-                    queueSize--
+                    linkedListSize--
 
                     // Check if the ship is completed
                     if (checkCompletedShip(currentRow)) {
@@ -987,7 +987,7 @@ class CFind(
 
                     // Adding the new rows to the linked list
                     val temp = processSuccessors(successors)
-                    queueSize += temp.size
+                    linkedListSize += temp.size
                     temp.forEach {
                         if (head == null) head = it
 
@@ -999,7 +999,7 @@ class CFind(
                     // Printing out the partials
                     printPartials(
                         bold(
-                            "\nQueue Size: $queueSize / $maxQueueSize"
+                            "\nQueue Size: $linkedListSize / $maxQueueSize"
                         )
                     )
                 }
@@ -1012,7 +1012,7 @@ class CFind(
                 }
 
                 // DFS round runs for a certain deepening increment
-                val message = "Beginning depth-first search round, queue size $queueSize"
+                val message = "Beginning depth-first search round, queue size $linkedListSize"
                 println(bold("\n$message"))
 
                 count = 0
@@ -1081,7 +1081,7 @@ class CFind(
                         val temp = row.next
                         if (stack.isEmpty()) {
                             row.pop()
-                            queueSize--
+                            linkedListSize--
                         }
                         row = temp
                     }
@@ -1099,7 +1099,7 @@ class CFind(
 
                 // Print out some status information
                 val averageDeepening = num / maxQueueSize.toDouble()
-                println(bold("$message -> $queueSize, average deepening " +
+                println(bold("$message -> $linkedListSize, average deepening " +
                         "${(100 * averageDeepening).toInt() / 100.0}"))
 
                 // Check how much time has past and see if we need to write to a backup
@@ -1118,25 +1118,30 @@ class CFind(
                 var row: Row
                 var pruning = 0.8
                 var longestPartialSoFar = currentRow.depth
-                val stack = arrayListOf<Row>()
                 while (priorityQueue.isNotEmpty()) {
                     row = priorityQueue.poll()
 
-                    stack.clear()
-                    stack.add(row)
+                    head = row
+                    tail = row
+                    row.next = null
+                    row.prev = null
 
                     // Decide what depth we should reach
                     val maxDepth2 = row.prunedDepth + minDeepeningIncrement
 
                     do {
                         // Check if stack is empty
-                        if (stack.isEmpty()) {
+                        if (tail == null) {
                             pruning = 0.99 * pruning + 0.01
                             break
                         }
 
                         // Get the current row that is going to be analysed
-                        currentRow = stack.removeLast()
+                        currentRow = tail!!
+                        tail = tail!!.prev
+                        if (tail == null) head = null
+                        linkedListSize--
+
                         maxDepth = max(currentRow.depth, maxDepth2)
                         if (currentRow.depth == maxDepth2) {
                             pruning *= 0.99
@@ -1151,7 +1156,13 @@ class CFind(
                             var finalDepth = -1
                             val maxRowsAdded = (maxQueueSize / ((priorityQueue.size + 0.0001) * (1.0 - pruning))).toInt()
                             for (depth in row.depth + 1..maxDepth2) {
-                                val lst = stack.filter { it.depth == depth }
+                                var curr = head
+                                val lst = arrayListOf<Row>()
+                                while (curr != null) {
+                                    if (curr.depth == depth) lst.add(curr)
+                                    curr = curr.next
+                                }
+
                                 rowsAdded += lst.size
 
                                 if (rowsAdded < maxRowsAdded || depth == row.depth + 1) {
@@ -1188,7 +1199,15 @@ class CFind(
                         val successors = nextRow(currentRow, rows, lookaheadRows, depth = currentRow.depth + 1).first
 
                         // Adding the new rows to the stack
-                        stack.addAll(processSuccessors(successors))
+                        processSuccessors(successors).forEach {
+                            if (tail != null) {
+                                tail!!.next = it
+                                it.prev = tail
+                            } else head = it
+
+                            tail = it
+                            linkedListSize++
+                        }
 
                         // Printing out the partials
                         if (currentRow.depth > longestPartialSoFar) {
@@ -1200,7 +1219,7 @@ class CFind(
                             printPartials(
                                 bold(
                                     "\nPriority Queue Size: ${priorityQueue.size} / $maxQueueSize" +
-                                            "\nStack Size: ${stack.size}, Depth: ${currentRow.depth} / $maxDepth2"
+                                            "\nStack Size: ${linkedListSize}, Depth: ${currentRow.depth} / $maxDepth2"
                                 ), numLines = 4
                             )
                         }
@@ -1235,7 +1254,7 @@ class CFind(
     }
 
     override fun saveState(): String = StringBuilder().apply {
-        val queueSize = if (searchStrategy == SearchStrategy.PRIORITY_QUEUE) priorityQueue.size else queueSize
+        val queueSize = if (searchStrategy == SearchStrategy.PRIORITY_QUEUE) priorityQueue.size else linkedListSize
         val inQueue = HashSet<Long>(queueSize)
         if (searchStrategy == SearchStrategy.PRIORITY_QUEUE)
             priorityQueue.forEach { inQueue.add(it.id) }
@@ -1295,7 +1314,7 @@ class CFind(
         val params = lines[0].split(" ")
 
         val rows = HashMap<Long, Row>(params[0].toInt())
-        queueSize = 0
+        linkedListSize = 0
         for (i in 1 ..< lines.size) {
             val tokens = lines[i].split(" ")
             if (tokens.size < 4) continue
@@ -1328,7 +1347,7 @@ class CFind(
                         tail = row
                     }
 
-                    queueSize++
+                    linkedListSize++
                 }
             }
         }
@@ -1611,7 +1630,7 @@ class CFind(
 
         // Encodes the key used to query the inner lookup table
         fun encodeKey(coordinate: Coordinate, node: Node? = null): Int {
-            if (rule.numStates > 2 || node == null || rule.background.sum() != 0) {
+            if (true || rule.numStates > 2 || node == null || rule.background.sum() != 0) {
                 var key = 0
                 var power = 1
                 for (it in reversedBaseCoordinate) {

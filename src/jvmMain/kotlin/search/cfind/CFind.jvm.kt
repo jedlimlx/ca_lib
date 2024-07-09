@@ -79,7 +79,7 @@ actual fun multithreadedDfs(cfind: CFind): Int {
                             internalRow.pop()
                             cfind.maxDepth = max(internalRow.depth, cfind.maxDepth)
 
-                            cfind.queueSize--
+                            cfind.linkedListSize--
                             prunedCount++
                         }
 
@@ -148,7 +148,7 @@ actual fun multithreadedDfs(cfind: CFind): Int {
 actual fun multithreadedPriorityQueue(cfind: CFind) {
     // Take note of the starting time
     val timeSource = TimeSource.Monotonic
-    var startTime = timeSource.markNow()
+    val startTime = timeSource.markNow()
 
     // Synchronisation primitives
     val mutex = Object()
