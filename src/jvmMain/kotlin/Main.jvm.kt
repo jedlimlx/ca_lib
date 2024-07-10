@@ -209,11 +209,11 @@ actual fun main() {
 //        }
 //    }
 
-    // INT("B2-ei3cjkr4cektyz5-cnr6-ik78/S01e2-ae3cnqry4-aeijkn5-ain6ekn7e"),
-
     val oblique = CFind(
-        HROT("R2,C2,S2,B3,NN"), 2, 1, 9, ShipSymmetry.ODD,
-        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE
+        INT("B2-ei3cjkr4cektyz5-cnr6-ik78/S01e2-ae3cnqry4-aeijkn5-ain6ekn7e"),
+        3, 1, 5, ShipSymmetry.ASYMMETRIC,
+        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE,
+        direction = Coordinate(2, 1)
     )
     oblique.search()
 }

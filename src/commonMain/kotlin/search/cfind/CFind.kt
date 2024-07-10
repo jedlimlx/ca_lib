@@ -93,7 +93,7 @@ class CFind(
 
     // TODO fix this optimisation for cases where numStates > 2 and diagonal ships in B0 rules
     val smallNeighbourhoodOptimisation = !(rule.background.sum() != 0 && spacing != 1) &&
-            rule.numStates == 2 && _neighbourhood[0].size <= 25
+            rule.numStates == 2 && _neighbourhood[0].size <= 25 && false
     val neighbourhood = run {
         if (smallNeighbourhoodOptimisation) _neighbourhood
         else originalNeighbourhood
@@ -147,19 +147,13 @@ class CFind(
             var initialCount = 0
             for (i in 0 ..<2*k) {
                 var count = initialCount
-                val lst = arrayListOf(initialCount)
-                while (count < period * k) {
+                while (this[count] == -1) {
                     this[count] = tempOffsets[i.mod(tempOffsets.size)]
                     count += backOff[count.mod(period)]
-                    lst.add(count)
+                    count %= period * k
                 }
 
-                for (j in initialCount..lst.max()) {
-                    if (j !in lst) {
-                        initialCount = j
-                        break
-                    }
-                }
+                initialCount = (initialCount + period).mod(period * k)
             }
         } else {
             var flipped = false
@@ -479,7 +473,7 @@ class CFind(
     }
 
     val additionalDepthArray = IntArray(spacing) {
-        ((rawAdditionalDepth - 1) + (offsets[(it + 1).mod(spacing)] - offsets[it])) / spacing + 1
+        ((rawAdditionalDepth - 1) + (offsets[(it + period).mod(spacing * k)] - offsets[it])) / spacing + 1
     }
 
     // Computing neighbourhoods to be memorised for lookahead
@@ -734,7 +728,7 @@ class CFind(
     }
 
     // Filter out the boundary conditions that don't need checking
-    val filteredRightBCs = rightBC.filter { it !in ignoreBCs }
+    val filteredRightBCs = rightBC //.filter { it !in ignoreBCs }
     val filteredLeftBCs = leftBC.subList(
         0,
         if (symmetry != ShipSymmetry.ASYMMETRIC && symmetry != ShipSymmetry.GLIDE) lastBaseCoordinate.x
@@ -1901,6 +1895,7 @@ class CFind(
         val bcMemo: Array<Pair<Boolean, BooleanArray?>> = Array(combinedBCmap.size) { Pair(false, null) }
         fun checkBoundaryCondition(node: Node, bcList: List<Coordinate>, offset: Coordinate = Coordinate()): Boolean {
             var satisfyBC = true
+            if (lookaheadDepth == 1) return true
 
             for (it in bcList) {
                 if (!satisfyBC) break
@@ -1987,8 +1982,8 @@ class CFind(
                 symmetry != ShipSymmetry.GLIDE ||
                 (period.mod(2) == 0 && rows.last().phase == 1)
             ) {
-                if (depthToCheck + additionalDepthArray[depth.mod(spacing)] < node.depth) continue
-                else depthToCheck = Int.MAX_VALUE - 1000
+                 if (depthToCheck + additionalDepthArray[depth.mod(spacing)] < node.depth) continue
+                 else depthToCheck = Int.MAX_VALUE - 1000
 
                 // Run the approximate lookahead
                 if (
@@ -2188,7 +2183,9 @@ class CFind(
             } else if (generation == 1) {
                 // TODO optimise this
                 val row = if (coordinate.y == centralHeight) this.last()!!
-                else mostRecentRow!!.getPredecessor(coordinate.y * period - backOff[depth.mod(period)] - 1)!!
+                else mostRecentRow!!.getPredecessor(
+                    coordinate.y * period - backOff[depth.mod(period)] - (depth - mostRecentRow.depth)
+                )!!
 
                 if (
                     symmetry != ShipSymmetry.GLIDE ||

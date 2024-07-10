@@ -257,4 +257,18 @@ class Test {
             assertEquals(photonSearch.searchResults.size, 1)
         }
     }
+
+    @Test
+    fun oneDimensionalTest() {
+        for (strategy in searchStrategies) {
+            val oneDimensionalSearch = CFind(
+                HROT("R3,C2,S2,B2,5-6,N+"),
+                10, 13, 1, ShipSymmetry.ASYMMETRIC,
+                verbosity = 1, searchStrategy = strategy
+            )
+            oneDimensionalSearch.search()
+
+            assertEquals(oneDimensionalSearch.searchResults.size, 1)
+        }
+    }
 }
