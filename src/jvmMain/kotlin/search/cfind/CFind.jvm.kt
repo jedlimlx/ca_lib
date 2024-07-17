@@ -155,7 +155,6 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
     val equivalentStatesMutex = Object()
     val printingMutex = Object()
     val anyProcessingMutex = Object()
-    val stackSizeMutex = Object()
     val quitMutex = Object()
 
     val anyProcessing = Semaphore(1)

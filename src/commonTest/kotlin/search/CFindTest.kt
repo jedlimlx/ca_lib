@@ -255,6 +255,14 @@ class Test {
             photonSearch.search()
 
             assertEquals(photonSearch.searchResults.size, 1)
+
+            val seedsSearch = CFind(
+                HROT("B2/S"), 1, 1, 4, ShipSymmetry.ASYMMETRIC,
+                verbosity = 1, searchStrategy = strategy
+            )
+            seedsSearch.search()
+
+            assertEquals(seedsSearch.searchResults.size, 2)
         }
     }
 
