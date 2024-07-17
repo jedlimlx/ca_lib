@@ -212,7 +212,7 @@ actual fun main() {
     val oblique = CFind(
         INT("B2-ei3cjkr4cektyz5-cnr6-ik78/S01e2-ae3cnqry4-aeijkn5-ain6ekn7e"),
         3, 1, 5, ShipSymmetry.ASYMMETRIC,
-        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE,
+        verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS,
         direction = Coordinate(2, 1)
     )
     oblique.search()

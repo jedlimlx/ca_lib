@@ -98,8 +98,8 @@ class Row(
 
             if (background == 1) {
                 val output = (1 shl (_endIndex - _startIndex + 1)) - 1
-                if (_startIndex < 0) output - ((hash.inv() and mask) shl -_startIndex)
-                else output - ((hash.inv() and mask) shr _startIndex)
+                output - if (_startIndex < 0) (hash.inv() and mask) shl -_startIndex
+                else (hash.inv() and mask) shr _startIndex
             } else {
                 if (_startIndex < 0) (hash and mask) shl -_startIndex
                 else (hash and mask) shr _startIndex
@@ -111,9 +111,9 @@ class Row(
 
             val output = if (background == 1) {
                 val output = (1 shl ((_endIndex - _startIndex) / search.spacing + 1)) - 1
-                if (_startIndex < 0)
-                    output - ((hash.inv() and mask) shl ((-_startIndex + search.spacing - 1) / search.spacing))
-                else output - ((hash.inv() and mask) shr startIndex)
+                output - if (_startIndex < 0)
+                    (hash.inv() and mask) shl ((-_startIndex + search.spacing - 1) / search.spacing)
+                else (hash.inv() and mask) shr startIndex
             } else {
                 if (_startIndex < 0) (hash and mask) shl ((-_startIndex + search.spacing - 1) / search.spacing)
                 else (hash and mask) shr startIndex

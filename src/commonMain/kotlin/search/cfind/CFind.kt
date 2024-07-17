@@ -91,9 +91,8 @@ class CFind(
         return@map lst.toTypedArray()
     }.toTypedArray()
 
-    // TODO fix this optimisation for cases where numStates > 2 and diagonal ships in B0 rules
-    val smallNeighbourhoodOptimisation = !(rule.background.sum() != 0 && spacing != 1) &&
-            rule.numStates == 2 && _neighbourhood[0].size <= 25 && false
+    // TODO fix this optimisation for cases where numStates > 2 and diagonal ships in B0 rules (for the case of r1 von neumann)
+    val smallNeighbourhoodOptimisation = rule.numStates == 2 && _neighbourhood[0].size <= 25 && spacing <= 2
     val neighbourhood = run {
         if (smallNeighbourhoodOptimisation) _neighbourhood
         else originalNeighbourhood
@@ -728,7 +727,7 @@ class CFind(
     }
 
     // Filter out the boundary conditions that don't need checking
-    val filteredRightBCs = rightBC //.filter { it !in ignoreBCs }
+    val filteredRightBCs = rightBC.filter { it !in ignoreBCs }
     val filteredLeftBCs = leftBC.subList(
         0,
         if (symmetry != ShipSymmetry.ASYMMETRIC && symmetry != ShipSymmetry.GLIDE) lastBaseCoordinate.x
@@ -1895,7 +1894,7 @@ class CFind(
         val bcMemo: Array<Pair<Boolean, BooleanArray?>> = Array(combinedBCmap.size) { Pair(false, null) }
         fun checkBoundaryCondition(node: Node, bcList: List<Coordinate>, offset: Coordinate = Coordinate()): Boolean {
             var satisfyBC = true
-            if (lookaheadDepth == 1) return true
+            if (lookaheadDepth >= 1) return true
 
             for (it in bcList) {
                 if (!satisfyBC) break

@@ -155,7 +155,7 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
     val equivalentStatesMutex = Object()
     val printingMutex = Object()
     val anyProcessingMutex = Object()
-    val timingMutex = Object()
+    val stackSizeMutex = Object()
     val quitMutex = Object()
 
     val anyProcessing = Semaphore(1)
@@ -209,7 +209,7 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
 
             var head: Row?
             var tail: Row?
-            var stackSize = 1
+            var stackSize: Int
             while (true) {
                 // Check if the queue is empty
                 var emptyQueue = false
@@ -241,6 +241,7 @@ actual fun multithreadedPriorityQueue(cfind: CFind) {
 
                 head = row
                 tail = row
+                stackSize = 0
                 row.next = null
                 row.prev = null
 
