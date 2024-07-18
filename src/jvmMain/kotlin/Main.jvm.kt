@@ -210,7 +210,7 @@ actual fun main() {
 //    }
 
     val photonSearch = CFind(
-        HROT("R2,C2,S2,B3,NN"), 1, 1, 9, ShipSymmetry.EVEN,
+        HROTGenerations("/2/3"), 1, 1, 9, ShipSymmetry.EVEN,
         verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS
     )
     photonSearch.search()

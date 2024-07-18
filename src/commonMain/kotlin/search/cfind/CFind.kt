@@ -2184,7 +2184,11 @@ class CFind(
             } else if (generation == 1) {
                 // TODO optimise this
                 val row = if (coordinate.y == centralHeight)
-                    this.last() ?: return this[Coordinate(coordinate.x, 0), 0, node, depth]
+                    this.last() ?: run {
+                        if (numEquivalentStates == rule.numStates)
+                            return this[Coordinate(coordinate.x, 0), 0, node, depth]
+                        else return node!!.completeRow[coordinate.x / spacing]
+                    }
                 else mostRecentRow!!.getPredecessor(
                     coordinate.y * period - backOff[depth.mod(period)] - (depth - mostRecentRow.depth)
                 )!!
