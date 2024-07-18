@@ -21,7 +21,7 @@ fun fromGliderDBEntry(entry: String): Spaceship {
     val grid = SparseGrid(tokens.last(), rule=fromRulestring(tokens[2]))
     val phases = Array(period+3) { grid.step(1).deepCopy() }
 
-    val spaceship = grid.identify()!! as Spaceship //Spaceship(dx, dy, period, phases)
+    val spaceship = Spaceship(dx, dy, period, phases)  //grid.identify()!! as Spaceship
 
     // TODO fix this
 //    if (spaceship.ruleRange!!.minRule.rulestring != tokens[2]) {
