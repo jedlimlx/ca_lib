@@ -91,7 +91,7 @@ class CFind(
         return@map lst.toTypedArray()
     }.toTypedArray()
 
-    // TODO fix this optimisation for cases where numStates > 2 and diagonal ships in B0 rules (for the case of r1 von neumann)
+    // TODO fix this optimisation for cases where numStates > 2 and diagonal ships in some rules
     val smallNeighbourhoodOptimisation = rule.numStates == 2 && _neighbourhood[0].size <= 25 && spacing <= 2
     val neighbourhood = run {
         if (smallNeighbourhoodOptimisation) _neighbourhood
@@ -203,15 +203,16 @@ class CFind(
     }
 
     val neighbourhoodByRows = run {
-        val lst = ArrayList<Pair<Int, Pair<Int, Int>>>()
+        val lst = ArrayList<Pair<Int, Pair<Int, Pair<Int, Int>>>>()
 
-        for (i in neighbourhood[0].minOf { it.y } + 1 .. neighbourhood[0].maxOf { it.y }) {
+        val min = neighbourhood[0].minOf { it.y } + 1
+        for (i in min .. neighbourhood[0].maxOf { it.y }) {
             val temp = neighbourhood[0].filter { it.y == i }
             if (temp.isEmpty()) continue
 
             val power = neighbourhood[0].indexOf(temp[0]) - baseCoordinates.size
             val range = Pair(temp.minOf { it.x } - lastBaseCoordinate.x, temp.maxOf { it.x } - lastBaseCoordinate.x)
-            lst.add(Pair(power, range))
+            lst.add(Pair(i - min, Pair(power, range)))
         }
 
         lst.toTypedArray()
@@ -536,6 +537,7 @@ class CFind(
                 for (c in reversedBaseCoordinate) {
                     if (c in baseCoordinates) {
                         val index = baseCoordinateMap[baseCoordinates.indexOf(c)]
+                        // println("$c $index ${ordering[index]}")
                         if (ordering[index] >= 0)
                             lst[ordering[index]] = getDigit(it, power, numEquivalentStates)
                     }
@@ -702,7 +704,7 @@ class CFind(
 
         println("Generating approximate lookahead table...")
 
-        if ((rule.numStates + 1.0).pow(neighbourhood[0].size + 1) < Int.MAX_VALUE) {
+        if ((rule.numStates + 1.0).pow(neighbourhood[0].size + 1) < 1 shl 25) {
             IntArray(
                 pow(rule.numStates + 1, neighbourhood[0].size + 1)
             ) {
@@ -1527,10 +1529,11 @@ class CFind(
                     if (lookaheadDepth != 0) {
                         if (smallNeighbourhoodOptimisation)
                             for (i in 1..<neighbourhoodByRows.size) {
+                                val (y, temp) = neighbourhoodByRows[i]
                                 key += rows[
-                                    i, neighbourhoodByRows[i].second.first + translatedIndex,
-                                    neighbourhoodByRows[i].second.second + translatedIndex
-                                ] shl neighbourhoodByRows[i].first
+                                    y, temp.second.first + translatedIndex,
+                                    temp.second.second + translatedIndex
+                                ] shl temp.first
                             }
                         else
                             for ((it, p) in memorisedlookaheadNeighbourhood)
@@ -1543,34 +1546,39 @@ class CFind(
                             approximateLookahead[originalPhase][lookaheadDepth - 1] == lookaheadDepth ||
                             successorLookahead[originalPhase][lookaheadDepth - 1] == lookaheadDepth
                         ) {
-                            if (smallNeighbourhoodOptimisation)
+                            if (smallNeighbourhoodOptimisation) {
+                                val (y, temp) = neighbourhoodByRows[0]
                                 key += rows[
-                                    0, neighbourhoodByRows[0].second.first + translatedIndex,
-                                    neighbourhoodByRows[0].second.second + translatedIndex
-                                ] shl neighbourhoodByRows[0].first
-                            else
+                                    y, temp.second.first + translatedIndex,
+                                    temp.second.second + translatedIndex
+                                ] shl temp.first
+                            } else {
                                 for ((it, p) in lookaheadNeighbourhood)
                                     key += (rows[it + coordinate, 0, row, depth] - background) * p
+                            }
 
                             if (index != -1) lookaheadMemo!![index] = key
                         } else {
                             if (index != -1) lookaheadMemo!![index] = key
 
-                            if (smallNeighbourhoodOptimisation)
+                            if (smallNeighbourhoodOptimisation) {
+                                val (y, temp) = neighbourhoodByRows[0]
                                 key += rows[
-                                    0, neighbourhoodByRows[0].second.first + translatedIndex,
-                                    neighbourhoodByRows[0].second.second + translatedIndex
-                                ] shl neighbourhoodByRows[0].first
-                            else
+                                    y, temp.second.first + translatedIndex,
+                                    temp.second.second + translatedIndex
+                                ] shl temp.first
+                            } else {
                                 for ((it, p) in lookaheadNeighbourhood)
                                     key += (rows[it + coordinate, 0, row, depth] - background) * p
+                            }
                         }
                     } else if (smallNeighbourhoodOptimisation) {
                         for (i in neighbourhoodByRows.indices) {
+                            val (y, temp) = neighbourhoodByRows[i]
                             key += rows[
-                                i, neighbourhoodByRows[i].second.first + translatedIndex,
-                                neighbourhoodByRows[i].second.second + translatedIndex
-                            ] shl neighbourhoodByRows[i].first
+                                y, temp.second.first + translatedIndex,
+                                temp.second.second + translatedIndex
+                            ] shl temp.first
                         }
                     } else neighbourhoodWithoutBg[coordinate]!!.forEach { (it, p) ->
                         key += (rows[it, 0, row, depth] - background) * p
@@ -1582,14 +1590,16 @@ class CFind(
                         approximateLookahead[originalPhase][lookaheadDepth - 1] != lookaheadDepth &&
                         successorLookahead[originalPhase][lookaheadDepth - 1] != lookaheadDepth
                     ) {
-                        if (smallNeighbourhoodOptimisation)
+                        if (smallNeighbourhoodOptimisation) {
+                            val (y, temp) = neighbourhoodByRows[0]
                             key += rows[
-                                0, neighbourhoodByRows[0].second.first + translatedIndex,
-                                neighbourhoodByRows[0].second.second + translatedIndex
-                            ] shl neighbourhoodByRows[0].first
-                        else
+                                y, temp.second.first + translatedIndex,
+                                temp.second.second + translatedIndex
+                            ] shl temp.first
+                        } else {
                             for ((it, p) in lookaheadNeighbourhood)
                                 key += (rows[it + coordinate, 0, row, depth] - background) * p
+                        }
                     }
                 }
 
@@ -1630,7 +1640,7 @@ class CFind(
                     key += rule.equivalentStates[rows[it + coordinate, 0, node, depth]] * power
                     power *= numEquivalentStates
                 }
-                
+
                 return key
             } else {
                 val len = reversedBaseCoordinate.size
@@ -1741,19 +1751,20 @@ class CFind(
                             power = pow(rule.numStates + 1, baseCoordinates.size)
                             key = power - 1
                             for (i in neighbourhoodByRows.indices) {
+                                val (y, temp2) = neighbourhoodByRows[i]
                                 var temp = row[
-                                    i, neighbourhoodByRows[i].second.first + translatedIndex,
-                                    neighbourhoodByRows[i].second.second + translatedIndex
+                                    y, temp2.second.first + translatedIndex,
+                                    temp2.second.second + translatedIndex
                                 ]
                                 
                                 if (temp >= 0) {
-                                    for (j in neighbourhoodByRows[i].second.first .. neighbourhoodByRows[i].second.second) {
+                                    for (j in temp2.second.first .. temp2.second.second) {
                                         key += (temp and 1) * power
                                         temp = temp shr 1
                                         power *= (rule.numStates + 1)
                                     }
                                 } else {
-                                    for (j in neighbourhoodByRows[i].second.first .. neighbourhoodByRows[i].second.second) {
+                                    for (j in temp2.second.first .. temp2.second.second) {
                                         key += if (j + translatedIndex >= 0) rule.numStates * power
                                         else this.background[depth.mod(this.background.size)]
                                         power *= (rule.numStates + 1)
@@ -1766,7 +1777,7 @@ class CFind(
                                 key += (if (state == -1) rule.numStates else state) * power
                                 power *= (rule.numStates + 1)
 
-                                if (false && storeNeighbourhood && !inBaseCoordinates[index]) {
+                                if (storeNeighbourhood && !inBaseCoordinates[index]) {
                                     key2 += (if (state == -1) 0 else state) * power2
                                     power2 *= rule.numStates
                                 }
@@ -1786,12 +1797,14 @@ class CFind(
                                 if (reverseOrdering[it] < baseCoordinates.size) -1 else 0
                             }
                             for (i in neighbourhoodByRows.indices) {
+                                val (y, temp2) = neighbourhoodByRows[i]
                                 var temp = row[
-                                    i, neighbourhoodByRows[i].second.first + translatedIndex,
-                                    neighbourhoodByRows[i].second.second + translatedIndex
+                                    y, temp2.second.first + translatedIndex,
+                                    temp2.second.second + translatedIndex
                                 ]
+
                                 if (temp >= 0) {
-                                    for (j in neighbourhoodByRows[i].second.first .. neighbourhoodByRows[i].second.second) {
+                                    for (j in temp2.second.first .. temp2.second.second) {
                                         if (ordering[index] >= 0)
                                             tempArray[ordering[index]] = temp and 1
 
@@ -1799,7 +1812,7 @@ class CFind(
                                         temp = temp shr 1
                                     }
                                 } else {
-                                    for (j in neighbourhoodByRows[i].second.first .. neighbourhoodByRows[i].second.second) {
+                                    for (j in temp2.second.first .. temp2.second.second) {
                                         if (ordering[index] >= 0)
                                             tempArray[ordering[index]] = if (j + translatedIndex >= 0) -1
                                             else this.background[depth.mod(this.background.size)]
@@ -1854,10 +1867,11 @@ class CFind(
             if (_lookaheadMemo!![index] == -1) {
                 if (smallNeighbourhoodOptimisation)
                     for (i in 1..<neighbourhoodByRows.size) {
-                        key += approximateLookaheadRows[
-                            i, neighbourhoodByRows[i].second.first + index,
-                            neighbourhoodByRows[i].second.second + index
-                        ] shl neighbourhoodByRows[i].first
+                        val (y, temp) = neighbourhoodByRows[i]
+                        key += rows[
+                            y, temp.second.first + index,
+                            temp.second.second + index
+                        ] shl temp.first
                     }
                 else
                     for ((it, p) in memorisedlookaheadNeighbourhood)
@@ -1867,7 +1881,7 @@ class CFind(
             } else key = _lookaheadMemo[index]
 
             if (smallNeighbourhoodOptimisation)
-                key += reverseDigits(row) shl neighbourhoodByRows[0].first
+                key += reverseDigits(row) shl neighbourhoodByRows[0].second.first
             else
                 for ((it, p) in lookaheadNeighbourhood) {
                     if ((it + coordinate).x >= 0) // TODO consider different backgrounds
@@ -1894,7 +1908,7 @@ class CFind(
         val bcMemo: Array<Pair<Boolean, BooleanArray?>> = Array(combinedBCmap.size) { Pair(false, null) }
         fun checkBoundaryCondition(node: Node, bcList: List<Coordinate>, offset: Coordinate = Coordinate()): Boolean {
             var satisfyBC = true
-            if (lookaheadDepth >= 1) return true
+            if (spacing > 2 && lookaheadDepth >= 1) return true
 
             for (it in bcList) {
                 if (!satisfyBC) break

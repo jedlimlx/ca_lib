@@ -20,6 +20,7 @@ import rules.ruleloader.ruletableFromFile
 import search.cfind.CFind
 import search.cfind.SearchStrategy
 import search.cfind.ShipSymmetry
+import search.cfind.pow
 import simulation.Coordinate
 import simulation.SparseGrid
 import java.io.File
@@ -209,9 +210,33 @@ actual fun main() {
 //        }
 //    }
 
-    val photonSearch = CFind(
-        HROTGenerations("/2/3"), 1, 1, 9, ShipSymmetry.EVEN,
-        verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS
+//    val search = CFind(
+//        HROT("B02/S2V"),
+//        4, 1, 12, ShipSymmetry.ODD,
+//        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE,
+//        direction = Coordinate(1, 1), lookaheadDepth = 2
+//    )
+//    search.search()
+
+    val search = CFind(
+        HROT("R3,C2,S2,B3,N+"),
+        2, 1, 6, ShipSymmetry.ODD,
+        verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS,
+        direction = Coordinate(1, 1), lookaheadDepth = 2
     )
-    photonSearch.search()
+    search.search()
+
+//    println(search.successorTable.size)
+//    println(search2.successorTable.size)
+//
+//    for (i in search.successorTable.indices) {
+//        for (j in 0 .. 4) {
+////            if (search.successorTable[i][2*j] != search.successorTable[i][2*j + 1])
+////                println("${i.toString(2)} $j ${search.successorTable[i].map { it.toString(2) }}")
+//            if (search.successorTable[i][j] != search2.successorTable[i][j])
+//                println("${i.toString(2)} $j " +
+//                        "${search.successorTable[i].map { it.toString(2) }} " +
+//                        "${search2.successorTable[i].map { it.toString(2) }}")
+//        }
+//    }
 }
