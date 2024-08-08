@@ -2,6 +2,7 @@ package search.cfind
 
 import simulation.Coordinate
 import simulation.Grid
+import simulation.Rotation
 import simulation.SparseGrid
 
 class Row(
@@ -192,7 +193,7 @@ class Row(
             }
 
             temp = predecessor.getPredecessor(period)
-            if (temp == null) return grid
+            if (temp == null) return grid.apply { rotate(Rotation.CLOCKWISE) }
 
             predecessor = temp
             counter++
@@ -206,7 +207,7 @@ class Row(
         }
     }
 
-    private fun translate(y: Int, x: Int): Coordinate {
+    private fun translate(x: Int, y: Int): Coordinate {
         return Coordinate(
             (-x * search.direction.x + y * search.direction.y) / search.spacing,
             (y * search.direction.x + x * search.direction.y) / search.spacing

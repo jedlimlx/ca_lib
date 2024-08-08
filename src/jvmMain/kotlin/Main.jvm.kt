@@ -218,11 +218,18 @@ actual fun main() {
 //    )
 //    search.search()
 
+//    val search = CFind(
+//        HROT("R2,C2,S1,3,5,B3,NN"),
+//        3, 1, 4, ShipSymmetry.ASYMMETRIC,
+//        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE,
+//        direction = Coordinate(1, 2)
+//    )
+//    search.search()
+
     val search = CFind(
-        HROT("R3,C2,S2,B3,N+"),
-        2, 1, 6, ShipSymmetry.ODD,
-        verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS,
-        direction = Coordinate(1, 1), lookaheadDepth = 2
+        HROT("R2,C2,S9,B0-3,NN"),
+        2, 1, 9, ShipSymmetry.ODD,
+        verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS
     )
     search.search()
 
