@@ -181,6 +181,7 @@ class CFind(
     val emptyHash = background.map { repeat(it, rule.numStates, numStatesPower) }
 
     val backgroundMap = IntArray(rule.numStates) { rule.background.indexOf(it) }
+    val strobing = rule.background.sum() != 0
 
     // Compute various statistics about the neighbourhood
     // TODO Get neighbourhood coordinate direction conventions right
@@ -1624,7 +1625,7 @@ class CFind(
 
         // Encodes the key used to query the inner lookup table
         fun encodeKey(coordinate: Coordinate, node: Node? = null): Int {
-            if (rule.numStates > 2 || node == null || rule.background.sum() != 0) {
+            if (rule.numStates > 2 || node == null || strobing) {
                 var key = 0
                 var power = 1
                 for (it in reversedBaseCoordinate) {
@@ -2188,7 +2189,9 @@ class CFind(
         mostRecentRow: Row? = null,
         row: Row? = null
     ): Int {
-        if (coordinate.x < 0) return background[(depth + generation * backOff[depth.mod(period)]).mod(background.size)]
+        if (coordinate.x < 0)
+            return if (strobing) background[(depth + generation * backOff[depth.mod(period)]).mod(background.size)] else 0
+
         if (coordinate.x >= width * spacing) {
             return when (symmetry) {
                 ShipSymmetry.EVEN -> this[Coordinate(2 * width * spacing - coordinate.x - 1, coordinate.y), generation, node, depth]
@@ -2197,7 +2200,9 @@ class CFind(
                     if (coordinate.x == width * spacing) background[(depth + generation * backOff[depth.mod(period)]).mod(background.size)]
                     else this[Coordinate(2 * width * spacing - coordinate.x, coordinate.y), generation, node, depth]
                 }
-                else -> background[(depth + generation * backOff[depth.mod(period)]).mod(background.size)]
+                else -> if (strobing)
+                    background[(depth + generation * backOff[depth.mod(period)]).mod(background.size)]
+                else 0
             }
         }
 

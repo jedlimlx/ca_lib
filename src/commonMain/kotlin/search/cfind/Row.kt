@@ -193,7 +193,7 @@ class Row(
             }
 
             temp = predecessor.getPredecessor(period)
-            if (temp == null) return grid.apply { rotate(Rotation.CLOCKWISE) }
+            if (temp == null) return grid.apply { rotate(Rotation.ANTICLOCKWISE) }
 
             predecessor = temp
             counter++

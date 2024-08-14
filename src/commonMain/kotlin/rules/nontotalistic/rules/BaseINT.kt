@@ -7,7 +7,7 @@ import kotlin.random.Random
 /**
  * A list of all types of non-totalistic transitions
  */
-val INT_NEIGHBOURHOODS  = mapOf(
+val INT_NEIGHBOURHOODS = mapOf(
     "M" to R1MooreINT(""),
     "H" to R1HexINT(""),
     "C2" to R2CrossINT(""),

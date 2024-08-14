@@ -14,6 +14,7 @@ import simulation.DenseGrid
 import com.github.ajalt.mordant.rendering.TextColors.*
 import com.github.ajalt.mordant.rendering.TextStyles.*
 import rules.hrot.HROT
+import rules.nonisotropic.MAP
 import rules.nontotalistic.rules.INT
 import rules.nontotalistic.rules.INTGenerations
 import rules.ruleloader.ruletableFromFile
@@ -23,6 +24,7 @@ import search.cfind.ShipSymmetry
 import search.cfind.pow
 import simulation.Coordinate
 import simulation.SparseGrid
+import soup.generateC1
 import java.io.File
 
 actual fun main() {
@@ -227,9 +229,10 @@ actual fun main() {
 //    search.search()
 
     val search = CFind(
-        HROT("R2,C2,S9,B0-3,NN"),
-        2, 1, 9, ShipSymmetry.ODD,
-        verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS
+        MAP("MAPERYXfhZofugWaH7oaIDogBZofuhogOiAaIDogIAAgAAWaH7oaIDogGiA6ICAAIAAaIDogIAAgACAAIAAAAAAAA"),
+        3, 1, 12, ShipSymmetry.ASYMMETRIC,
+        verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS,
+        isotropic = false, direction = Coordinate(0, -1)
     )
     search.search()
 

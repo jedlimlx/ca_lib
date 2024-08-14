@@ -81,7 +81,7 @@ abstract class Rule {
             )
         }
 
-        bgList.slice(0 until bgList.size - 1).toIntArray()
+        bgList.slice(0..<bgList.size - 1).toIntArray()
     }
 
     /**
