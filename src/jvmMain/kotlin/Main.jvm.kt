@@ -229,10 +229,10 @@ actual fun main() {
 //    search.search()
 
     val search = CFind(
-        MAP("MAPERYXfhZofugWaH7oaIDogBZofuhogOiAaIDogIAAgAAWaH7oaIDogGiA6ICAAIAAaIDogIAAgACAAIAAAAAAAA"),
-        3, 1, 12, ShipSymmetry.ASYMMETRIC,
-        verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS,
-        isotropic = false, direction = Coordinate(0, -1)
+        HROT("B02/S2V"),
+        4, 1, 13, ShipSymmetry.ODD,
+        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE,
+        direction = Coordinate(-1, -1)
     )
     search.search()
 

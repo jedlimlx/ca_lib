@@ -18,6 +18,8 @@ import rules.RuleFamily
 import search.SearchProgram
 import simulation.Coordinate
 import simulation.Grid
+import kotlin.math.floor
+import kotlin.math.ln
 import kotlin.math.max
 import kotlin.math.pow
 import kotlin.random.Random
@@ -43,7 +45,7 @@ class CFind(
     val partialFrequency: Int = 1000,
     val backupFrequency: Int = 60*15,
     val backupName: String = "dump",
-    val transpositionTableSize: Int = Int.MAX_VALUE,
+    val transpositionTableSize: Int = 1 shl 24,
     val maxTimePerRound: Int = 5*60,
     val numThreads: Int = 8,
     val stdin: Boolean = false,
@@ -165,6 +167,12 @@ class CFind(
             }
         }
     }
+
+    // Precompute some of the constants needed
+    val numEquivalentStates: Int = rule.equivalentStates.distinct().size
+
+    val numStatesPower = pow(rule.numStates, width)
+    val numEquivalentStatesPower = pow(numEquivalentStates, width)
 
     // Computing the background for strobing rules
     val background = IntArray(this.period * maxOf(this.k, 1)) { -1 }.apply {
@@ -305,8 +313,7 @@ class CFind(
     val neighbourhoodWithoutBg: HashMap<Coordinate, List<Pair<Coordinate, Int>>> = hashMapOf()
 
     // Initialising the transposition table
-    @OptIn(ExperimentalUnsignedTypes::class)
-    val equivalentStates: LRUCache<Int, UShortArray> = LRUCache(transpositionTableSize)
+    val equivalentStates: LRUCache<Int, IntArray> = LRUCache(transpositionTableSize)
 
     // Computing the rows that should be used in computing the next state
     val indices = Array(period) { phase ->
@@ -487,14 +494,6 @@ class CFind(
     val minX = if (lookaheadNeighbourhood.isNotEmpty()) lookaheadNeighbourhood.minOf { (it, _) -> it.x } else 0
 
     // Building lookup tables
-    val numEquivalentStates: Int = rule.equivalentStates.distinct().size
-    val equivalentStateSets: List<List<Int>> = run {
-        val lst = List<ArrayList<Int>>(numEquivalentStates) { arrayListOf() }
-        rule.equivalentStates.forEachIndexed { actualState, state -> lst[state].add(actualState) }
-
-        lst
-    }
-
     val cacheWidths: IntArray = IntArray(widthsByHeight.size) {
         pow(numEquivalentStates, widthsByHeight[it] - (if (it == 0) 1 else 0))
     }
@@ -759,10 +758,6 @@ class CFind(
             it.groupBy { it.y }.map { (_, lst) -> lst.size }.max()
         else -1
     }.toIntArray()
-
-    // Precompute some of the constants needed
-    val numStatesPower = pow(rule.numStates, width)
-    val numEquivalentStatesPower = pow(numEquivalentStates, width)
 
     // Opening the partial files
     val partialFileStreams = partialFiles.map { SystemFileSystem.sink(Path(it)).buffered() }
@@ -1407,7 +1402,6 @@ class CFind(
     /**
      * Checks if the search has arrived at an equivalent state.
      */
-    @OptIn(ExperimentalUnsignedTypes::class)
     fun checkEquivalentState(row: Row): Boolean {
         val rows = row.getAllPredecessors((height - 1) * period)
 
@@ -1416,17 +1410,24 @@ class CFind(
         val hash = rows.map { it.hashCode() }.hashCode()
         val reverseHash = if (useReverseHash) rows.map { it.reverseHashCode() }.hashCode() else 0
         fun addState() {
-            val temp = rows.map { it.hash.toUShort() }.toUShortArray()
+            val maxHash = pow(rule.numStates, width)
+            val times = floor(ln(Int.MAX_VALUE.toDouble()) / ln(maxHash.toDouble())).toInt()
+
+            val temp = rows.map { it.hash }.chunked(times).map {
+                it.mapIndexed { index, it -> pow(maxHash, index) * it }.sum() + rows[0].depthHash()
+            }.toIntArray()
             equivalentStates[hash] = temp
             if (useReverseHash)
-                equivalentStates[reverseHash] = rows.map { it.reverseHash.toUShort() }.toUShortArray()
+                equivalentStates[reverseHash] = rows.map { it.reverseHash }.chunked(times).map {
+                    it.mapIndexed { index, it -> pow(maxHash, index) * it }.sum() + rows[0].depthHash()
+                }.toIntArray()
         }
 
         if (hash in equivalentStates.keys) {
             var equivalent = true
             val state = equivalentStates[hash]!!
             for (i in state.indices) {
-                if (state[i] != rows[i].hash.toUShort()) {
+                if (state[i] != rows[i].hash) {
                     equivalent = false
                     break
                 }
@@ -1440,7 +1441,7 @@ class CFind(
             var equivalent = true
             val state = equivalentStates[reverseHash]!!
             for (i in state.indices) {
-                if (state[i] != rows[i].reverseHash.toUShort()) {
+                if (state[i] != rows[i].reverseHash) {
                     equivalent = false
                     break
                 }

@@ -225,8 +225,10 @@ class Row(
         return this
     }
 
-    override fun hashCode() = hash + 293 * depth.mod(depthPeriod)
-    fun reverseHashCode() = reverseHash + 293 * depth.mod(depthPeriod)
+    override fun hashCode() = hash
+    fun reverseHashCode() = reverseHash
+    fun depthHash() = 293 * depth.mod(depthPeriod)
+
     override fun compareTo(other: Row): Int = this.depth - other.depth
 
     override fun equals(other: Any?): Boolean {

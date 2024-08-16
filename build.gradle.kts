@@ -2,12 +2,11 @@ import org.jetbrains.dokka.gradle.DokkaTask
 
 plugins {
     application
-    id("org.jetbrains.dokka") version "1.9.10"
-    kotlin("multiplatform") version "1.9.20"
-    kotlin("plugin.serialization") version "1.9.20"
+    id("org.jetbrains.dokka") version "1.9.20"
+    kotlin("multiplatform") version "2.0.0"
 }
 group = "org.jedlimlx"
-version = "1.0"
+version = "0.1.0-alpha.1"
 
 application {
     mainClass.set("MainKt")
@@ -19,8 +18,9 @@ repositories {
 }
 
 kotlin {
+    jvmToolchain(8)
+
     jvm {
-        jvmToolchain(8)
         withJava()
         testRuns.named("test") {
             executionTask.configure {
