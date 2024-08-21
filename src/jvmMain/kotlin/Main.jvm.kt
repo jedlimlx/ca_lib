@@ -27,7 +27,7 @@ import simulation.SparseGrid
 import soup.generateC1
 import java.io.File
 
-actual fun main() {
+actual fun test() {
 //    val t = Terminal(interactive = true, ansiLevel = AnsiLevel.TRUECOLOR)
 //
 //    val gliderdb = GliderDB<HROTGenerations>(

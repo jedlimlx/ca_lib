@@ -1,2 +1,1 @@
-actual fun main() {
-}
+actual fun test() {}

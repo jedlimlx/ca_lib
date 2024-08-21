@@ -12,7 +12,6 @@ application {
     mainClass.set("MainKt")
 }
 
-
 repositories {
     mavenCentral()
 }
@@ -56,6 +55,7 @@ kotlin {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.3.2")
                 implementation("com.github.ajalt.mordant:mordant:2.3.0")
+                implementation("com.github.ajalt.clikt:clikt:4.2.2")
             }
         }
         val commonTest by getting {

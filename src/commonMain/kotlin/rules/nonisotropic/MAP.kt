@@ -3,7 +3,7 @@ package rules.nonisotropic
 import simulation.Coordinate
 
 /**
- * Represents a 2-state isotropic non-totalistic (INT) rule
+ * Represents a 2-state anisotropic rule in the range-1 moore neighbourhood written in the MAP notation.
  */
 class MAP : BaseMAP {
     /**

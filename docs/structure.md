@@ -12,7 +12,6 @@ As such, it is better suited to running larger patterns in which there is a stil
 For small, dense patterns, this implementation will use less memory and simulate more quickly as reading and writing to an array is more efficient than
 reading and writing to a sparse matrix (represented by a map). However, since empty regions are stored as well, this method will result in a higher memory usage for larger patterns.
 
-
 ## Cellular Automaton Rules
 
 In ca_lib, individual rules are represented by the abstract [Rule](api-reference/ca_lib/rules/-rule/index.html) class.
@@ -21,6 +20,14 @@ A family of rules such as INT rules or HROT rules are represented by the abstrac
 The currently supported rulefamiles are:
 
 - Higher-range Outer Totalistic (HROT)
+  - 2-state
+  - Generations
+  - Extended Generations
 - Isotropic non-totalistic (INT)
+  - 2-state
+  - Generations
+  - Deficient
+- Anisotropic (MAP)
+  - 2-state range-1 Moore
 
 To implement your own rule families and rules, see [custom-rules.md]

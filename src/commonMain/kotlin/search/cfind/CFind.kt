@@ -16,12 +16,10 @@ import prettyPrintNeighbourhood
 import rules.Rule
 import rules.RuleFamily
 import search.SearchProgram
+import search.cfind.pow
 import simulation.Coordinate
 import simulation.Grid
-import kotlin.math.floor
-import kotlin.math.ln
-import kotlin.math.max
-import kotlin.math.pow
+import kotlin.math.*
 import kotlin.random.Random
 import kotlin.time.TimeSource
 
@@ -36,7 +34,7 @@ class CFind(
     val width: Int,
     val symmetry: ShipSymmetry,
     val direction: Coordinate = Coordinate(0, 1),
-    val isotropic: Boolean = true,
+    _isotropic: Boolean = true,
     val maxQueueSize: Int = 1 shl 20,
     minDeepeningIncrement: Int = -1,
     lookaheadDepth: Int = Int.MAX_VALUE,
@@ -70,6 +68,7 @@ class CFind(
             basisVectors.first * it.x + basisVectors.second * it.y
         }.toTypedArray()
     }.toTypedArray()
+    val isotropic = if (abs(direction.x) == abs(direction.y) || abs(direction.x) == 0 || abs(direction.y) == 0) _isotropic else false
 
     // Compute statistics about the periodicity of the integer lattice (for oblique and diagonal searches)
     val spacing = direction.x * direction.x + direction.y * direction.y
@@ -2139,7 +2138,7 @@ class CFind(
     /**
      * Translates the [coordinate] at [depth] from the internal representation to the actual coordinate on the integer lattice
      */
-    private inline fun translate(coordinate: Coordinate, depth: Int): Coordinate {
+    private fun translate(coordinate: Coordinate, depth: Int): Coordinate {
         if (spacing == 1) return coordinate
         else return Coordinate(coordinate.x * spacing + offsets[depth.mod(offsets.size)], coordinate.y)
     }

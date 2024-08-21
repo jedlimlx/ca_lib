@@ -40,7 +40,7 @@ internal inline fun reverseDigits(x: Int, base: Int = 2, length: Int = -1): Int 
     return temp
 }
 
-internal inline fun getDigit(number: Int, power: Int, base: Int): Int {
+internal fun getDigit(number: Int, power: Int, base: Int): Int {
     if (base == 2) return if (number and power == 0) 0 else 1
     return number.floorDiv(power).mod(base)
 }
