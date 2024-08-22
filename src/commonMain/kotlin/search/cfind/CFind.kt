@@ -758,6 +758,10 @@ class CFind(
         else -1
     }.toIntArray()
 
+    // Parameters for checking for equivalent states
+    val maxHash = pow(rule.numStates, width)
+    val times = floor(ln(Int.MAX_VALUE.toDouble()) / ln(maxHash.toDouble())).toInt()
+
     // Opening the partial files
     val partialFileStreams = partialFiles.map { SystemFileSystem.sink(Path(it)).buffered() }
 
@@ -1409,9 +1413,6 @@ class CFind(
         val hash = rows.map { it.hashCode() }.hashCode()
         val reverseHash = if (useReverseHash) rows.map { it.reverseHashCode() }.hashCode() else 0
         fun addState() {
-            val maxHash = pow(rule.numStates, width)
-            val times = floor(ln(Int.MAX_VALUE.toDouble()) / ln(maxHash.toDouble())).toInt()
-
             val temp = rows.map { it.hash }.chunked(times).map {
                 it.mapIndexed { index, it -> pow(maxHash, index) * it }.sum() + rows[0].depthHash()
             }.toIntArray()
@@ -1424,30 +1425,38 @@ class CFind(
 
         if (hash in equivalentStates.keys) {
             var equivalent = true
+            val temp = rows.map { it.hash }.chunked(times).map {
+                it.mapIndexed { index, it -> pow(maxHash, index) * it }.sum() + rows[0].depthHash()
+            }.toIntArray()
+
             val state = equivalentStates[hash]!!
             for (i in state.indices) {
-                if (state[i] != rows[i].hash) {
+                if (state[i] != temp[i]) {
                     equivalent = false
                     break
                 }
             }
 
             if (!equivalent) {
-                addState()
+                // addState()
                 return false
             }
         } else if (useReverseHash && reverseHash in equivalentStates.keys) {
             var equivalent = true
+            val temp = rows.map { it.reverseHash }.chunked(times).map {
+                it.mapIndexed { index, it -> pow(maxHash, index) * it }.sum() + rows[0].depthHash()
+            }.toIntArray()
+
             val state = equivalentStates[reverseHash]!!
             for (i in state.indices) {
-                if (state[i] != rows[i].reverseHash) {
+                if (state[i] != temp[i]) {
                     equivalent = false
                     break
                 }
             }
 
             if (!equivalent) {
-                addState()
+                // addState()
                 return false
             }
         } else {

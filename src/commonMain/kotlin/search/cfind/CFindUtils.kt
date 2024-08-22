@@ -20,7 +20,7 @@ internal fun repeat(num: Int, base: Int, power: Int): Int {
     else (power - 1) / (base - 1) * num
 }
 
-internal inline fun reverseDigits(x: Int, base: Int = 2, length: Int = -1): Int {
+internal fun reverseDigits(x: Int, base: Int = 2, length: Int = -1): Int {
     var temp = 0
     var x = x
     if (base == 2) {

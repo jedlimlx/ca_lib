@@ -103,7 +103,7 @@ class CFindCommand: CliktCommand() {
         "--stdin", "-std",
         help = "Output all partials with no other output (useful for piping output into apgsearch)."
     ).flag()
-    val isotropic by option(
+    val anisotropic by option(
         "--anisotropic", "-ani",
         help = "Is the rule anisotropic? (affects optimisations for asymmetric searches)"
     ).flag()
@@ -123,7 +123,7 @@ class CFindCommand: CliktCommand() {
             period, displacement,
             width, symmetry,
             direction,
-            isotropic,
+            !anisotropic,
             1 shl maxQueueSize,
             minDeepeningIncrement,
             lookaheadDepth,
