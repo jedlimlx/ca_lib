@@ -279,4 +279,18 @@ class Test {
             assertEquals(oneDimensionalSearch.searchResults.size, 1)
         }
     }
+
+    @Test
+    fun obliqueTest() {
+        for (strategy in searchStrategies) {
+            val obliqueSearch = CFind(
+                INT("B2-ei3cjkr4cektyz5-cnr6-ik78/S01e2-ae3cnqry4-aeijkn5-ain6ekn7e"),
+                3, 1, 5, ShipSymmetry.ASYMMETRIC,
+                verbosity = 1, searchStrategy = strategy, direction = Coordinate(2, 1)
+            )
+            obliqueSearch.search()
+
+            assertEquals(obliqueSearch.searchResults.size, 1)
+        }
+    }
 }

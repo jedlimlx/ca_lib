@@ -1410,23 +1410,23 @@ class CFind(
 
         val useReverseHash = isotropic && (symmetry == ShipSymmetry.GLIDE || symmetry == ShipSymmetry.ASYMMETRIC)
 
-        val hash = rows.map { it.hashCode() }.hashCode()
-        val reverseHash = if (useReverseHash) rows.map { it.reverseHashCode() }.hashCode() else 0
+        val hash = rows.map { it.hashCode() }.hashCode() + rows[0].depthHash()
+        val reverseHash = if (useReverseHash) rows.map { it.reverseHashCode() }.hashCode() + rows[0].depthHash() else 0
         fun addState() {
             val temp = rows.map { it.hash }.chunked(times).map {
-                it.mapIndexed { index, it -> pow(maxHash, index) * it }.sum() + rows[0].depthHash()
+                it.mapIndexed { index, it -> pow(maxHash, index) * it }.sum()
             }.toIntArray()
             equivalentStates[hash] = temp
             if (useReverseHash)
                 equivalentStates[reverseHash] = rows.map { it.reverseHash }.chunked(times).map {
-                    it.mapIndexed { index, it -> pow(maxHash, index) * it }.sum() + rows[0].depthHash()
+                    it.mapIndexed { index, it -> pow(maxHash, index) * it }.sum()
                 }.toIntArray()
         }
 
         if (hash in equivalentStates.keys) {
             var equivalent = true
             val temp = rows.map { it.hash }.chunked(times).map {
-                it.mapIndexed { index, it -> pow(maxHash, index) * it }.sum() + rows[0].depthHash()
+                it.mapIndexed { index, it -> pow(maxHash, index) * it }.sum()
             }.toIntArray()
 
             val state = equivalentStates[hash]!!
@@ -1437,14 +1437,11 @@ class CFind(
                 }
             }
 
-            if (!equivalent) {
-                // addState()
-                return false
-            }
+            if (!equivalent) return false
         } else if (useReverseHash && reverseHash in equivalentStates.keys) {
             var equivalent = true
             val temp = rows.map { it.reverseHash }.chunked(times).map {
-                it.mapIndexed { index, it -> pow(maxHash, index) * it }.sum() + rows[0].depthHash()
+                it.mapIndexed { index, it -> pow(maxHash, index) * it }.sum()
             }.toIntArray()
 
             val state = equivalentStates[reverseHash]!!
@@ -1455,10 +1452,7 @@ class CFind(
                 }
             }
 
-            if (!equivalent) {
-                // addState()
-                return false
-            }
+            if (!equivalent) return false
         } else {
             addState()
             return false

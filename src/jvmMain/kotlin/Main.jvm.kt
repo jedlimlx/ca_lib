@@ -213,8 +213,8 @@ actual fun test() {
 //    }
 
 //    val search = CFind(
-//        HROT("B02/S2V"),
-//        4, 1, 12, ShipSymmetry.ODD,
+//        HROT("R2,C2,S2,B3,NN"),
+//        2, 1, 6, ShipSymmetry.ODD,
 //        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE,
 //        direction = Coordinate(1, 1), lookaheadDepth = 2
 //    )
@@ -228,13 +228,12 @@ actual fun test() {
 //    )
 //    search.search()
 
-    val search = CFind(
-        HROT("B02/S2V"),
-        4, 1, 13, ShipSymmetry.ODD,
-        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE,
-        direction = Coordinate(-1, -1)
+    val obliqueSearch = CFind(
+        INT("B2-ei3cjkr4cektyz5-cnr6-ik78/S01e2-ae3cnqry4-aeijkn5-ain6ekn7e"),
+        3, 1, 5, ShipSymmetry.ASYMMETRIC, _isotropic = false,
+        verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS, direction = Coordinate(1,2)
     )
-    search.search()
+    obliqueSearch.search()
 
 //    println(search.successorTable.size)
 //    println(search2.successorTable.size)

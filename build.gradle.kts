@@ -1,19 +1,19 @@
+import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.dokka.gradle.DokkaTask
 
 plugins {
-    application
     id("org.jetbrains.dokka") version "1.9.20"
-    kotlin("multiplatform") version "2.0.0"
+    kotlin("multiplatform") version "2.0.20"
+    id("org.jetbrains.compose") version "1.6.11"
+    id("org.jetbrains.kotlin.plugin.compose") version "2.0.20"
 }
-group = "org.jedlimlx"
-version = "0.1.0-alpha.1"
 
-application {
-    mainClass.set("MainKt")
-}
+group = "org.jedlimlx"
+version = "1.0.0"
 
 repositories {
     mavenCentral()
+    google()
 }
 
 kotlin {
@@ -54,7 +54,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.3.2")
-                implementation("com.github.ajalt.mordant:mordant:2.3.0")
+                implementation("com.github.ajalt.mordant:mordant:2.7.2")
                 implementation("com.github.ajalt.clikt:clikt:4.2.2")
             }
         }
@@ -62,12 +62,13 @@ kotlin {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.3.2")
                 implementation(kotlin("test"))
-                implementation("com.github.ajalt.mordant:mordant:2.3.0")
+                implementation("com.github.ajalt.mordant:mordant:2.7.2")
             }
         }
         val jvmMain by getting {
             dependencies {
                 implementation("it.skrape:skrapeit:1.1.5")
+                implementation("androidx.compose.runtime:runtime:1.6.8")
             }
         }
         val jvmTest by getting {
@@ -84,4 +85,14 @@ kotlin {
 
 tasks.withType<DokkaTask>().configureEach {
     outputDirectory.set(File("${System.getProperty("user.dir")}/docs/api-reference"))
+}
+
+compose.desktop {
+    application {
+        mainClass = "MainKt"
+
+        nativeDistributions {
+            targetFormats(TargetFormat.Pkg, TargetFormat.Exe, TargetFormat.Deb)
+        }
+    }
 }
