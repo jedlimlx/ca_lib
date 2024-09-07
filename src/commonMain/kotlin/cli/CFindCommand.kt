@@ -99,6 +99,10 @@ class CFindCommand: CliktCommand() {
         "--threads", "-t",
         help = "The number of threads to use to parallelise the search."
     ).int().default(1)
+    val verbosity by option(
+        "--verbosity", "-vv",
+        help = "The amount of information you want the search to output. (nothing: -1, default: 0, debug: 1)"
+    ).int().default(0)
     val stdin by option(
         "--stdin", "-std",
         help = "Output all partials with no other output (useful for piping output into apgsearch)."
@@ -135,7 +139,8 @@ class CFindCommand: CliktCommand() {
             1 shl transpositionTableSize,
             maxTimePerRound,
             numThreads,
-            stdin
+            stdin,
+            verbosity = verbosity
         )
         search.search()
     }

@@ -230,7 +230,7 @@ actual fun test() {
 
     val obliqueSearch = CFind(
         HROT("R2,C2,S1,3,5,B3,NN"),
-        3, 1, 5, ShipSymmetry.ASYMMETRIC, _isotropic = false,
+        3, 1, 4, ShipSymmetry.ASYMMETRIC, _isotropic = false,
         verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, direction = Coordinate(1, 2),
         partialFrequency = 1000
     )
