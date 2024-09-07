@@ -11,6 +11,5 @@ class MainCommand: CliktCommand(name="ca_lib") {
 }
 
 fun main(args: Array<String>) {
-    test()
     MainCommand().subcommands(CFindCommand()).main(args)
 }
