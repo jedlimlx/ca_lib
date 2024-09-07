@@ -229,9 +229,10 @@ actual fun test() {
 //    search.search()
 
     val obliqueSearch = CFind(
-        INT("B2-ei3cjkr4cektyz5-cnr6-ik78/S01e2-ae3cnqry4-aeijkn5-ain6ekn7e"),
+        HROT("R2,C2,S1,3,5,B3,NN"),
         3, 1, 5, ShipSymmetry.ASYMMETRIC, _isotropic = false,
-        verbosity = 1, searchStrategy = SearchStrategy.HYBRID_BFS, direction = Coordinate(1,2)
+        verbosity = 1, searchStrategy = SearchStrategy.PRIORITY_QUEUE, direction = Coordinate(1, 2),
+        partialFrequency = 1000
     )
     obliqueSearch.search()
 

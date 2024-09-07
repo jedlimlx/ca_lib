@@ -162,8 +162,20 @@ class Row(
             predecessor = predecessor.predecessor!!
         }
 
-        getAllPredecessors(-1, deepCopy = false).forEach {
-            if (!it.isEmpty()) return 1
+        val allPredecessors = getAllPredecessors(-1, deepCopy = false)
+        allPredecessors.forEach {
+            if (!it.isEmpty()) {
+                var firstDepth = 0
+                for (i in allPredecessors.indices) {
+                    if (!allPredecessors[allPredecessors.size - i - 1].isEmpty()) {
+                        firstDepth = allPredecessors[i].depth
+                        break
+                    }
+                }
+
+                return if (firstDepth.mod(search.spacing) == depth.mod(search.spacing)) 1
+                else 0
+            }
         }
 
         return 2
