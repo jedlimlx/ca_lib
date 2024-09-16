@@ -16,8 +16,8 @@ fun parseSpeed(speed: String): Pair<Pair<Int, Int>, Int> {
         return Pair(Pair(k, k), p)
     } else {
         val tokens = speed.split(")c/")
-        val tokens2 = tokens[0].replace("(", "").split(",", "")
-        val p = tokens[1].subSequence(0, tokens[1].length-1).toString().toInt()
+        val tokens2 = tokens[0].replace("(", "").split(",")
+        val p = tokens[1].toInt()
         return Pair(Pair(tokens2[0].toInt(), tokens2[1].toInt()), p)
     }
 }
