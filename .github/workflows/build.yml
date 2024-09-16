@@ -1,0 +1,60 @@
+name: build
+
+on: workflow_dispatch
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 17
+      - name: Build with Gradle
+        run: ./gradlew createDistributable
+      - name: Upload the Executable
+        uses: actions/upload-artifact@v2
+        with:
+          name: ca_lib-linux
+          path: ./build/compose/binaries/main/app/ca_lib
+  windows:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v4
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: 17
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+    - name: Build with Gradle
+      run: ./gradlew createDistributable
+    - name: Upload the Executable
+      uses: actions/upload-artifact@v2
+      with:
+        name: ca_lib-windows
+        path: ./build/compose/binaries/main/app/ca_lib
+  mac-os:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 17
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Build with Gradle
+        run: ./gradlew createDistributable
+      - name: Upload the Executable
+        uses: actions/upload-artifact@v2
+        with:
+          name: ca_lib-macos
+          path: ./build/compose/binaries/main/app/ca_lib
