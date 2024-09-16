@@ -30,7 +30,7 @@ class INT : BaseINT, RuleRangeable<INT> {
 
     override val regex: List<Regex> by lazy {
         INT_NEIGHBOURHOODS.map { (key, entry) ->
-            Regex("[Bb]${entry.regex}/?[Ss]${entry.regex}(/?[Nn]($key|${key.lowercase()}))?")
+            Regex("[Bb]${entry.regex}*/?[Ss]${entry.regex}*(/?[Nn]($key|${key.lowercase()}))?")
         }
     }
 

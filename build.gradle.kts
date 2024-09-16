@@ -54,8 +54,8 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.3.2")
-                implementation("com.github.ajalt.mordant:mordant:2.7.2")
-                implementation("com.github.ajalt.clikt:clikt:4.2.2")
+                implementation("com.github.ajalt.mordant:mordant:3.0.0")
+                implementation("com.github.ajalt.clikt:clikt:5.0.0")
             }
         }
         val commonTest by getting {
@@ -92,6 +92,7 @@ compose.desktop {
         mainClass = "MainKt"
 
         nativeDistributions {
+            windows { console = true }
             targetFormats(TargetFormat.Pkg, TargetFormat.Exe, TargetFormat.Deb)
         }
     }
