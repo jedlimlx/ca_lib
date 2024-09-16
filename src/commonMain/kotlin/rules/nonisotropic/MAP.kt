@@ -30,7 +30,7 @@ class MAP : BaseMAP {
 
     override val regex: List<Regex> = listOf(
         Regex(
-            "MAP[Bb]$mapRegex[/+][Ss]$mapRegex"
+            "MAP$mapRegex"
         )
     )
 

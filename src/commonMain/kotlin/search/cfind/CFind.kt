@@ -312,7 +312,7 @@ class CFind(
     val neighbourhoodWithoutBg: HashMap<Coordinate, List<Pair<Coordinate, Int>>> = hashMapOf()
 
     // Initialising the transposition table
-    val equivalentStates: LRUCache<Int, IntArray> = LRUCache(transpositionTableSize)
+    val equivalentStates: LRUCache<Int, UIntArray> = LRUCache(transpositionTableSize)
 
     // Computing the rows that should be used in computing the next state
     val indices = Array(period) { phase ->
@@ -829,7 +829,7 @@ class CFind(
         println((bold("Approximate Lookahead: ") + "${approximateLookahead.map { it.toList() }.toList()}"), verbosity = 1)
         println((bold("Additional Depth (for lookahead): ") + "${additionalDepthArray.toList()}"), verbosity = 1)
         println((bold("Lookahead Depth: ") + "$lookaheadDepth"), verbosity = 1)
-        println(bold("Row Indices: "))
+        println(bold("Row Indices: "), verbosity = 1)
 
         for (depth in 0.. lookaheadIndices.map { it.size }.max()) {
             val lst = if (depth == 0) indices else lookaheadIndices.map {
@@ -850,7 +850,7 @@ class CFind(
                         if (depth <= this.lookaheadDepth[phase]) string
                         else gray(string)
                     } else " ".repeat(4*this@CFind.indices[0].size - 1)
-                }.joinToString(bold(" | "))
+                }.joinToString(bold(" | ")), verbosity = 1
             )
         }
 
@@ -1405,6 +1405,7 @@ class CFind(
     /**
      * Checks if the search has arrived at an equivalent state.
      */
+    @OptIn(ExperimentalUnsignedTypes::class)
     fun checkEquivalentState(row: Row): Boolean {
         val rows = row.getAllPredecessors((height - 1) * period)
 
@@ -1413,21 +1414,21 @@ class CFind(
         val hash = rows.map { it.hashCode() }.hashCode() + rows[0].depthHash()
         val reverseHash = if (useReverseHash) rows.map { it.reverseHashCode() }.hashCode() + rows[0].depthHash() else 0
         fun addState() {
-            val temp = rows.map { it.hash }.chunked(times).map {
-                it.mapIndexed { index, it -> pow(maxHash, index) * it }.sum()
-            }.toIntArray()
+            val temp = rows.map { it.hash.toUInt() }.chunked(times).map {
+                it.mapIndexed { index, it -> pow(maxHash, index).toUInt() * it }.sum()
+            }.toUIntArray()
             equivalentStates[hash] = temp
             if (useReverseHash)
-                equivalentStates[reverseHash] = rows.map { it.reverseHash }.chunked(times).map {
-                    it.mapIndexed { index, it -> pow(maxHash, index) * it }.sum()
-                }.toIntArray()
+                equivalentStates[reverseHash] = rows.map { it.reverseHash.toUInt() }.chunked(times).map {
+                    it.mapIndexed { index, it -> pow(maxHash, index).toUInt() * it }.sum()
+                }.toUIntArray()
         }
 
         if (hash in equivalentStates.keys) {
             var equivalent = true
-            val temp = rows.map { it.hash }.chunked(times).map {
-                it.mapIndexed { index, it -> pow(maxHash, index) * it }.sum()
-            }.toIntArray()
+            val temp = rows.map { it.hash.toUInt() }.chunked(times).map {
+                it.mapIndexed { index, it -> pow(maxHash, index).toUInt() * it }.sum()
+            }.toUIntArray()
 
             val state = equivalentStates[hash]!!
             for (i in state.indices) {
@@ -1440,9 +1441,9 @@ class CFind(
             if (!equivalent) return false
         } else if (useReverseHash && reverseHash in equivalentStates.keys) {
             var equivalent = true
-            val temp = rows.map { it.reverseHash }.chunked(times).map {
-                it.mapIndexed { index, it -> pow(maxHash, index) * it }.sum()
-            }.toIntArray()
+            val temp = rows.map { it.reverseHash.toUInt() }.chunked(times).map {
+                it.mapIndexed { index, it -> pow(maxHash, index).toUInt() * it }.sum()
+            }.toUIntArray()
 
             val state = equivalentStates[reverseHash]!!
             for (i in state.indices) {

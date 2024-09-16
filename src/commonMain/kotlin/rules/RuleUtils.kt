@@ -3,6 +3,7 @@ package rules
 import rules.hrot.HROT
 import rules.hrot.HROTGenerations
 import rules.hrot.HROTExtendedGenerations
+import rules.nonisotropic.MAP
 import rules.nontotalistic.rules.DeficientINT
 import rules.nontotalistic.rules.INT
 import rules.nontotalistic.rules.INTGenerations
@@ -14,7 +15,8 @@ private val RULE_FAMILIES = listOf(
     HROTExtendedGenerations(),
     INT(),
     INTGenerations(),
-    DeficientINT()
+    DeficientINT(),
+    MAP()
 )
 
 /**

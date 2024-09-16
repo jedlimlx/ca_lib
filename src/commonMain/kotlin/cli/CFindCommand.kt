@@ -11,6 +11,7 @@ import com.github.ajalt.clikt.parameters.types.choice
 import com.github.ajalt.clikt.parameters.types.int
 import patterns.parseSpeed
 import rules.fromRulestring
+import rules.ruleloader.ruletableFromFile
 import search.cfind.CFind
 import search.cfind.SearchStrategy
 import search.cfind.ShipSymmetry
@@ -35,8 +36,11 @@ class RequiredOptions : OptionGroup(
     help = "Options controlling the type of spaceship that will be searched for."
 ) {
     val rule by option("--rule", "-r", help="The cellular automaton rule to search in.").convert {
-        println(it)
-        fromRulestring(it)
+        try {
+            fromRulestring(it)
+        } catch (e: IllegalArgumentException) {
+            ruletableFromFile(it)
+        }
     }.required()
     val speed by option("--vel", "-v", help="The speed of the ship.").required()
     val width by option("--width", "-w", help="The width of the ship.").int().required()
