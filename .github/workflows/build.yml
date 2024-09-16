@@ -16,7 +16,7 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew createDistributable
       - name: Upload the Executable
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: ca_lib-linux
           path: ./build/compose/binaries/main/app/ca_lib
@@ -35,7 +35,7 @@ jobs:
     - name: Build with Gradle
       run: ./gradlew createDistributable
     - name: Upload the Executable
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: ca_lib-windows
         path: ./build/compose/binaries/main/app/ca_lib
@@ -54,7 +54,7 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew createDistributable
       - name: Upload the Executable
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: ca_lib-macos
           path: ./build/compose/binaries/main/app/ca_lib
