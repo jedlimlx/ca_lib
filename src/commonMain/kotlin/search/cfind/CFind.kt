@@ -747,12 +747,22 @@ class CFind(
     }.toTypedArray()
 
     // Computes the deepest cell which is needed in checking for the boundary conditions
-    val rightBcDepth: IntArray = splitRightBCs.map {
+    val rightBcDepth: IntArray = offsets.indices.map { depth ->
+        rightBC.filter {
+            val coordinate = -it + lastBaseCoordinate
+            coordinate.x.mod(spacing) == offsets[(depth - coordinate.y * period).mod(offsets.size)]
+        }
+    }.map {
         if (it.isNotEmpty())
             it.groupBy { it.y }.map { (_, lst) -> lst.size }.max()
         else -1
     }.toIntArray()
-    val leftBcDepth: IntArray = splitLeftBCs.map {
+    val leftBcDepth: IntArray = offsets.indices.map { depth ->
+        leftBC.filter {
+            val coordinate = -it + Coordinate(width * spacing - 1, 0) + lastBaseCoordinate
+            coordinate.x.mod(spacing) == offsets[(depth - coordinate.y * period).mod(offsets.size)]
+        }
+    }.map {
         if (it.isNotEmpty() && (symmetry == ShipSymmetry.GLIDE || symmetry == ShipSymmetry.ASYMMETRIC))
             it.groupBy { it.y }.map { (_, lst) -> lst.size }.max()
         else -1
@@ -2040,7 +2050,7 @@ class CFind(
                                 offset = Coordinate(width * spacing - 1, 0),
                                 outputStates = true
                             )
-                            allowedStates = temp.second
+                            //allowedStates = temp.second
                             if (allowedStates == 0) return Pair(completedRows, maxDepth)
 
                             temp.first
