@@ -2050,7 +2050,7 @@ class CFind(
                                 offset = Coordinate(width * spacing - 1, 0),
                                 outputStates = true
                             )
-                            //allowedStates = temp.second
+                            allowedStates = temp.second
                             if (allowedStates == 0) return Pair(completedRows, maxDepth)
 
                             temp.first
