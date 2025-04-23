@@ -12,7 +12,6 @@ import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-@Ignore
 class Test {
     private val searchStrategies = listOf(SearchStrategy.HYBRID_BFS, SearchStrategy.PRIORITY_QUEUE)
 

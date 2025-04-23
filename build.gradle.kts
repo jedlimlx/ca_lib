@@ -2,10 +2,10 @@ import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.dokka.gradle.DokkaTask
 
 plugins {
-    id("org.jetbrains.dokka") version "1.9.20"
+    id("org.jetbrains.dokka") version "2.0.0"
     kotlin("multiplatform") version "2.0.20"
-    id("org.jetbrains.compose") version "1.6.11"
-    id("org.jetbrains.kotlin.plugin.compose") version "2.0.20"
+    id("org.jetbrains.compose") version "1.7.3"
+    id("org.jetbrains.kotlin.plugin.compose") version "2.1.20"
 }
 
 group = "org.jedlimlx"
@@ -53,16 +53,16 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.3.2")
-                implementation("com.github.ajalt.mordant:mordant:3.0.0")
-                implementation("com.github.ajalt.clikt:clikt:5.0.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.7.0")
+                implementation("com.github.ajalt.mordant:mordant:3.0.2")
+                implementation("com.github.ajalt.clikt:clikt:5.0.3")
             }
         }
         val commonTest by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.3.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.7.0")
                 implementation(kotlin("test"))
-                implementation("com.github.ajalt.mordant:mordant:2.7.2")
+                implementation("com.github.ajalt.mordant:mordant:3.0.2")
             }
         }
         val jvmMain by getting {
