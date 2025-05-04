@@ -56,6 +56,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.7.0")
                 implementation("com.github.ajalt.mordant:mordant:3.0.2")
                 implementation("com.github.ajalt.clikt:clikt:5.0.3")
+                api(compose.runtime)
             }
         }
         val commonTest by getting {
@@ -68,7 +69,7 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 implementation("it.skrape:skrapeit:1.1.5")
-                implementation("androidx.compose.runtime:runtime:1.6.8")
+                implementation("androidx.compose.runtime:runtime:1.7.8")
             }
         }
         val jvmTest by getting {
