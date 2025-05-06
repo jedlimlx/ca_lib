@@ -30,11 +30,11 @@ class INTGenerations : BaseINT, RuleRangeable<INTGenerations> {
 
     override val regex: List<Regex> by lazy {
         INT_NEIGHBOURHOODS.map { (key, entry) ->
-            Regex("[BbSs]?${entry.regex}/[BbSs]?${entry.regex}/[CcGg]?[0-9]+(/[Nn]?($key|${key.lowercase()}))?")
+            Regex("[BbSs]?${entry.regex}*/[BbSs]?${entry.regex}*/[CcGg]?[0-9]+(/[Nn]?($key|${key.lowercase()}))?")
         } + INT_NEIGHBOURHOODS.map { (key, entry) ->
-            Regex("[BbSs]${entry.regex}/?[BbSs]${entry.regex}/?[CcGg][0-9]+(/?[Nn]($key|${key.lowercase()}))?")
+            Regex("[BbSs]${entry.regex}*/?[BbSs]${entry.regex}*/?[CcGg][0-9]+(/?[Nn]($key|${key.lowercase()}))?")
         } + INT_NEIGHBOURHOODS.map { (key, entry) ->
-            Regex("[CcGg][0-9]+/?[Bb]${entry.regex}/?[Ss]${entry.regex}(/?[Nn]($key|${key.lowercase()}))?")
+            Regex("[CcGg][0-9]+/?[Bb]${entry.regex}*/?[Ss]${entry.regex}*(/?[Nn]($key|${key.lowercase()}))?")
         }
     }
 
