@@ -932,8 +932,8 @@ class CFind(
             // We will represent the queue as a linked list
             if (!loadedState) {
                 linkedListSize = 1
-                head = if (searchStrategy != SearchStrategy.DFS) currentRow else null
-                tail = if (searchStrategy != SearchStrategy.DFS) currentRow else null
+                head = currentRow
+                tail = currentRow
             }
             while (shipsFound < numShips) {
                 // BFS round runs until the queue size exceeds the maximum queue size
